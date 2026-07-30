@@ -4,6 +4,7 @@ import { Tabs, Tab, Box } from '@mui/material'
 import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
 import JobList from '../jobs/JobList'
+import JobModal from '../jobs/JobModal'
 import ProposalList from '../proposals/ProposalList'
 import ContractList from '../contracts/ContractList'
 import LpuList from '../lpu/LpuList'
@@ -14,27 +15,15 @@ export default function FreelancersPage() {
     const t = searchParams.get('tab')
     return t ? Number(t) : 0
   })
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editId, setEditId] = useState<number | null>(null)
+  const [freelancerModal, setFreelancerModal] = useState({ open: false, editId: null as number | null })
+  const [jobModal, setJobModal] = useState({ open: false, editId: null as number | null })
 
   const handleTabChange = (_: any, v: number) => {
     setTab(v)
     setSearchParams(v ? { tab: String(v) } : {}, { replace: true })
   }
 
-  const handleNew = () => {
-    setEditId(null)
-    setModalOpen(true)
-  }
-
-  const handleEdit = (id: number) => {
-    setEditId(id)
-    setModalOpen(true)
-  }
-
-  const refreshOnSave = () => {
-    window.location.reload()
-  }
+  const refresh = () => window.location.reload()
 
   return (
     <Box>
@@ -45,12 +34,33 @@ export default function FreelancersPage() {
         <Tab label="Contracts" />
         <Tab label="LPU" />
       </Tabs>
-      {tab === 0 && <FreelancerList onNew={handleNew} onEdit={handleEdit} />}
-      {tab === 1 && <JobList />}
+      {tab === 0 && (
+        <FreelancerList
+          onNew={() => setFreelancerModal({ open: true, editId: null })}
+          onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
+        />
+      )}
+      {tab === 1 && (
+        <JobList
+          onNew={() => setJobModal({ open: true, editId: null })}
+          onEdit={(id) => setJobModal({ open: true, editId: id })}
+        />
+      )}
       {tab === 2 && <ProposalList />}
       {tab === 3 && <ContractList />}
       {tab === 4 && <LpuList />}
-      <FreelancerModal open={modalOpen} editId={editId} onClose={() => setModalOpen(false)} onSaved={refreshOnSave} />
+      <FreelancerModal
+        open={freelancerModal.open}
+        editId={freelancerModal.editId}
+        onClose={() => setFreelancerModal({ open: false, editId: null })}
+        onSaved={refresh}
+      />
+      <JobModal
+        open={jobModal.open}
+        editId={jobModal.editId}
+        onClose={() => setJobModal({ open: false, editId: null })}
+        onSaved={refresh}
+      />
     </Box>
   )
 }

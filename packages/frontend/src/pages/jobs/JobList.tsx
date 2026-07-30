@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -28,10 +27,14 @@ interface Job {
   skills: string[]
 }
 
-export default function JobList() {
+interface Props {
+  onNew: () => void
+  onEdit: (id: number) => void
+}
+
+export default function JobList({ onNew, onEdit }: Props) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [error, setError] = useState('')
-  const navigate = useNavigate()
 
   useEffect(() => {
     api.get('/jobs')
@@ -40,7 +43,7 @@ export default function JobList() {
   }, [])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this job?')) return
+    if (!confirm('Tem certeza que deseja excluir este job?')) return
     try {
       await api.delete(`/jobs/${id}`)
       setJobs((prev) => prev.filter((j) => j.id !== id))
@@ -53,31 +56,31 @@ export default function JobList() {
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Jobs</Typography>
-        <Button variant="contained" onClick={() => navigate('/jobs/new')}>New Job</Button>
+        <Button variant="contained" onClick={onNew}>Novo Job</Button>
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Budget</TableCell>
-              <TableCell>Budget Type</TableCell>
+              <TableCell>Título</TableCell>
+              <TableCell>Orçamento</TableCell>
+              <TableCell>Tipo</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Skills</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Habilidades</TableCell>
+              <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {jobs.map((j) => (
-              <TableRow key={j.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/jobs/${j.id}`)}>
+              <TableRow key={j.id} hover sx={{ cursor: 'pointer' }}>
                 <TableCell>{j.title}</TableCell>
                 <TableCell>${j.budget}</TableCell>
-                <TableCell>{j.budgetType}</TableCell>
+                <TableCell>{j.budgetType === 'hourly' ? 'Por Hora' : 'Fixo'}</TableCell>
                 <TableCell>{j.status}</TableCell>
                 <TableCell>{Array.isArray(j.skills) ? j.skills.join(', ') : j.skills}</TableCell>
                 <TableCell>
-                  <IconButton onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${j.id}/edit`) }}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); onEdit(j.id) }}>
                     <Edit />
                   </IconButton>
                   <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(j.id) }}>

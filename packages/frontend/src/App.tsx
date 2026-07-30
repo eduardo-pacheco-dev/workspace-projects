@@ -8,7 +8,6 @@ import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
 import FreelancerDetail from './pages/freelancers/FreelancerDetail'
-import JobForm from './pages/jobs/JobForm'
 import JobDetail from './pages/jobs/JobDetail'
 import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
@@ -37,9 +36,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/freelancers" element={<FreelancersPage />} />
           <Route path="/freelancers/:id" element={<FreelancerDetail />} />
-          <Route path="/jobs/new" element={<JobForm />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
-          <Route path="/jobs/:id/edit" element={<JobForm />} />
           <Route path="/proposals/new" element={<ProposalForm />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />
           <Route path="/proposals/:id/edit" element={<ProposalForm />} />

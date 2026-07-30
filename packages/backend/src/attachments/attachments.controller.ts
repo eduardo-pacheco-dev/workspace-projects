@@ -34,6 +34,21 @@ export class AttachmentsController {
     return this.attachmentsService.findByJob(jobId);
   }
 
+  @Get('file/:id')
+  async getFile(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const attachment = await this.attachmentsService.findById(id);
+    const filePath = path.resolve('uploads', attachment.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Arquivo não encontrado' });
+    }
+    res.setHeader('Content-Type', attachment.mimetype);
+    res.setHeader('Content-Disposition', 'inline');
+    res.sendFile(filePath);
+  }
+
   @Get('download/:id')
   async download(
     @Param('id', ParseIntPipe) id: number,

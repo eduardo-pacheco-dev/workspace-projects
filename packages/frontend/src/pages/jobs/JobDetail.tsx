@@ -121,7 +121,7 @@ export default function JobDetail() {
   }
 
   const handlePreview = (att: Attachment) => {
-    setPreview({ url: `/api/attachments/download/${att.id}`, type: att.mimetype, name: att.originalName })
+    setPreview({ url: `/api/attachments/file/${att.id}`, type: att.mimetype, name: att.originalName })
   }
 
   const formatSize = (bytes: number) => {
@@ -222,7 +222,7 @@ export default function JobDetail() {
                     {isImage ? (
                       <Box
                         component="img"
-                        src={`/api/attachments/download/${att.id}`}
+                        src={`/api/attachments/file/${att.id}`}
                         sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
                       />
                     ) : isPdf ? (

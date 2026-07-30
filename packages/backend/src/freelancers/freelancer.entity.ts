@@ -26,6 +26,9 @@ export class Freelancer {
   @Column({ type: 'text', nullable: true })
   email?: string;
 
+  @Column({ type: 'text', nullable: true })
+  phone?: string;
+
   @Column({ type: 'text' })
   bio: string;
 

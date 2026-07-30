@@ -35,6 +35,10 @@ export class CreateFreelancerDto {
   portfolio?: string;
 
   @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
   @IsIn(['junior', 'mid', 'senior', 'lead'])
   experienceLevel?: string;
 

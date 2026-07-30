@@ -25,7 +25,7 @@ import {
   TextField,
   MenuItem,
 } from '@mui/material'
-import { ArrowBack, Edit, Person, Email, Language, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
+import { ArrowBack, Edit, Person, Email, Phone, Language, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
 import api from '../../services/api'
 
 interface Attachment {
@@ -44,6 +44,7 @@ interface Freelancer {
   firstName: string
   lastName: string
   email?: string
+  phone?: string
   bio: string
   portfolio: string
   hourlyRate: number
@@ -77,7 +78,7 @@ export default function FreelancerDetail() {
   const [editOpen, setEditOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', bio: '', portfolio: '',
+    firstName: '', lastName: '', email: '', phone: '', bio: '', portfolio: '',
     hourlyRate: 0, skills: '', experienceLevel: 'mid', availability: 'available',
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -135,6 +136,7 @@ export default function FreelancerDetail() {
       firstName: freelancer.firstName,
       lastName: freelancer.lastName,
       email: freelancer.email || '',
+      phone: freelancer.phone ? formatPhone(freelancer.phone) : '',
       bio: freelancer.bio || '',
       portfolio: freelancer.portfolio || '',
       hourlyRate: freelancer.hourlyRate,
@@ -146,13 +148,14 @@ export default function FreelancerDetail() {
   }
 
   const handleFormChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }))
+    const value = field === 'phone' ? formatPhone(e.target.value) : e.target.value
+    setForm((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSubmitEdit = async () => {
     setSaving(true)
     try {
-      const payload = { ...form, hourlyRate: Number(form.hourlyRate) }
+      const payload = { ...form, hourlyRate: Number(form.hourlyRate), phone: form.phone.replace(/\D/g, '') }
       const { data } = await api.patch(`/freelancers/${id}`, payload)
       setFreelancer(data)
       setEditOpen(false)
@@ -166,6 +169,15 @@ export default function FreelancerDetail() {
   const handlePreview = (att: Attachment) => {
     setPreview({ url: `/api/attachments/file/${att.id}`, type: att.mimetype, name: att.originalName })
   }
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11)
+    if (digits.length < 3) return digits
+    if (digits.length < 8) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+
+  const displayPhone = freelancer.phone ? formatPhone(freelancer.phone) : '-'
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
@@ -250,6 +262,13 @@ export default function FreelancerDetail() {
             <Box>
               <Typography variant="subtitle2" color="text.secondary">E-mail</Typography>
               <Typography variant="body1">{freelancer.email || '-'}</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Phone color="action" />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">Telefone</Typography>
+              <Typography variant="body1">{displayPhone}</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -354,6 +373,7 @@ export default function FreelancerDetail() {
               <TextField label="Sobrenome" value={form.lastName} onChange={handleFormChange('lastName')} fullWidth />
             </Box>
             <TextField label="E-mail" type="email" value={form.email} onChange={handleFormChange('email')} fullWidth />
+            <TextField label="Telefone" value={form.phone} onChange={handleFormChange('phone')} fullWidth placeholder="(11) 99999-9999" />
             <TextField label="Bio" multiline rows={3} value={form.bio} onChange={handleFormChange('bio')} fullWidth />
             <TextField label="Portfolio (URL)" value={form.portfolio} onChange={handleFormChange('portfolio')} fullWidth />
             <TextField label="Valor por Hora" type="number" value={form.hourlyRate} onChange={handleFormChange('hourlyRate')} fullWidth />

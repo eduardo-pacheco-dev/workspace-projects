@@ -49,12 +49,16 @@ REMOTE_SCRIPT=$(cat << ENDSCRIPT
 
   echo "==> Checking environment variables..."
   if [ ! -f "$REMOTE_DIR/packages/backend/.env" ]; then
-    echo "WARNING: .env file not found!"
-    echo "Create it manually:"
-    echo "  cp .env.example .env"
-    echo "  nano .env"
+    cp "$REMOTE_DIR/.env.example" "$REMOTE_DIR/packages/backend/.env" 2>/dev/null || true
+    echo "WARNING: .env file not found! A template was created."
+    echo "Edit it with: nano $REMOTE_DIR/packages/backend/.env"
     echo "Required: DB_PASSWORD, JWT_SECRET"
   fi
+
+  echo "==> Loading environment variables..."
+  set -a
+  . "$REMOTE_DIR/packages/backend/.env" 2>/dev/null || true
+  set +a
 
   echo "==> Installing production dependencies..."
   npm install --omit=dev

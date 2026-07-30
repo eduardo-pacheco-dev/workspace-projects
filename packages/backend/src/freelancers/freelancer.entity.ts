@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Lpu } from '../lpu/lpu.entity';
+import { Attachment } from '../attachments/attachment.entity';
 
 @Entity()
 export class Freelancer {
@@ -45,6 +46,9 @@ export class Freelancer {
 
   @OneToMany(() => Lpu, (lpu) => lpu.freelancer)
   lpus: Lpu[];
+
+  @OneToMany(() => Attachment, (att) => att.freelancer)
+  attachments: Attachment[];
 
   @CreateDateColumn()
   createdAt: Date;

@@ -29,9 +29,40 @@ export class AttachmentsController {
     return this.attachmentsService.upload(jobId, file);
   }
 
+  @Post('upload-freelancer/:freelancerId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadFreelancer(
+    @Param('freelancerId', ParseIntPipe) freelancerId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadFreelancer(freelancerId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
+  }
+
+  @Get('freelancer/:freelancerId')
+  findByFreelancer(@Param('freelancerId', ParseIntPipe) freelancerId: number) {
+    return this.attachmentsService.findByFreelancer(freelancerId);
+  }
+
+  private sendFile(attachment: any, res: Response, disposition: 'inline' | 'attachment') {
+    const subdir = attachment.freelancerId
+      ? `freelancer-${attachment.freelancerId}`
+      : `job-${attachment.jobId}`;
+    const filePath = path.resolve('uploads', subdir, attachment.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Arquivo não encontrado' });
+    }
+    res.setHeader('Content-Type', attachment.mimetype);
+    if (disposition === 'inline') {
+      res.setHeader('Content-Disposition', 'inline');
+      res.sendFile(filePath);
+    } else {
+      res.download(filePath, attachment.originalName);
+    }
   }
 
   @Get('file/:id')
@@ -40,14 +71,7 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
-    const filePath = path.join(jobDir, attachment.filename);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Arquivo não encontrado' });
-    }
-    res.setHeader('Content-Type', attachment.mimetype);
-    res.setHeader('Content-Disposition', 'inline');
-    res.sendFile(filePath);
+    this.sendFile(attachment, res, 'inline');
   }
 
   @Get('download/:id')
@@ -56,12 +80,7 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
-    const filePath = path.join(jobDir, attachment.filename);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Arquivo não encontrado' });
-    }
-    res.download(filePath, attachment.originalName);
+    this.sendFile(attachment, res, 'attachment');
   }
 
   @Delete(':id')

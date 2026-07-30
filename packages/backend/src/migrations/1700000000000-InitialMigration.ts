@@ -89,7 +89,7 @@ export class InitialMigration1700000000000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS attachment (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,
-        jobId INTEGER NOT NULL,
+        jobId INTEGER NULL,
         filename VARCHAR(255) NOT NULL,
         originalName VARCHAR(255) NOT NULL,
         mimetype VARCHAR(100) NOT NULL,

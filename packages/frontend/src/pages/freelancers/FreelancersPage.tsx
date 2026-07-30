@@ -5,8 +5,6 @@ import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
 import JobList from '../jobs/JobList'
 import JobModal from '../jobs/JobModal'
-import ProposalList from '../proposals/ProposalList'
-import ContractList from '../contracts/ContractList'
 import LpuList from '../lpu/LpuList'
 
 export default function FreelancersPage() {
@@ -30,8 +28,6 @@ export default function FreelancersPage() {
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Freelancers" />
         <Tab label="Jobs" />
-        <Tab label="Proposals" />
-        <Tab label="Contracts" />
         <Tab label="LPU" />
       </Tabs>
       {tab === 0 && (
@@ -46,9 +42,7 @@ export default function FreelancersPage() {
           onEdit={(id) => setJobModal({ open: true, editId: id })}
         />
       )}
-      {tab === 2 && <ProposalList />}
-      {tab === 3 && <ContractList />}
-      {tab === 4 && <LpuList />}
+      {tab === 2 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}

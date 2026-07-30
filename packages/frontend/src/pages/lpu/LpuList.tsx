@@ -17,7 +17,8 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, FileDownload } from '@mui/icons-material'
+import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import LpuModal from './LpuModal'
 
@@ -88,13 +89,32 @@ export default function LpuList() {
     setModalOpen(true)
   }
 
+  const handleExport = () => {
+    const rows = lpus.map((l) => ({
+      Nome: l.nome,
+      Descrição: l.descricao || '',
+      Valor: l.valor || '',
+      Data: l.data || '',
+      Status: l.status === 'ativo' ? 'Ativo' : 'Inativo',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'LPUs')
+    XLSX.writeFile(wb, `lpus-${selectedFreelancer}.xlsx`)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">LPUs</Typography>
-        <Button variant="contained" onClick={handleNew} disabled={!selectedFreelancer} startIcon={<Add />}>
-          Nova LPU
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" onClick={handleExport} disabled={lpus.length === 0} startIcon={<FileDownload />}>
+            Exportar Excel
+          </Button>
+          <Button variant="contained" onClick={handleNew} disabled={!selectedFreelancer} startIcon={<Add />}>
+            Nova LPU
+          </Button>
+        </Box>
       </Box>
 
       <TextField

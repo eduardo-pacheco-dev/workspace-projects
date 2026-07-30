@@ -33,7 +33,7 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
   NC='\033[0m'
 
   STEP=0
-  TOTAL=9
+  TOTAL=8
   DEPLOY_START=$(date +%s)
 
   print_header() {
@@ -108,46 +108,44 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
   "
 
   # Step 3: Environment
-  run_step "Checking .env file" "  " bash -c "
+  run_step "Configuring environment" "  " bash -c "
     if [ ! -f \"$REMOTE_DIR/packages/backend/.env\" ]; then
       cp \"$REMOTE_DIR/.env.example\" \"$REMOTE_DIR/packages/backend/.env\" 2>/dev/null || true
       echo 'WARNING: .env template created. Edit with: nano $REMOTE_DIR/packages/backend/.env'
     fi
   "
 
-  # Step 4: Load env
-  run_step "Loading environment" "  " bash -c "
-    set -a
-    . \"$REMOTE_DIR/packages/backend/.env\" 2>/dev/null || true
-    set +a
-  "
+  # Load env vars (in main shell so PM2 can see them)
+  set -a
+  . "$REMOTE_DIR/packages/backend/.env" 2>/dev/null || true
+  set +a
 
-  # Step 5: Install
+  # Step 4: Install
   run_step "Installing dependencies" "  " bash -c "
     cd \"$REMOTE_DIR\"
     npm install 2>&1 | tail -5
   "
 
-  # Step 6: Build
+  # Step 5: Build
   run_step "Building project" "  " bash -c "
     cd \"$REMOTE_DIR\"
     npm run build 2>&1 | tail -10
   "
 
-  # Step 7: Migrations
+  # Step 6: Migrations
   run_step "Running migrations" "  " bash -c "
     cd \"$REMOTE_DIR/packages/backend\"
     NODE_ENV=production npx --no-install typeorm migration:run -d dist/data-source.js 2>&1 || echo 'Already up to date.'
   "
 
-  # Step 8: Restart
+  # Step 7: Restart
   run_step "Restarting PM2" "  " bash -c "
     cd \"$REMOTE_DIR\"
-    pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+    pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
     pm2 save
   "
 
-  # Step 9: Nginx
+  # Step 8: Nginx
   run_step "Configuring Nginx" "  " bash -c "
     NGINX_SRC=\"$REMOTE_DIR/nginx.conf\"
     NGINX_DST=\"/etc/nginx/sites-available/afl.brazil.vps-kinghost.net\"

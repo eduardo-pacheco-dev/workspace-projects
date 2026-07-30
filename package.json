@@ -1,0 +1,12 @@
+{
+  "name": "myapp",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "start": "pnpm -r run start:prod"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

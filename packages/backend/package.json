@@ -12,9 +12,9 @@
     "start:prod": "node dist/main",
     "create-user": "ts-node scripts/create-user.ts",
     "typeorm": "ts-node ./node_modules/typeorm/cli",
-    "migration:generate": "pnpm typeorm migration:generate -d src/data-source.ts",
-    "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
-    "migration:revert": "pnpm typeorm migration:revert -d src/data-source.ts"
+    "migration:generate": "npx typeorm migration:generate -d src/data-source.ts",
+    "migration:run": "npx typeorm migration:run -d src/data-source.ts",
+    "migration:revert": "npx typeorm migration:revert -d src/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

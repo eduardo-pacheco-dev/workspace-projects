@@ -16,17 +16,16 @@ else
 fi
 
 echo "==> Installing dependencies..."
-pnpm install
+npm install
 
 echo "==> Building..."
-pnpm build
+npm run build
 
 echo "==> Copying files to $USER@$HOST:~/myapp..."
 rsync -avz --delete \
   -e "ssh -i $KEY_FILE -o StrictHostKeyChecking=no" \
   package.json \
-  pnpm-workspace.yaml \
-  pnpm-lock.yaml \
+  package-lock.json \
   ecosystem.config.js \
   packages/backend/package.json \
   packages/backend/dist/ \
@@ -43,7 +42,7 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" << 'REMOTE'
   mysql -h "${DB_HOST:-localhost}" -P "${DB_PORT:-3306}" -u "${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME:-myapp}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
   echo "==> Installing production dependencies..."
-  pnpm install --prod
+  npm install --omit=dev
 
   echo "==> Running database migrations..."
   cd packages/backend

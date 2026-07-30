@@ -2,5 +2,6 @@ node_modules/
 dist/
 data/
 uploads/
+pnpm-lock.yaml
 .env
 *.local

@@ -8,6 +8,7 @@ import { ProposalsModule } from './proposals/proposals.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { LpuModule } from './lpu/lpu.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { CommentsModule } from './comments/comments.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -42,6 +43,7 @@ const isProd = process.env.NODE_ENV === 'production';
     ContractsModule,
     LpuModule,
     AttachmentsModule,
+    CommentsModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Attachment } from '../attachments/attachment.entity';
+import { Comment } from '../comments/comment.entity';
 
 @Entity()
 export class Job {
@@ -39,6 +40,9 @@ export class Job {
 
   @OneToMany(() => Attachment, (att) => att.job)
   attachments: Attachment[];
+
+  @OneToMany(() => Comment, (c) => c.job)
+  comments: Comment[];
 
   @CreateDateColumn()
   createdAt: Date;

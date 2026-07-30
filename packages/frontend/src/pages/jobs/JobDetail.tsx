@@ -21,8 +21,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from '@mui/material'
-import { ArrowBack, Edit, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
+import { ArrowBack, Edit, AttachFile, Delete, Download, Visibility, PictureAsPdf, Send } from '@mui/icons-material'
 import api from '../../services/api'
 
 interface Attachment {
@@ -32,6 +33,14 @@ interface Attachment {
   originalName: string
   mimetype: string
   size: number
+  createdAt: string
+}
+
+interface Comment {
+  id: number
+  jobId: number
+  content: string
+  author: string
   createdAt: string
 }
 
@@ -70,6 +79,9 @@ export default function JobDetail() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -88,6 +100,30 @@ export default function JobDetail() {
   useEffect(() => {
     fetchAttachments()
   }, [id])
+
+  const fetchComments = () => {
+    api.get(`/comments/job/${id}`)
+      .then((res) => setComments(res.data))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchComments()
+  }, [id])
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return
+    setSubmitting(true)
+    try {
+      await api.post(`/comments/job/${id}`, { content: newComment })
+      setNewComment('')
+      fetchComments()
+    } catch {
+      setError('Não foi possível enviar o comentário.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
   if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
@@ -258,6 +294,42 @@ export default function JobDetail() {
             })}
           </List>
         )}
+      </Paper>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+        <Divider sx={{ mb: 2 }} />
+        {comments.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhum comentário ainda.</Typography>
+        ) : (
+          <List dense disablePadding sx={{ mb: 2 }}>
+            {comments.map((c) => (
+              <ListItem key={c.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="subtitle2">{c.author}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(c.createdAt).toLocaleString('pt-BR')}
+                  </Typography>
+                </Box>
+                <Typography variant="body2">{c.content}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        )}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Escreva um comentário..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment() } }}
+            disabled={submitting}
+          />
+          <IconButton color="primary" onClick={handleSubmitComment} disabled={submitting || !newComment.trim()}>
+            <Send />
+          </IconButton>
+        </Box>
       </Paper>
 
       <Box sx={{ display: 'flex', gap: 2 }}>

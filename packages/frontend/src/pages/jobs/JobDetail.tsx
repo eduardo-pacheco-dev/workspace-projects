@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
-  Card,
-  CardContent,
   Typography,
   Button,
   Alert,
   Box,
   CircularProgress,
   Chip,
+  Paper,
+  Grid,
+  Divider,
+  IconButton,
 } from '@mui/material'
+import { ArrowBack, Edit } from '@mui/icons-material'
 import api from '../../services/api'
 
 interface Job {
@@ -20,9 +23,23 @@ interface Job {
   budget: number
   budgetType: string
   status: string
-  skills: string[]
+  skills: string
   experienceLevel: string
-  clientId: number
+  clientId: string
+}
+
+const statusMap: Record<string, { label: string; color: 'info' | 'warning' | 'success' | 'error' }> = {
+  open: { label: 'Aberto', color: 'info' },
+  in_progress: { label: 'Em Andamento', color: 'warning' },
+  completed: { label: 'Concluído', color: 'success' },
+  cancelled: { label: 'Cancelado', color: 'error' },
+}
+
+const expLevelMap: Record<string, string> = {
+  junior: 'Junior',
+  mid: 'Pleno',
+  senior: 'Sênior',
+  lead: 'Lead',
 }
 
 export default function JobDetail() {
@@ -41,30 +58,72 @@ export default function JobDetail() {
 
   if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
   if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
-  if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job not found.</Alert></Container>
+  if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job não encontrado.</Alert></Container>
+
+  const statusInfo = statusMap[job.status] || { label: job.status, color: 'info' as const }
+  const skills = typeof job.skills === 'string'
+    ? job.skills.split(',').map((s) => s.trim()).filter(Boolean)
+    : job.skills
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Card>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" gutterBottom>Job Detail</Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-            <Typography><strong>ID:</strong> {job.id}</Typography>
-            <Typography><strong>Title:</strong> {job.title}</Typography>
-            <Typography><strong>Description:</strong> {job.description || '-'}</Typography>
-            <Typography><strong>Budget:</strong> ${job.budget}</Typography>
-            <Typography><strong>Budget Type:</strong> {job.budgetType}</Typography>
-            <Typography><strong>Status:</strong> {job.status}</Typography>
-            <Typography><strong>Experience Level:</strong> {job.experienceLevel}</Typography>
-            <Typography><strong>Client ID:</strong> {job.clientId}</Typography>
-            <Typography><strong>Skills:</strong> {Array.isArray(job.skills) ? job.skills.map((s) => <Chip key={s} label={s} size="small" sx={{ mr: 0.5, mb: 0.5 }} />) : job.skills}</Typography>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
+        <IconButton onClick={() => navigate('/freelancers?tab=1')}>
+          <ArrowBack />
+        </IconButton>
+        <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes do Job</Typography>
+        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/freelancers?tab=1')}>
+          Editar
+        </Button>
+      </Box>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <Box>
+            <Typography variant="h4">{job.title}</Typography>
+            <Chip label={statusInfo.label} color={statusInfo.color} size="small" sx={{ mt: 0.5 }} />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="contained" onClick={() => navigate(`/jobs/${id}/edit`)}>Edit</Button>
-            <Button variant="outlined" onClick={() => navigate('/jobs')}>Back to List</Button>
-          </Box>
-        </CardContent>
-      </Card>
+        </Box>
+        <Divider sx={{ mb: 3 }} />
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Orçamento</Typography>
+            <Typography variant="body1" gutterBottom>${job.budget} ({job.budgetType === 'hourly' ? 'Por Hora' : 'Fixo'})</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Nível de Experiência</Typography>
+            <Typography variant="body1" gutterBottom>{expLevelMap[job.experienceLevel] || job.experienceLevel}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Cliente</Typography>
+            <Typography variant="body1" gutterBottom>{job.clientId || '-'}</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+            <Chip label={statusInfo.label} color={statusInfo.color} size="small" />
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">Descrição</Typography>
+            <Typography variant="body1" gutterBottom>{job.description || '-'}</Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Habilidades</Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              {skills.length > 0
+                ? skills.map((s) => <Chip key={s} label={s} size="small" variant="outlined" color="primary" />)
+                : <Typography variant="body2" color="text.secondary">Nenhuma habilidade cadastrada</Typography>
+              }
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Button variant="outlined" onClick={() => navigate('/freelancers?tab=1')}>
+          Voltar para a Lista
+        </Button>
+      </Box>
     </Container>
   )
 }

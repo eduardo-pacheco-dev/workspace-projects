@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function JobList({ onNew, onEdit }: Props) {
+  const navigate = useNavigate()
   const [jobs, setJobs] = useState<Job[]>([])
   const [error, setError] = useState('')
 
@@ -73,7 +75,7 @@ export default function JobList({ onNew, onEdit }: Props) {
           </TableHead>
           <TableBody>
             {jobs.map((j) => (
-              <TableRow key={j.id} hover sx={{ cursor: 'pointer' }}>
+              <TableRow key={j.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/jobs/${j.id}`)}>
                 <TableCell>{j.title}</TableCell>
                 <TableCell>${j.budget}</TableCell>
                 <TableCell>{j.budgetType === 'hourly' ? 'Por Hora' : 'Fixo'}</TableCell>

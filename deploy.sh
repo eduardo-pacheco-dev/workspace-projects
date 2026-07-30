@@ -42,7 +42,7 @@ REMOTE_SCRIPT=$(cat << ENDSCRIPT
   DB_CMD=""
   command -v mariadb >/dev/null 2>&1 && DB_CMD="mariadb" || command -v mysql >/dev/null 2>&1 && DB_CMD="mysql" || true
   if [ -n "\$DB_CMD" ]; then
-    \$DB_CMD -h "\${DB_HOST:-localhost}" -P "\${DB_PORT:-3306}" -u "\${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \`\${DB_NAME:-myapp}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || echo "Warning: Could not create database. Continuing..."
+    \$DB_CMD -h "\${DB_HOST:-localhost}" -P "\${DB_PORT:-3306}" -u "\${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \${DB_NAME:-myapp} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || echo "Warning: Could not create database. Continuing..."
   else
     echo "Warning: mysql/mariadb client not found. Skipping database creation."
   fi

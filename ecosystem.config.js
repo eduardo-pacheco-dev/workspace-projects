@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'backend',
       cwd: './packages/backend',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -20,7 +20,7 @@ module.exports = {
     {
       name: 'frontend',
       cwd: './packages/frontend',
-      script: 'node_modules/vite/bin/vite.js',
+      script: '../node_modules/vite/bin/vite.js',
       args: 'preview --port 5173 --host',
       instances: 1,
       exec_mode: 'fork',

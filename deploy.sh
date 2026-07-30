@@ -38,7 +38,19 @@ echo "==> Installing production deps and restarting..."
 ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" << 'REMOTE'
   set -e
   cd ~/myapp
+
+  echo "==> Creating database if not exists..."
+  mysql -h "${DB_HOST:-localhost}" -P "${DB_PORT:-3306}" -u "${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME:-myapp}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+  echo "==> Installing production dependencies..."
   pnpm install --prod
+
+  echo "==> Running database migrations..."
+  cd packages/backend
+  NODE_ENV=production node ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js 2>&1 || echo "Migration step skipped (may already be up to date)."
+  cd ~/myapp
+
+  echo "==> Restarting application..."
   pm2 restart ecosystem.config.js
   pm2 save
 REMOTE

@@ -2,9 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Lpu } from '../lpu/lpu.entity';
 
 @Entity()
 export class Freelancer {
@@ -37,6 +39,9 @@ export class Freelancer {
 
   @Column({ type: 'text' })
   availability: string;
+
+  @OneToMany(() => Lpu, (lpu) => lpu.freelancer)
+  lpus: Lpu[];
 
   @CreateDateColumn()
   createdAt: Date;

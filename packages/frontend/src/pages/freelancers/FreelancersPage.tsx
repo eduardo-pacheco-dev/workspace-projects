@@ -6,6 +6,7 @@ import FreelancerModal from './FreelancerModal'
 import JobList from '../jobs/JobList'
 import ProposalList from '../proposals/ProposalList'
 import ContractList from '../contracts/ContractList'
+import LpuList from '../lpu/LpuList'
 
 export default function FreelancersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -42,11 +43,13 @@ export default function FreelancersPage() {
         <Tab label="Jobs" />
         <Tab label="Proposals" />
         <Tab label="Contracts" />
+        <Tab label="LPU" />
       </Tabs>
       {tab === 0 && <FreelancerList onNew={handleNew} onEdit={handleEdit} />}
       {tab === 1 && <JobList />}
       {tab === 2 && <ProposalList />}
       {tab === 3 && <ContractList />}
+      {tab === 4 && <LpuList />}
       <FreelancerModal open={modalOpen} editId={editId} onClose={() => setModalOpen(false)} onSaved={refreshOnSave} />
     </Box>
   )

@@ -6,6 +6,7 @@ import { FreelancersModule } from './freelancers/freelancers.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { ContractsModule } from './contracts/contracts.module';
+import { LpuModule } from './lpu/lpu.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -38,6 +39,7 @@ const isProd = process.env.NODE_ENV === 'production';
     JobsModule,
     ProposalsModule,
     ContractsModule,
+    LpuModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

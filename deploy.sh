@@ -137,7 +137,7 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
   # Step 7: Migrations
   run_step "Running migrations" "  " bash -c "
     cd \"$REMOTE_DIR/packages/backend\"
-    NODE_ENV=production node ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js 2>&1 || echo 'Already up to date.'
+    NODE_ENV=production npx --no-install typeorm migration:run -d dist/data-source.js 2>&1 || echo 'Already up to date.'
   "
 
   # Step 8: Restart

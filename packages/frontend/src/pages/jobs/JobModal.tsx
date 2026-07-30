@@ -62,10 +62,10 @@ export default function JobModal({ open, editId, onClose, onSaved }: JobModalPro
       description,
       budget: Number(budget),
       budgetType,
-      skills: skills.split(',').map((s) => s.trim()).filter(Boolean),
+      skills,
       experienceLevel,
       status,
-      clientId,
+      clientId: Number(clientId),
     }
 
     try {

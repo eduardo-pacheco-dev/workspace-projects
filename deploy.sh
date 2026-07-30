@@ -47,6 +47,15 @@ REMOTE_SCRIPT=$(cat << ENDSCRIPT
     echo "Warning: mysql/mariadb client not found. Skipping database creation."
   fi
 
+  echo "==> Checking environment variables..."
+  if [ ! -f "$REMOTE_DIR/packages/backend/.env" ]; then
+    echo "WARNING: .env file not found!"
+    echo "Create it manually:"
+    echo "  cp .env.example .env"
+    echo "  nano .env"
+    echo "Required: DB_PASSWORD, JWT_SECRET"
+  fi
+
   echo "==> Installing production dependencies..."
   npm install --omit=dev
 

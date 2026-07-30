@@ -29,7 +29,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
             host: process.env.DB_HOST || 'localhost',
             port: Number(process.env.DB_PORT) || 3306,
             username: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
+            password: process.env.DB_PASSWORD || 'admin',
             database: process.env.DB_NAME || 'db_workspace',
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
             migrations: [__dirname + '/migrations/*.{ts,js}'],

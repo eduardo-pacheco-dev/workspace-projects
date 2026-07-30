@@ -5,7 +5,7 @@ import { DataSource } from 'typeorm';
 import * as path from 'path';
 
 const isProd = process.env.NODE_ENV === 'production';
-const baseDir = isProd ? path.resolve('dist') : path.resolve('src');
+const baseDir = isProd ? path.resolve('dist/src') : path.resolve('src');
 
 const AppDataSource = new DataSource({
   type: process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql',

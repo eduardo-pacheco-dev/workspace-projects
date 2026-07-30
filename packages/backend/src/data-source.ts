@@ -14,7 +14,7 @@ const AppDataSource = new DataSource({
   port: Number(process.env.DB_PORT) || 3306,
   username: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'myapp',
+  database: process.env.DB_NAME || 'db_workspace',
   entities: [path.join(baseDir, '**', '*.entity{.ts,.js}')],
   migrations: [path.join(baseDir, 'migrations', '*.{ts,js}')],
   synchronize: false,

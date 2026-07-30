@@ -33,7 +33,7 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
   NC='\033[0m'
 
   STEP=0
-  TOTAL=8
+  TOTAL=9
   DEPLOY_START=$(date +%s)
 
   print_header() {
@@ -145,6 +145,22 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
     cd \"$REMOTE_DIR\"
     pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
     pm2 save
+  "
+
+  # Step 9: Nginx
+  run_step "Configuring Nginx" "  " bash -c "
+    NGINX_SRC=\"$REMOTE_DIR/nginx.conf\"
+    NGINX_DST=\"/etc/nginx/sites-available/afl.brazil.vps-kinghost.net\"
+    NGINX_ENABLED=\"/etc/nginx/sites-enabled/afl.brazil.vps-kinghost.net\"
+    if [ -f \"\$NGINX_SRC\" ]; then
+      sudo cp \"\$NGINX_SRC\" \"\$NGINX_DST\"
+      if [ ! -L \"\$NGINX_ENABLED\" ]; then
+        sudo ln -sf \"\$NGINX_DST\" \"\$NGINX_ENABLED\"
+      fi
+      sudo nginx -t && sudo systemctl reload nginx || echo 'Warning: nginx reload failed. Check config.'
+    else
+      echo 'Warning: nginx.conf not found. Skipping nginx setup.'
+    fi
   "
 
   TOTAL_SECS=$(( $(date +%s) - DEPLOY_START ))

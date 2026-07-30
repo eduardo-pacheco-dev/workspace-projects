@@ -65,7 +65,7 @@ export default function JobModal({ open, editId, onClose, onSaved }: JobModalPro
       skills: skills.split(',').map((s) => s.trim()).filter(Boolean),
       experienceLevel,
       status,
-      clientId: Number(clientId),
+      clientId,
     }
 
     try {
@@ -123,7 +123,7 @@ export default function JobModal({ open, editId, onClose, onSaved }: JobModalPro
             <MenuItem value="completed">Concluído</MenuItem>
             <MenuItem value="cancelled">Cancelado</MenuItem>
           </TextField>
-          <TextField fullWidth label="ID do Cliente" type="number" value={clientId} onChange={(e) => setClientId(e.target.value)} margin="normal" required />
+          <TextField fullWidth label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)} margin="normal" required />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={loading}>Cancelar</Button>

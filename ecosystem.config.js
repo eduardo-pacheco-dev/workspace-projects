@@ -20,7 +20,7 @@ module.exports = {
     {
       name: 'frontend',
       cwd: './packages/frontend',
-      script: '../node_modules/vite/bin/vite.js',
+      script: '../../node_modules/vite/bin/vite.js',
       args: 'preview --port 5173 --host',
       instances: 1,
       exec_mode: 'fork',

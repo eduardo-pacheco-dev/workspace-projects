@@ -22,7 +22,7 @@ export class Freelancer {
   @Column({ type: 'text' })
   lastName: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   email?: string;
 
   @Column({ type: 'text' })

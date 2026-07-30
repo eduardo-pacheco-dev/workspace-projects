@@ -22,8 +22,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  MenuItem,
 } from '@mui/material'
-import { ArrowBack, Edit, Person, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
+import { ArrowBack, Edit, Person, Email, Language, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
 import api from '../../services/api'
 
 interface Attachment {
@@ -41,7 +43,9 @@ interface Freelancer {
   userId: number
   firstName: string
   lastName: string
+  email?: string
   bio: string
+  portfolio: string
   hourlyRate: number
   skills: string
   experienceLevel: string
@@ -70,6 +74,12 @@ export default function FreelancerDetail() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', email: '', bio: '', portfolio: '',
+    hourlyRate: 0, skills: '', experienceLevel: 'mid', availability: 'available',
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -120,6 +130,39 @@ export default function FreelancerDetail() {
     }
   }
 
+  const handleOpenEdit = () => {
+    setForm({
+      firstName: freelancer.firstName,
+      lastName: freelancer.lastName,
+      email: freelancer.email || '',
+      bio: freelancer.bio || '',
+      portfolio: freelancer.portfolio || '',
+      hourlyRate: freelancer.hourlyRate,
+      skills: freelancer.skills || '',
+      experienceLevel: freelancer.experienceLevel,
+      availability: freelancer.availability,
+    })
+    setEditOpen(true)
+  }
+
+  const handleFormChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  }
+
+  const handleSubmitEdit = async () => {
+    setSaving(true)
+    try {
+      const payload = { ...form, hourlyRate: Number(form.hourlyRate) }
+      const { data } = await api.patch(`/freelancers/${id}`, payload)
+      setFreelancer(data)
+      setEditOpen(false)
+    } catch {
+      setError('Não foi possível salvar as alterações.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handlePreview = (att: Attachment) => {
     setPreview({ url: `/api/attachments/file/${att.id}`, type: att.mimetype, name: att.originalName })
   }
@@ -143,7 +186,7 @@ export default function FreelancerDetail() {
           <ArrowBack />
         </IconButton>
         <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes do Freelancer</Typography>
-        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/freelancers')}>
+        <Button variant="contained" startIcon={<Edit />} onClick={handleOpenEdit}>
           Editar
         </Button>
       </Box>
@@ -193,6 +236,33 @@ export default function FreelancerDetail() {
                 ? skills.map((s) => <Chip key={s} label={s} size="small" variant="outlined" color="primary" />)
                 : <Typography variant="body2" color="text.secondary">Nenhuma habilidade cadastrada</Typography>
               }
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Contato</Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Email color="action" />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">E-mail</Typography>
+              <Typography variant="body1">{freelancer.email || '-'}</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Language color="action" />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">Portfolio</Typography>
+              {freelancer.portfolio ? (
+                <Typography variant="body1" component="a" href={freelancer.portfolio} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main' }}>
+                  {freelancer.portfolio}
+                </Typography>
+              ) : (
+                <Typography variant="body1">-</Typography>
+              )}
             </Box>
           </Grid>
         </Grid>
@@ -274,6 +344,40 @@ export default function FreelancerDetail() {
           Voltar para a Lista
         </Button>
       </Box>
+
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Editar Freelancer</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField label="Nome" value={form.firstName} onChange={handleFormChange('firstName')} fullWidth />
+              <TextField label="Sobrenome" value={form.lastName} onChange={handleFormChange('lastName')} fullWidth />
+            </Box>
+            <TextField label="E-mail" type="email" value={form.email} onChange={handleFormChange('email')} fullWidth />
+            <TextField label="Bio" multiline rows={3} value={form.bio} onChange={handleFormChange('bio')} fullWidth />
+            <TextField label="Portfolio (URL)" value={form.portfolio} onChange={handleFormChange('portfolio')} fullWidth />
+            <TextField label="Valor por Hora" type="number" value={form.hourlyRate} onChange={handleFormChange('hourlyRate')} fullWidth />
+            <TextField label="Habilidades (separadas por vírgula)" value={form.skills} onChange={handleFormChange('skills')} fullWidth />
+            <TextField label="Nível" select value={form.experienceLevel} onChange={handleFormChange('experienceLevel')} fullWidth>
+              <MenuItem value="junior">Junior</MenuItem>
+              <MenuItem value="mid">Pleno</MenuItem>
+              <MenuItem value="senior">Sênior</MenuItem>
+              <MenuItem value="lead">Lead</MenuItem>
+            </TextField>
+            <TextField label="Disponibilidade" select value={form.availability} onChange={handleFormChange('availability')} fullWidth>
+              <MenuItem value="available">Disponível</MenuItem>
+              <MenuItem value="busy">Ocupado</MenuItem>
+              <MenuItem value="unavailable">Indisponível</MenuItem>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmitEdit} disabled={saving}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={!!preview} onClose={() => setPreview(null)} maxWidth="lg" fullWidth>
         <DialogTitle>{preview?.name || 'Preview'}</DialogTitle>

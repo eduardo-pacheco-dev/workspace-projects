@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, KeyboardEvent } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -10,6 +10,7 @@ import {
   Box,
   MenuItem,
   CircularProgress,
+  Chip,
 } from '@mui/material'
 import api from '../../services/api'
 
@@ -26,8 +27,8 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [bio, setBio] = useState('')
-  const [hourlyRate, setHourlyRate] = useState('')
-  const [skills, setSkills] = useState('')
+  const [skillInput, setSkillInput] = useState('')
+  const [skills, setSkills] = useState<string[]>([])
   const [experienceLevel, setExperienceLevel] = useState('junior')
   const [availability, setAvailability] = useState('available')
   const [error, setError] = useState('')
@@ -41,14 +42,35 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
           setFirstName(data.firstName || '')
           setLastName(data.lastName || '')
           setBio(data.bio || '')
-          setHourlyRate(data.hourlyRate ? String(data.hourlyRate) : '')
-          setSkills(Array.isArray(data.skills) ? data.skills.join(', ') : data.skills || '')
+          const parsed = typeof data.skills === 'string'
+            ? data.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : data.skills || []
+          setSkills(parsed)
           setExperienceLevel(data.experienceLevel || 'junior')
           setAvailability(data.availability || 'available')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [open, editId])
+
+  const handleAddSkill = () => {
+    const trimmed = skillInput.trim()
+    if (trimmed && !skills.includes(trimmed)) {
+      setSkills([...skills, trimmed])
+    }
+    setSkillInput('')
+  }
+
+  const handleSkillKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddSkill()
+    }
+  }
+
+  const handleRemoveSkill = (skill: string) => {
+    setSkills(skills.filter((s) => s !== skill))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -59,8 +81,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
       firstName,
       lastName,
       bio,
-      hourlyRate: Number(hourlyRate),
-      skills,
+      skills: skills.join(', '),
       experienceLevel,
       availability,
     }
@@ -86,8 +107,8 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     setFirstName('')
     setLastName('')
     setBio('')
-    setHourlyRate('')
-    setSkills('')
+    setSkillInput('')
+    setSkills([])
     setExperienceLevel('junior')
     setAvailability('available')
     onClose()
@@ -102,8 +123,21 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
           <TextField fullWidth label="Nome" value={firstName} onChange={(e) => setFirstName(e.target.value)} margin="normal" required />
           <TextField fullWidth label="Sobrenome" value={lastName} onChange={(e) => setLastName(e.target.value)} margin="normal" required />
           <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} margin="normal" />
-          <TextField fullWidth label="Valor por Hora" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} margin="normal" required />
-          <TextField fullWidth label="Habilidades (separadas por vírgula)" value={skills} onChange={(e) => setSkills(e.target.value)} margin="normal" helperText="ex: JavaScript, React, Node.js" />
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <TextField
+              fullWidth
+              label="Habilidades"
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleSkillKeyDown}
+              placeholder="Digite e pressione Enter"
+            />
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1 }}>
+              {skills.map((s) => (
+                <Chip key={s} label={s} size="small" onDelete={() => handleRemoveSkill(s)} />
+              ))}
+            </Box>
+          </Box>
           <TextField fullWidth select label="Nível de Experiência" value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} margin="normal" required>
             <MenuItem value="junior">Junior</MenuItem>
             <MenuItem value="mid">Pleno</MenuItem>

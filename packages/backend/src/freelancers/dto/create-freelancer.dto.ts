@@ -21,9 +21,10 @@ export class CreateFreelancerDto {
   @IsString()
   bio?: string;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  hourlyRate: number;
+  hourlyRate?: number;
 
   @IsOptional()
   @IsString()

@@ -17,9 +17,23 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
-import { ArrowBack, Edit, AttachFile, Delete, Download } from '@mui/icons-material'
+import { ArrowBack, Edit, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
 import api from '../../services/api'
+
+interface Attachment {
+  id: number
+  jobId: number
+  filename: string
+  originalName: string
+  mimetype: string
+  size: number
+  createdAt: string
+}
 
 interface Job {
   id: number
@@ -53,6 +67,10 @@ export default function JobDetail() {
   const [job, setJob] = useState<Job | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     api.get(`/jobs/${id}`)
@@ -60,14 +78,6 @@ export default function JobDetail() {
       .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))
   }, [id])
-
-  if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
-  if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
-  if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job não encontrado.</Alert></Container>
-
-  const [attachments, setAttachments] = useState<any[]>([])
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchAttachments = () => {
     api.get(`/attachments/job/${id}`)
@@ -78,6 +88,10 @@ export default function JobDetail() {
   useEffect(() => {
     fetchAttachments()
   }, [id])
+
+  if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
+  if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
+  if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job não encontrado.</Alert></Container>
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -104,6 +118,10 @@ export default function JobDetail() {
     } catch {
       setError('Não foi possível excluir o anexo.')
     }
+  }
+
+  const handlePreview = (att: Attachment) => {
+    setPreview({ url: `/api/attachments/download/${att.id}`, type: att.mimetype, name: att.originalName })
   }
 
   const formatSize = (bytes: number) => {
@@ -195,30 +213,49 @@ export default function JobDetail() {
           <Typography variant="body2" color="text.secondary">Nenhum anexo cadastrado.</Typography>
         ) : (
           <List dense disablePadding>
-            {attachments.map((att) => (
-              <ListItem key={att.id} sx={{ px: 0 }}>
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <AttachFile fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={att.originalName}
-                  secondary={formatSize(att.size)}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    size="small"
-                    component="a"
-                    href={`/api/attachments/download/${att.id}`}
-                    target="_blank"
-                  >
-                    <Download fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
-                    <Delete fontSize="small" />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
+            {attachments.map((att) => {
+              const isImage = att.mimetype.startsWith('image/')
+              const isPdf = att.mimetype === 'application/pdf'
+              return (
+                <ListItem key={att.id} sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 44 }}>
+                    {isImage ? (
+                      <Box
+                        component="img"
+                        src={`/api/attachments/download/${att.id}`}
+                        sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
+                      />
+                    ) : isPdf ? (
+                      <PictureAsPdf color="error" />
+                    ) : (
+                      <AttachFile fontSize="small" />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={att.originalName}
+                    secondary={formatSize(att.size)}
+                  />
+                  <ListItemSecondaryAction>
+                    {(isImage || isPdf) && (
+                      <IconButton size="small" onClick={() => handlePreview(att)}>
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    )}
+                    <IconButton
+                      size="small"
+                      component="a"
+                      href={`/api/attachments/download/${att.id}`}
+                      target="_blank"
+                    >
+                      <Download fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              )
+            })}
           </List>
         )}
       </Paper>
@@ -228,6 +265,24 @@ export default function JobDetail() {
           Voltar para a Lista
         </Button>
       </Box>
+
+      <Dialog open={!!preview} onClose={() => setPreview(null)} maxWidth="lg" fullWidth>
+        <DialogTitle>{preview?.name || 'Preview'}</DialogTitle>
+        <DialogContent>
+          {preview?.type.startsWith('image/') ? (
+            <Box
+              component="img"
+              src={preview?.url}
+              sx={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', mx: 'auto' }}
+            />
+          ) : preview?.type === 'application/pdf' ? (
+            <embed src={preview?.url} type="application/pdf" width="100%" height="600px" />
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreview(null)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }

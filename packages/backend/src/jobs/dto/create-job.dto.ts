@@ -32,6 +32,6 @@ export class CreateJobDto {
   @IsIn(['open', 'in_progress', 'completed', 'cancelled'])
   status?: string;
 
-  @IsNumber()
-  clientId: number;
+  @IsString()
+  clientId: string;
 }

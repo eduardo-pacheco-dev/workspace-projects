@@ -65,7 +65,7 @@ export default function JobModal({ open, editId, onClose, onSaved }: JobModalPro
       skills,
       experienceLevel,
       status,
-      clientId: Number(clientId),
+      clientId,
     }
 
     try {

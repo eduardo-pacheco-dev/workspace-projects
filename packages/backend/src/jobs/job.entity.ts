@@ -32,8 +32,8 @@ export class Job {
   @Column({ type: 'text' })
   status: string;
 
-  @Column({ type: 'integer' })
-  clientId: number;
+  @Column({ type: 'text', nullable: true })
+  clientId?: string;
 
   @CreateDateColumn()
   createdAt: Date;

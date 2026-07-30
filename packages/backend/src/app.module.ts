@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { FreelancersModule } from './freelancers/freelancers.module';
+import { JobsModule } from './jobs/jobs.module';
+import { ProposalsModule } from './proposals/proposals.module';
+import { ContractsModule } from './contracts/contracts.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -30,6 +34,10 @@ const isProd = process.env.NODE_ENV === 'production';
     ),
     AuthModule,
     UsersModule,
+    FreelancersModule,
+    JobsModule,
+    ProposalsModule,
+    ContractsModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

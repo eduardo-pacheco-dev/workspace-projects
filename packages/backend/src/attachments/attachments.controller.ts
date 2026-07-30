@@ -40,7 +40,8 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const filePath = path.resolve('uploads', attachment.filename);
+    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
+    const filePath = path.join(jobDir, attachment.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }
@@ -55,7 +56,8 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const filePath = path.resolve('uploads', attachment.filename);
+    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
+    const filePath = path.join(jobDir, attachment.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }

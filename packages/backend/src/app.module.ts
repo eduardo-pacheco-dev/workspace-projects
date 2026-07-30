@@ -2,6 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { FreelancersModule } from './freelancers/freelancers.module';
+import { JobsModule } from './jobs/jobs.module';
+import { ProposalsModule } from './proposals/proposals.module';
+import { ContractsModule } from './contracts/contracts.module';
+import { LpuModule } from './lpu/lpu.module';
+import { AttachmentsModule } from './attachments/attachments.module';
+import { CommentsModule } from './comments/comments.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -18,7 +25,9 @@ const isProd = process.env.NODE_ENV === 'production';
             password: process.env.DB_PASSWORD || '',
             database: process.env.DB_NAME || 'myapp',
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: true,
+            migrations: [__dirname + '/migrations/*.{ts,js}'],
+            synchronize: false,
+            migrationsRun: true,
           }
         : {
             type: 'sqljs',
@@ -30,6 +39,13 @@ const isProd = process.env.NODE_ENV === 'production';
     ),
     AuthModule,
     UsersModule,
+    FreelancersModule,
+    JobsModule,
+    ProposalsModule,
+    ContractsModule,
+    LpuModule,
+    AttachmentsModule,
+    CommentsModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

@@ -23,6 +23,9 @@ export class Freelancer {
   lastName: string;
 
   @Column({ type: 'text' })
+  email?: string;
+
+  @Column({ type: 'text' })
   bio: string;
 
   @Column({ type: 'real' })

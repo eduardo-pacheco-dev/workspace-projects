@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Lpu } from '../lpu/lpu.entity';
 import { Attachment } from '../attachments/attachment.entity';
+import { Comment } from '../comments/comment.entity';
 
 @Entity()
 export class Freelancer {
@@ -52,6 +53,9 @@ export class Freelancer {
 
   @OneToMany(() => Attachment, (att) => att.freelancer)
   attachments: Attachment[];
+
+  @OneToMany(() => Comment, (c) => c.freelancer)
+  comments: Comment[];
 
   @CreateDateColumn()
   createdAt: Date;

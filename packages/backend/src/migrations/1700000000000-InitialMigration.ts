@@ -100,7 +100,8 @@ export class InitialMigration1700000000000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS comment (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,
-        jobId INTEGER NOT NULL,
+        jobId INTEGER NULL,
+        freelancerId INTEGER NULL,
         content TEXT NOT NULL,
         author VARCHAR(255) NOT NULL DEFAULT 'Anônimo',
         createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

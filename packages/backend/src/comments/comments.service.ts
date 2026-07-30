@@ -16,9 +16,21 @@ export class CommentsService {
     return this.commentRepository.save(comment);
   }
 
+  async createForFreelancer(freelancerId: number, dto: CreateCommentDto, author: string): Promise<Comment> {
+    const comment = this.commentRepository.create({ freelancerId, content: dto.content, author });
+    return this.commentRepository.save(comment);
+  }
+
   async findByJob(jobId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { jobId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByFreelancer(freelancerId: number): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { freelancerId },
       order: { createdAt: 'DESC' },
     });
   }

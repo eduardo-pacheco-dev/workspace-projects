@@ -29,9 +29,24 @@ export class CommentsController {
     return this.commentsService.create(jobId, dto, author);
   }
 
+  @Post('freelancer/:freelancerId')
+  createForFreelancer(
+    @Param('freelancerId', ParseIntPipe) freelancerId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForFreelancer(freelancerId, dto, author);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.commentsService.findByJob(jobId);
+  }
+
+  @Get('freelancer/:freelancerId')
+  findByFreelancer(@Param('freelancerId', ParseIntPipe) freelancerId: number) {
+    return this.commentsService.findByFreelancer(freelancerId);
   }
 
   @Patch(':id')

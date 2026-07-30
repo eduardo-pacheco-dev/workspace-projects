@@ -25,7 +25,8 @@ import {
   TextField,
   MenuItem,
 } from '@mui/material'
-import { ArrowBack, Edit, Person, Email, Phone, Language, AttachFile, Delete, Download, Visibility, PictureAsPdf } from '@mui/icons-material'
+import { ArrowBack, Edit, Person, Email, Phone, Language, AttachFile, Delete, Download, Visibility, PictureAsPdf, Send } from '@mui/icons-material'
+import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 
 interface Attachment {
@@ -35,6 +36,14 @@ interface Attachment {
   originalName: string
   mimetype: string
   size: number
+  createdAt: string
+}
+
+interface Comment {
+  id: number
+  freelancerId: number
+  content: string
+  author: string
   createdAt: string
 }
 
@@ -69,6 +78,7 @@ const availMap: Record<string, { label: string; color: 'success' | 'warning' | '
 export default function FreelancerDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [freelancer, setFreelancer] = useState<Freelancer | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -81,6 +91,11 @@ export default function FreelancerDetail() {
     firstName: '', lastName: '', email: '', phone: '', bio: '', portfolio: '',
     hourlyRate: 0, skills: '', experienceLevel: 'mid', availability: 'available',
   })
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editContent, setEditContent] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -98,6 +113,16 @@ export default function FreelancerDetail() {
 
   useEffect(() => {
     fetchAttachments()
+  }, [id])
+
+  const fetchComments = () => {
+    api.get(`/comments/freelancer/${id}`)
+      .then((res) => setComments(res.data))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchComments()
   }, [id])
 
   if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
@@ -128,6 +153,52 @@ export default function FreelancerDetail() {
       fetchAttachments()
     } catch {
       setError('Não foi possível excluir o anexo.')
+    }
+  }
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return
+    setSubmitting(true)
+    try {
+      await api.post(`/comments/freelancer/${id}`, { content: newComment })
+      setNewComment('')
+      fetchComments()
+    } catch {
+      setError('Não foi possível enviar o comentário.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleEditComment = (c: Comment) => {
+    setEditingId(c.id)
+    setEditContent(c.content)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditContent('')
+  }
+
+  const handleSaveEdit = async (commentId: number) => {
+    if (!editContent.trim()) return
+    try {
+      await api.patch(`/comments/${commentId}`, { content: editContent })
+      setEditingId(null)
+      setEditContent('')
+      fetchComments()
+    } catch {
+      setError('Não foi possível editar o comentário.')
+    }
+  }
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este comentário?')) return
+    try {
+      await api.delete(`/comments/${commentId}`)
+      fetchComments()
+    } catch {
+      setError('Não foi possível excluir o comentário.')
     }
   }
 
@@ -285,6 +356,75 @@ export default function FreelancerDetail() {
             </Box>
           </Grid>
         </Grid>
+      </Paper>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+        <Divider sx={{ mb: 2 }} />
+        {comments.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhum comentário ainda.</Typography>
+        ) : (
+          <List dense disablePadding sx={{ mb: 2 }}>
+            {comments.map((c) => {
+              const isOwner = user?.email === c.author
+              return (
+                <ListItem key={c.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="subtitle2">{c.author}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(c.createdAt).toLocaleString('pt-BR')}
+                      </Typography>
+                      {isOwner && editingId !== c.id && (
+                        <>
+                          <IconButton size="small" onClick={() => handleEditComment(c)}>
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleDeleteComment(c.id)}>
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                  {editingId === c.id ? (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        autoFocus
+                      />
+                      <IconButton size="small" color="primary" onClick={() => handleSaveEdit(c.id)}>
+                        <Send fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={handleCancelEdit}>
+                        <ArrowBack fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">{c.content}</Typography>
+                  )}
+                </ListItem>
+              )
+            })}
+          </List>
+        )}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Escreva um comentário..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment() } }}
+            disabled={submitting}
+          />
+          <IconButton color="primary" onClick={handleSubmitComment} disabled={submitting || !newComment.trim()}>
+            <Send />
+          </IconButton>
+        </Box>
       </Paper>
 
       <Paper sx={{ p: 4, mb: 3 }}>

@@ -6,10 +6,14 @@ export class AddFreelancerIdToAttachment1700000000003 implements MigrationInterf
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE attachment ADD COLUMN freelancerId INTEGER NULL`);
     await queryRunner.query(`ALTER TABLE attachment MODIFY COLUMN jobId INTEGER NULL`);
+    await queryRunner.query(`ALTER TABLE comment ADD COLUMN freelancerId INTEGER NULL`);
+    await queryRunner.query(`ALTER TABLE comment MODIFY COLUMN jobId INTEGER NULL`);
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE attachment DROP COLUMN freelancerId`);
     await queryRunner.query(`ALTER TABLE attachment MODIFY COLUMN jobId INTEGER NOT NULL`);
+    await queryRunner.query(`ALTER TABLE comment DROP COLUMN freelancerId`);
+    await queryRunner.query(`ALTER TABLE comment MODIFY COLUMN jobId INTEGER NOT NULL`);
   }
 }

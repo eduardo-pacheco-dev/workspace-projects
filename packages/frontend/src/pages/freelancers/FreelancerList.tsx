@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -43,6 +44,7 @@ type SortBy = 'id' | 'firstName' | 'lastName' | 'hourlyRate' | 'experienceLevel'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function FreelancerList({ onNew, onEdit }: Props) {
+  const navigate = useNavigate()
   const [freelancers, setFreelancers] = useState<Freelancer[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -168,7 +170,7 @@ export default function FreelancerList({ onNew, onEdit }: Props) {
           </TableHead>
           <TableBody>
             {freelancers.map((f) => (
-              <TableRow key={f.id} hover sx={{ cursor: 'pointer' }}>
+              <TableRow key={f.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/freelancers/${f.id}`)}>
                 <TableCell>{f.firstName}</TableCell>
                 <TableCell>{f.lastName}</TableCell>
                 <TableCell>${f.hourlyRate}</TableCell>

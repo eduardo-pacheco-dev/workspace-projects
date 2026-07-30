@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   ParseIntPipe,
@@ -30,5 +32,24 @@ export class CommentsController {
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.commentsService.findByJob(jobId);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const userEmail = req.user?.email || 'Anônimo';
+    return this.commentsService.update(id, dto.content, userEmail);
+  }
+
+  @Delete(':id')
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    const userEmail = req.user?.email || 'Anônimo';
+    return this.commentsService.delete(id, userEmail);
   }
 }

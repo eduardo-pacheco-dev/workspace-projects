@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './comment.entity';
@@ -21,5 +21,28 @@ export class CommentsService {
       where: { jobId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findById(id: number): Promise<Comment> {
+    const comment = await this.commentRepository.findOne({ where: { id } });
+    if (!comment) throw new NotFoundException('Comentário não encontrado');
+    return comment;
+  }
+
+  async update(id: number, content: string, userEmail: string): Promise<Comment> {
+    const comment = await this.findById(id);
+    if (comment.author !== userEmail) {
+      throw new ForbiddenException('Você não pode editar este comentário');
+    }
+    comment.content = content;
+    return this.commentRepository.save(comment);
+  }
+
+  async delete(id: number, userEmail: string): Promise<void> {
+    const comment = await this.findById(id);
+    if (comment.author !== userEmail) {
+      throw new ForbiddenException('Você não pode excluir este comentário');
+    }
+    await this.commentRepository.delete(id);
   }
 }

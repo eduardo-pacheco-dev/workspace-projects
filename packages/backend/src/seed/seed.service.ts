@@ -7,6 +7,8 @@ export class SeedService implements OnApplicationBootstrap {
   constructor(private readonly usersService: UsersService) {}
 
   async onApplicationBootstrap() {
+    if (process.env.NODE_ENV === 'production') return;
+
     const admin = await this.usersService.findByEmail('admin@admin.com');
     if (admin) return;
 

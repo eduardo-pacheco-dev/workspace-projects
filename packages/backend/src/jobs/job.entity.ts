@@ -2,9 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Attachment } from '../attachments/attachment.entity';
 
 @Entity()
 export class Job {
@@ -34,6 +36,9 @@ export class Job {
 
   @Column({ type: 'text', nullable: true })
   clientId?: string;
+
+  @OneToMany(() => Attachment, (att) => att.job)
+  attachments: Attachment[];
 
   @CreateDateColumn()
   createdAt: Date;

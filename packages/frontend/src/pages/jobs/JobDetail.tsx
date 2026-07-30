@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
@@ -12,8 +12,13 @@ import {
   Grid,
   Divider,
   IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemSecondaryAction,
 } from '@mui/material'
-import { ArrowBack, Edit } from '@mui/icons-material'
+import { ArrowBack, Edit, AttachFile, Delete, Download } from '@mui/icons-material'
 import api from '../../services/api'
 
 interface Job {
@@ -59,6 +64,53 @@ export default function JobDetail() {
   if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
   if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
   if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job não encontrado.</Alert></Container>
+
+  const [attachments, setAttachments] = useState<any[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const fetchAttachments = () => {
+    api.get(`/attachments/job/${id}`)
+      .then((res) => setAttachments(res.data))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchAttachments()
+  }, [id])
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      await api.post(`/attachments/upload/${id}`, form)
+      fetchAttachments()
+    } catch (err: any) {
+      setError('Não foi possível enviar o arquivo.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteAttachment = async (attId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
+    try {
+      await api.delete(`/attachments/${attId}`)
+      fetchAttachments()
+    } catch {
+      setError('Não foi possível excluir o anexo.')
+    }
+  }
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
 
   const statusInfo = statusMap[job.status] || { label: job.status, color: 'info' as const }
   const skills = typeof job.skills === 'string'
@@ -117,6 +169,58 @@ export default function JobDetail() {
             </Box>
           </Grid>
         </Grid>
+      </Paper>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">Anexos</Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AttachFile />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Enviando...' : 'Adicionar Anexo'}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            onChange={handleUpload}
+          />
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        {attachments.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">Nenhum anexo cadastrado.</Typography>
+        ) : (
+          <List dense disablePadding>
+            {attachments.map((att) => (
+              <ListItem key={att.id} sx={{ px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <AttachFile fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={att.originalName}
+                  secondary={formatSize(att.size)}
+                />
+                <ListItemSecondaryAction>
+                  <IconButton
+                    size="small"
+                    component="a"
+                    href={`/api/attachments/download/${att.id}`}
+                    target="_blank"
+                  >
+                    <Download fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
+        )}
       </Paper>
 
       <Box sx={{ display: 'flex', gap: 2 }}>

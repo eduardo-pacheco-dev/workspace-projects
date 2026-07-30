@@ -36,10 +36,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             open={!!anchorEl}
             onClose={handleClose}
           >
-            <MenuItem onClick={() => go('/freelancers')}>Freelancers</MenuItem>
-            <MenuItem onClick={() => go('/jobs')}>Jobs</MenuItem>
-            <MenuItem onClick={() => go('/proposals')}>Proposals</MenuItem>
-            <MenuItem onClick={() => go('/contracts')}>Contracts</MenuItem>
+          <MenuItem onClick={() => go('/freelancers')}>Freelancers</MenuItem>
+          <MenuItem onClick={() => go('/freelancers?tab=1')}>Jobs</MenuItem>
+          <MenuItem onClick={() => go('/freelancers?tab=2')}>Proposals</MenuItem>
+          <MenuItem onClick={() => go('/freelancers?tab=3')}>Contracts</MenuItem>
           </Menu>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             App

@@ -11,10 +11,10 @@
     "start:dev": "ts-node src/main.ts",
     "start:prod": "node dist/main",
     "create-user": "ts-node scripts/create-user.ts",
-    "typeorm": "ts-node ./node_modules/typeorm/cli",
-    "migration:generate": "npx typeorm migration:generate -d src/data-source.ts",
-    "migration:run": "npx typeorm migration:run -d src/data-source.ts",
-    "migration:revert": "npx typeorm migration:revert -d src/data-source.ts"
+    "typeorm": "ts-node --transpile-only ../../node_modules/typeorm/cli",
+    "migration:generate": "ts-node --transpile-only ../../node_modules/typeorm/cli migration:generate -d src/data-source.ts",
+    "migration:run": "ts-node --transpile-only ../../node_modules/typeorm/cli migration:run -d src/data-source.ts",
+    "migration:revert": "ts-node --transpile-only ../../node_modules/typeorm/cli migration:revert -d src/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

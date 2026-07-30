@@ -11,10 +11,10 @@ module.exports = {
         PORT: 3001,
         DB_HOST: 'localhost',
         DB_PORT: 3306,
-        DB_USER: 'root',
-        DB_PASSWORD: '',
+        DB_USER: 'db_admin',
+        DB_PASSWORD: process.env.DB_PASSWORD || '',
         DB_NAME: 'myapp',
-        JWT_SECRET: '',
+        JWT_SECRET: process.env.JWT_SECRET || '',
       },
     },
     {

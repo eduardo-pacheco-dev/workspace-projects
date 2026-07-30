@@ -39,7 +39,26 @@ REMOTE_SCRIPT=$(cat << ENDSCRIPT
   cd $REMOTE_DIR
 
   echo "==> Creating database if not exists..."
-  mysql -h "\${DB_HOST:-localhost}" -P "\${DB_PORT:-3306}" -u "\${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \`\${DB_NAME:-myapp}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+  DB_CMD=""
+  command -v mariadb >/dev/null 2>&1 && DB_CMD="mariadb" || command -v mysql >/dev/null 2>&1 && DB_CMD="mysql" || true
+  if [ -n "\$DB_CMD" ]; then
+    \$DB_CMD -h "\${DB_HOST:-localhost}" -P "\${DB_PORT:-3306}" -u "\${DB_USER:-root}" -e "CREATE DATABASE IF NOT EXISTS \`\${DB_NAME:-myapp}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || echo "Warning: Could not create database. Continuing..."
+  else
+    echo "Warning: mysql/mariadb client not found. Skipping database creation."
+  fi
+
+  echo "==> Checking environment variables..."
+  if [ ! -f "$REMOTE_DIR/packages/backend/.env" ]; then
+    cp "$REMOTE_DIR/.env.example" "$REMOTE_DIR/packages/backend/.env" 2>/dev/null || true
+    echo "WARNING: .env file not found! A template was created."
+    echo "Edit it with: nano $REMOTE_DIR/packages/backend/.env"
+    echo "Required: DB_PASSWORD, JWT_SECRET"
+  fi
+
+  echo "==> Loading environment variables..."
+  set -a
+  . "$REMOTE_DIR/packages/backend/.env" 2>/dev/null || true
+  set +a
 
   echo "==> Installing production dependencies..."
   npm install --omit=dev

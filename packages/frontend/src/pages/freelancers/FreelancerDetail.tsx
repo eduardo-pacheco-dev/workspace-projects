@@ -16,13 +16,13 @@ import api from '../../services/api'
 interface Freelancer {
   id: number
   userId: number
-  title: string
+  firstName: string
+  lastName: string
   bio: string
   hourlyRate: number
   skills: string[]
   experienceLevel: string
   availability: string
-  name?: string
 }
 
 export default function FreelancerDetail() {
@@ -51,8 +51,7 @@ export default function FreelancerDetail() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             <Typography><strong>ID:</strong> {freelancer.id}</Typography>
             <Typography><strong>User ID:</strong> {freelancer.userId}</Typography>
-            <Typography><strong>Name:</strong> {freelancer.name || '-'}</Typography>
-            <Typography><strong>Title:</strong> {freelancer.title}</Typography>
+            <Typography><strong>Nome:</strong> {freelancer.firstName} {freelancer.lastName}</Typography>
             <Typography><strong>Bio:</strong> {freelancer.bio || '-'}</Typography>
             <Typography><strong>Hourly Rate:</strong> ${freelancer.hourlyRate}</Typography>
             <Typography><strong>Skills:</strong> {Array.isArray(freelancer.skills) ? freelancer.skills.map((s) => <Chip key={s} label={s} size="small" sx={{ mr: 0.5, mb: 0.5 }} />) : freelancer.skills}</Typography>
@@ -60,7 +59,7 @@ export default function FreelancerDetail() {
             <Typography><strong>Availability:</strong> {freelancer.availability}</Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="contained" onClick={() => navigate(`/freelancers/${id}/edit`)}>Edit</Button>
+            <Button variant="contained" onClick={() => navigate('/freelancers')}>Editar</Button>
             <Button variant="outlined" onClick={() => navigate('/freelancers')}>Back to List</Button>
           </Box>
         </CardContent>

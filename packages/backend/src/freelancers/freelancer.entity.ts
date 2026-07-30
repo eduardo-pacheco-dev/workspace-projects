@@ -11,11 +11,14 @@ export class Freelancer {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'integer' })
-  userId: number;
+  @Column({ type: 'integer', nullable: true })
+  userId?: number;
 
   @Column({ type: 'text' })
-  title: string;
+  firstName: string;
+
+  @Column({ type: 'text' })
+  lastName: string;
 
   @Column({ type: 'text' })
   bio: string;

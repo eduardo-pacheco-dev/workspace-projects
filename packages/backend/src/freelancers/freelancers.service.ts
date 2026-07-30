@@ -23,8 +23,50 @@ export class FreelancersService {
     return this.freelancersRepository.save(freelancer);
   }
 
-  async findAll(): Promise<Freelancer[]> {
-    return this.freelancersRepository.find();
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    search?: string;
+    experienceLevel?: string;
+    availability?: string;
+  }): Promise<{ data: Freelancer[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'id',
+      sortOrder = 'ASC' as 'ASC' | 'DESC',
+      search,
+      experienceLevel,
+      availability,
+    } = query;
+
+    const qb = this.freelancersRepository.createQueryBuilder('f');
+
+    if (search) {
+      qb.where('f.firstName LIKE :search OR f.lastName LIKE :search OR f.skills LIKE :search', { search: `%${search}%` });
+    }
+
+    if (experienceLevel) {
+      qb.andWhere('f.experienceLevel = :experienceLevel', { experienceLevel });
+    }
+
+    if (availability) {
+      qb.andWhere('f.availability = :availability', { availability });
+    }
+
+    const allowedSort = ['id', 'firstName', 'lastName', 'hourlyRate', 'experienceLevel', 'availability'];
+    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
+    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    const [data, total] = await qb
+      .orderBy(`f.${safeSort}`, safeOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(id: number): Promise<Freelancer> {

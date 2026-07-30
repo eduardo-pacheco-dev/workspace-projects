@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { FreelancersService } from './freelancers.service';
 import { CreateFreelancerDto } from './dto/create-freelancer.dto';
@@ -22,8 +23,16 @@ export class FreelancersController {
   }
 
   @Get()
-  findAll() {
-    return this.freelancersService.findAll();
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('search') search?: string,
+    @Query('experienceLevel') experienceLevel?: string,
+    @Query('availability') availability?: string,
+  ) {
+    return this.freelancersService.findAll({ page, limit, sortBy, sortOrder, search, experienceLevel, availability });
   }
 
   @Get(':id')

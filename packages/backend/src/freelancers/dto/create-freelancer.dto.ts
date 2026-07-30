@@ -7,14 +7,19 @@ import {
 } from 'class-validator';
 
 export class CreateFreelancerDto {
+  @IsOptional()
   @IsNumber()
-  userId: number;
+  userId?: number;
 
   @IsString()
-  title: string;
+  firstName: string;
 
   @IsString()
-  bio: string;
+  lastName: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
 
   @IsNumber()
   @Min(0)

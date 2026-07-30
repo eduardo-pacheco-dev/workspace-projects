@@ -7,7 +7,6 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
-import FreelancerForm from './pages/freelancers/FreelancerForm'
 import FreelancerDetail from './pages/freelancers/FreelancerDetail'
 import JobForm from './pages/jobs/JobForm'
 import JobDetail from './pages/jobs/JobDetail'
@@ -37,9 +36,7 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/freelancers" element={<FreelancersPage />} />
-          <Route path="/freelancers/new" element={<FreelancerForm />} />
           <Route path="/freelancers/:id" element={<FreelancerDetail />} />
-          <Route path="/freelancers/:id/edit" element={<FreelancerForm />} />
           <Route path="/jobs/new" element={<JobForm />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/jobs/:id/edit" element={<JobForm />} />

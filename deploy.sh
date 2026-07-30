@@ -100,7 +100,7 @@ ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" bash -s "$REMOTE_DI
     command -v mariadb >/dev/null 2>&1 && DB_CMD=mariadb || command -v mysql >/dev/null 2>&1 && DB_CMD=mysql || true
     if [ -n \"\$DB_CMD\" ]; then
       \$DB_CMD -h \"\${DB_HOST:-localhost}\" -P \"\${DB_PORT:-3306}\" -u \"\${DB_USER:-root}\" \
-        -e \"CREATE DATABASE IF NOT EXISTS \${DB_NAME:-myapp} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\" \
+        -e \"CREATE DATABASE IF NOT EXISTS \${DB_NAME:-db_workspace} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\" \
         || echo 'Warning: Could not create database.'
     else
       echo 'Warning: mysql/mariadb not found. Skipping.'

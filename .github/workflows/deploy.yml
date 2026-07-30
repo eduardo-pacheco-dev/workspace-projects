@@ -24,31 +24,8 @@ jobs:
       - run: pnpm build
 
       - name: Deploy to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: |
-            package.json
-            pnpm-workspace.yaml
-            pnpm-lock.yaml
-            ecosystem.config.js
-            packages/backend/package.json
-            packages/backend/dist/
-            packages/frontend/package.json
-            packages/frontend/dist/
-          target: ~/myapp
-          strip_components: 0
-
-      - name: Install and restart
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd ~/myapp
-            pnpm install --prod
-            pm2 restart ecosystem.config.js
-            pm2 save
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: bash deploy.sh

@@ -5,6 +5,16 @@ HOST="${VPS_HOST:?VPS_HOST not set}"
 USER="${VPS_USER:?VPS_USER not set}"
 KEY="${VPS_SSH_KEY:?VPS_SSH_KEY not set}"
 
+# Se VPS_SSH_KEY for o conteúdo da chave (GitHub Action), escreve em temp file
+if [[ "$KEY" == -----BEGIN* ]]; then
+  KEY_FILE=$(mktemp)
+  echo "$KEY" > "$KEY_FILE"
+  chmod 600 "$KEY_FILE"
+  trap 'rm -f "$KEY_FILE"' EXIT
+else
+  KEY_FILE="$KEY"
+fi
+
 echo "==> Installing dependencies..."
 pnpm install
 
@@ -13,7 +23,7 @@ pnpm build
 
 echo "==> Copying files to $USER@$HOST:~/myapp..."
 rsync -avz --delete \
-  -e "ssh -i $KEY" \
+  -e "ssh -i $KEY_FILE -o StrictHostKeyChecking=no" \
   package.json \
   pnpm-workspace.yaml \
   pnpm-lock.yaml \
@@ -25,7 +35,7 @@ rsync -avz --delete \
   "$USER@$HOST:~/myapp/"
 
 echo "==> Installing production deps and restarting..."
-ssh -i "$KEY" "$USER@$HOST" << 'REMOTE'
+ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no "$USER@$HOST" << 'REMOTE'
   set -e
   cd ~/myapp
   pnpm install --prod

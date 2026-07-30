@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main",
     "start:dev": "ts-node src/main.ts",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "create-user": "ts-node scripts/create-user.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

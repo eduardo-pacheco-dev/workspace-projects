@@ -90,17 +90,29 @@ export default function LpuList() {
   }
 
   const handleExport = () => {
+    const freelancer = freelancers.find((f) => f.id === Number(selectedFreelancer))
+    const name = freelancer ? `${freelancer.firstName}-${freelancer.lastName}` : selectedFreelancer
+
     const rows = lpus.map((l) => ({
       Nome: l.nome,
       Descrição: l.descricao || '',
-      Valor: l.valor || '',
+      Valor: l.valor ?? '',
       Data: l.data || '',
       Status: l.status === 'ativo' ? 'Ativo' : 'Inativo',
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
+
+    ws['!cols'] = [
+      { wch: 30 },
+      { wch: 40 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 10 },
+    ]
+
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'LPUs')
-    XLSX.writeFile(wb, `lpus-${selectedFreelancer}.xlsx`)
+    XLSX.writeFile(wb, `lpus-${name}.xlsx`)
   }
 
   return (

@@ -35,7 +35,7 @@ export default function FreelancerDetail() {
   useEffect(() => {
     api.get(`/freelancers/${id}`)
       .then((res) => setFreelancer(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading freelancer.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))
   }, [id])
 

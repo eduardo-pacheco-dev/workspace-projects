@@ -42,7 +42,7 @@ export default function FreelancerForm() {
           setExperienceLevel(data.experienceLevel || 'junior')
           setAvailability(data.availability || 'available')
         })
-        .catch((err) => setError(err.response?.data?.message || 'Error loading freelancer.'))
+        .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [id, isEdit])
 
@@ -69,7 +69,7 @@ export default function FreelancerForm() {
       }
       navigate('/freelancers')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error saving freelancer.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }

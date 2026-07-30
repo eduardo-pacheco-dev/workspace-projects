@@ -41,7 +41,7 @@ export default function ContractForm() {
           setEndDate(data.endDate ? data.endDate.slice(0, 10) : '')
           setTotalBudget(data.totalBudget ? String(data.totalBudget) : '')
         })
-        .catch((err) => setError(err.response?.data?.message || 'Error loading contract.'))
+        .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [id, isEdit])
 
@@ -72,7 +72,7 @@ export default function ContractForm() {
       }
       navigate('/contracts')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error saving contract.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }

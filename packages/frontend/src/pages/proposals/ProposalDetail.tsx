@@ -32,7 +32,7 @@ export default function ProposalDetail() {
   useEffect(() => {
     api.get(`/proposals/${id}`)
       .then((res) => setProposal(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading proposal.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))
   }, [id])
 

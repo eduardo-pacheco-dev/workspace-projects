@@ -35,7 +35,7 @@ export default function JobDetail() {
   useEffect(() => {
     api.get(`/jobs/${id}`)
       .then((res) => setJob(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading job.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))
   }, [id])
 

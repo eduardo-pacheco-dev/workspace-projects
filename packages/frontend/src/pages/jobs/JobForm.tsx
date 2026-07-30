@@ -44,7 +44,7 @@ export default function JobForm() {
           setStatus(data.status || 'open')
           setClientId(String(data.clientId || ''))
         })
-        .catch((err) => setError(err.response?.data?.message || 'Error loading job.'))
+        .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [id, isEdit])
 
@@ -72,7 +72,7 @@ export default function JobForm() {
       }
       navigate('/jobs')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error saving job.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }

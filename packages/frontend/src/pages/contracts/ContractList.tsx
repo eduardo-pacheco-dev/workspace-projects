@@ -36,7 +36,7 @@ export default function ContractList() {
   useEffect(() => {
     api.get('/contracts')
       .then((res) => setContracts(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading contracts.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar a lista.'))
   }, [])
 
   const handleDelete = async (id: number) => {
@@ -45,7 +45,7 @@ export default function ContractList() {
       await api.delete(`/contracts/${id}`)
       setContracts((prev) => prev.filter((c) => c.id !== id))
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error deleting contract.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 

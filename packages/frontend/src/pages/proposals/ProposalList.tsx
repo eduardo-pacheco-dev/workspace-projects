@@ -34,7 +34,7 @@ export default function ProposalList() {
   useEffect(() => {
     api.get('/proposals')
       .then((res) => setProposals(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading proposals.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar a lista.'))
   }, [])
 
   const handleDelete = async (id: number) => {
@@ -43,7 +43,7 @@ export default function ProposalList() {
       await api.delete(`/proposals/${id}`)
       setProposals((prev) => prev.filter((p) => p.id !== id))
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error deleting proposal.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 

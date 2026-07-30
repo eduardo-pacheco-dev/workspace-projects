@@ -37,7 +37,7 @@ export default function ProposalForm() {
           setProposedRate(data.proposedRate ? String(data.proposedRate) : '')
           setEstimatedDuration(data.estimatedDuration || '')
         })
-        .catch((err) => setError(err.response?.data?.message || 'Error loading proposal.'))
+        .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [id, isEdit])
 
@@ -66,7 +66,7 @@ export default function ProposalForm() {
       }
       navigate('/proposals')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error saving proposal.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }

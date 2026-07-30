@@ -38,7 +38,7 @@ export default function FreelancerList() {
   useEffect(() => {
     api.get('/freelancers')
       .then((res) => setFreelancers(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading freelancers.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar a lista.'))
   }, [])
 
   const handleDelete = async (id: number) => {
@@ -47,7 +47,7 @@ export default function FreelancerList() {
       await api.delete(`/freelancers/${id}`)
       setFreelancers((prev) => prev.filter((f) => f.id !== id))
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error deleting freelancer.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 

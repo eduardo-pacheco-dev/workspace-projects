@@ -36,7 +36,7 @@ export default function JobList() {
   useEffect(() => {
     api.get('/jobs')
       .then((res) => setJobs(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading jobs.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar a lista.'))
   }, [])
 
   const handleDelete = async (id: number) => {
@@ -45,7 +45,7 @@ export default function JobList() {
       await api.delete(`/jobs/${id}`)
       setJobs((prev) => prev.filter((j) => j.id !== id))
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error deleting job.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 

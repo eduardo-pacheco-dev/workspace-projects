@@ -34,7 +34,7 @@ export default function ContractDetail() {
   useEffect(() => {
     api.get(`/contracts/${id}`)
       .then((res) => setContract(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Error loading contract.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))
   }, [id])
 

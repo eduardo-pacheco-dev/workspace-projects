@@ -3,24 +3,24 @@ import * as bcrypt from 'bcrypt';
 import * as path from 'path';
 import { User } from '../src/users/user.entity';
 
-const isProd = process.env.NODE_ENV === 'production';
+const isSqljs = process.env.DB_TYPE === 'sqljs';
 
 const dataSource = new DataSource(
-  isProd
+  isSqljs
     ? {
-        type: 'mysql',
-        host: process.env.DB_HOST || 'localhost',
-        port: Number(process.env.DB_PORT) || 3306,
-        username: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'db_workspace',
+        type: 'sqljs',
+        autoSave: true,
+        location: path.resolve('data/db.sqlite'),
         entities: [User],
         synchronize: false,
       }
     : {
-        type: 'sqljs',
-        autoSave: true,
-        location: path.resolve('data/db.sqlite'),
+        type: 'mysql',
+        host: process.env.DB_HOST || 'localhost',
+        port: Number(process.env.DB_PORT) || 3306,
+        username: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || 'admin',
+        database: process.env.DB_NAME || 'db_workspace',
         entities: [User],
         synchronize: false,
       },

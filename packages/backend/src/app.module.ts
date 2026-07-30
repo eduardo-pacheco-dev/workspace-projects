@@ -11,30 +11,30 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { CommentsModule } from './comments/comments.module';
 import { SeedModule } from './seed/seed.module';
 
-const isProd = process.env.NODE_ENV === 'production';
+const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(
-      isProd
+      dbType === 'sqljs'
         ? {
-            type: 'mysql',
-            host: process.env.DB_HOST || 'localhost',
-            port: Number(process.env.DB_PORT) || 3306,
-            username: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-            database: process.env.DB_NAME || 'db_workspace',
-            entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            migrations: [__dirname + '/migrations/*.{ts,js}'],
-            synchronize: false,
-            migrationsRun: true,
-          }
-        : {
             type: 'sqljs',
             autoSave: true,
             location: 'data/db.sqlite',
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
             synchronize: true,
+          }
+        : {
+            type: 'mysql',
+            host: process.env.DB_HOST || 'localhost',
+            port: Number(process.env.DB_PORT) || 3306,
+            username: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || 'admin',
+            database: process.env.DB_NAME || 'db_workspace',
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            migrations: [__dirname + '/migrations/*.{ts,js}'],
+            synchronize: false,
+            migrationsRun: true,
           },
     ),
     AuthModule,
@@ -46,7 +46,7 @@ const isProd = process.env.NODE_ENV === 'production';
     LpuModule,
     AttachmentsModule,
     CommentsModule,
-    ...(isProd ? [] : [SeedModule]),
+    ...(dbType === 'sqljs' ? [SeedModule] : []),
   ],
 })
 export class AppModule {}

@@ -21,7 +21,7 @@ export class InitialMigration1700000000000 implements MigrationInterface {
         userId INTEGER NULL,
         firstName VARCHAR(255) NOT NULL DEFAULT '',
         lastName VARCHAR(255) NOT NULL DEFAULT '',
-        email VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NULL,
         phone VARCHAR(255) NULL,
         skills TEXT NULL,
         portfolio TEXT NULL,

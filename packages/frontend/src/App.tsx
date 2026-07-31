@@ -2,7 +2,7 @@ import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
-import Register from './pages/auth/Register'
+import SignUp from './pages/auth/SignUp'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
@@ -32,7 +32,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/500" element={<InternalError />} />

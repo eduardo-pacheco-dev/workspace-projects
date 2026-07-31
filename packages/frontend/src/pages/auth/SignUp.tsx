@@ -10,43 +10,51 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
-  Checkbox,
-  FormControlLabel,
   Paper,
   Avatar,
-  Divider,
+  Grid,
 } from '@mui/material'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined'
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
+import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import GoogleIcon from '@mui/icons-material/Google'
-import { useAuth } from '../../contexts/AuthContext'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import api from '../../services/api'
 
-export default function SignIn() {
+export default function SignUp() {
+  const [name, setName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       setError('Preencha todos os campos.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('As senhas não conferem.')
       return
     }
 
     setLoading(true)
     try {
-      await login(email, password)
-      navigate('/')
+      await api.post('/auth/register', { name, lastName, email, phone, password })
+      navigate('/signin')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao fazer login.')
+      setError(err.response?.data?.message || 'Erro ao cadastrar.')
     } finally {
       setLoading(false)
     }
@@ -79,15 +87,15 @@ export default function SignIn() {
 
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
-            Gerencie seu workspace em um só lugar
+            Crie sua conta e comece a trabalhar
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, maxWidth: 480 }}>
-            Freelancers, jobs, propostas e contratos organizados em um único painel.
+            Junte-se à nossa plataforma e gerencie seus projetos com facilidade.
           </Typography>
         </Box>
 
         <Typography variant="body2" sx={{ opacity: 0.7 }}>
-          © {new Date().getFullYear()} Workspace. Todos os direitos reservados.
+          © {new Date().getFullYear()} AFL Engenharia. Todos os direitos reservados.
         </Typography>
       </Box>
 
@@ -105,19 +113,55 @@ export default function SignIn() {
           <Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
               <Avatar sx={{ bgcolor: 'primary.main', width: 52, height: 52, mb: 2 }}>
-                <LockOutlinedIcon />
+                <PersonAddOutlinedIcon />
               </Avatar>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                Bem-vindo de volta
+                Criar conta
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Entre com suas credenciais
+                Preencha os dados abaixo para se cadastrar
               </Typography>
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Box component="form" onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nome"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    margin="normal"
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonOutlinedIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Sobrenome"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    margin="normal"
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonOutlinedIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+              </Grid>
               <TextField
                 fullWidth
                 label="Email"
@@ -130,6 +174,21 @@ export default function SignIn() {
                   startAdornment: (
                     <InputAdornment position="start">
                       <EmailOutlinedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Telefone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                margin="normal"
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneOutlinedIcon fontSize="small" />
                     </InputAdornment>
                   ),
                 }}
@@ -156,14 +215,28 @@ export default function SignIn() {
                   ),
                 }}
               />
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                <FormControlLabel control={<Checkbox size="small" />} label="Lembrar de mim" />
-                <Link component={RouterLink} to="/forgot-password" variant="body2" underline="hover">
-                  Esqueceu a senha?
-                </Link>
-              </Box>
-
+              <TextField
+                fullWidth
+                label="Confirmar Senha"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                margin="normal"
+                required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
               <Button
                 type="submit"
                 fullWidth
@@ -171,35 +244,27 @@ export default function SignIn() {
                 disabled={loading}
                 sx={{ mt: 2, py: 1.4, borderRadius: 2, textTransform: 'none', fontSize: 16 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Cadastrar'}
               </Button>
             </Box>
 
-            <Divider sx={{ my: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                ou
-              </Typography>
-            </Divider>
-
-            <Button
-              component={RouterLink}
-              to="/auth/google"
-              fullWidth
-              variant="outlined"
-              color="inherit"
-              startIcon={<GoogleIcon />}
-              sx={{ py: 1.4, borderRadius: 2, textTransform: 'none', fontSize: 16 }}
-            >
-              Continuar com Google
-            </Button>
-
             <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                Não tem conta?{' '}
-                <Link component={RouterLink} to="/signup" variant="body2" underline="hover" fontWeight={600}>
-                  Cadastre-se
+                Já tem conta?{' '}
+                <Link component={RouterLink} to="/signin" variant="body2" underline="hover" fontWeight={600}>
+                  Faça login
                 </Link>
               </Typography>
+              <Link
+                component={RouterLink}
+                to="/signin"
+                variant="body2"
+                underline="hover"
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 1 }}
+              >
+                <ArrowBackIcon fontSize="small" />
+                Voltar para o login
+              </Link>
             </Box>
           </Paper>
         </Box>

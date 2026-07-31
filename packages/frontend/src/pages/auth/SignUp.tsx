@@ -22,6 +22,7 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import api from '../../services/api'
+import { signUpSchema, getFieldErrors } from '../../schemas/authSchemas'
 
 export default function SignUp() {
   const [name, setName] = useState('')
@@ -32,20 +33,25 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
 
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Preencha todos os campos.')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('As senhas não conferem.')
+    const result = signUpSchema.safeParse({
+      name,
+      lastName,
+      email,
+      phone,
+      password,
+      confirmPassword,
+    })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
 
@@ -132,9 +138,14 @@ export default function SignUp() {
                     fullWidth
                     label="Nome"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value)
+                      setFieldErrors((prev) => ({ ...prev, name: '' }))
+                    }}
                     margin="normal"
                     required
+                    error={!!fieldErrors.name}
+                    helperText={fieldErrors.name}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -149,9 +160,14 @@ export default function SignUp() {
                     fullWidth
                     label="Sobrenome"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => {
+                      setLastName(e.target.value)
+                      setFieldErrors((prev) => ({ ...prev, lastName: '' }))
+                    }}
                     margin="normal"
                     required
+                    error={!!fieldErrors.lastName}
+                    helperText={fieldErrors.lastName}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -167,9 +183,14 @@ export default function SignUp() {
                 label="Email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, email: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -182,9 +203,14 @@ export default function SignUp() {
                 fullWidth
                 label="Telefone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, phone: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.phone}
+                helperText={fieldErrors.phone}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -198,9 +224,14 @@ export default function SignUp() {
                 label="Senha"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, password: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -220,9 +251,14 @@ export default function SignUp() {
                 label="Confirmar Senha"
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.confirmPassword}
+                helperText={fieldErrors.confirmPassword}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">

@@ -17,10 +17,12 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined'
 import api from '../../services/api'
+import { forgotPasswordSchema, getFieldErrors } from '../../schemas/authSchemas'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -28,9 +30,11 @@ export default function ForgotPassword() {
     e.preventDefault()
     setError('')
     setSuccess(false)
+    setFieldErrors({})
 
-    if (!email) {
-      setError('Informe seu email.')
+    const result = forgotPasswordSchema.safeParse({ email })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
 
@@ -137,9 +141,14 @@ export default function ForgotPassword() {
                   label="Email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setFieldErrors((prev) => ({ ...prev, email: '' }))
+                  }}
                   margin="normal"
                   required
+                  error={!!fieldErrors.email}
+                  helperText={fieldErrors.email}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">

@@ -22,12 +22,14 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import GoogleIcon from '@mui/icons-material/Google'
 import { useAuth } from '../../contexts/AuthContext'
+import { signInSchema, getFieldErrors } from '../../schemas/authSchemas'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -35,9 +37,11 @@ export default function SignIn() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
 
-    if (!email || !password) {
-      setError('Preencha todos os campos.')
+    const result = signInSchema.safeParse({ email, password })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
 
@@ -123,9 +127,14 @@ export default function SignIn() {
                 label="Email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, email: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -139,9 +148,14 @@ export default function SignIn() {
                 label="Senha"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, password: '' }))
+                }}
                 margin="normal"
                 required
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">

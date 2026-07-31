@@ -13,6 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material'
 import api from '../../services/api'
+import { resetPasswordSchema, getFieldErrors } from '../../schemas/authSchemas'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -22,19 +23,17 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
 
-    if (!password || !confirmPassword) {
-      setError('Preencha todos os campos.')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('As senhas não conferem.')
+    const result = resetPasswordSchema.safeParse({ password, confirmPassword })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
 
@@ -68,18 +67,28 @@ export default function ResetPassword() {
               label="Nova Senha"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value)
+                setFieldErrors((prev) => ({ ...prev, password: '' }))
+              }}
               margin="normal"
               required
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
             />
             <TextField
               fullWidth
               label="Confirmar Nova Senha"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value)
+                setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }))
+              }}
               margin="normal"
               required
+              error={!!fieldErrors.confirmPassword}
+              helperText={fieldErrors.confirmPassword}
             />
             <Button
               type="submit"

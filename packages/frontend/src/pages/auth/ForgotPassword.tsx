@@ -79,7 +79,7 @@ export default function ForgotPassword() {
             </Button>
           </Box>
           <Box sx={{ textAlign: 'center', mt: 1 }}>
-            <Link component={RouterLink} to="/login" variant="body2">
+            <Link component={RouterLink} to="/signin" variant="body2">
               Voltar para o login
             </Link>
           </Box>

@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { useAuth } from '../../contexts/AuthContext'
 
-export default function Login() {
+export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

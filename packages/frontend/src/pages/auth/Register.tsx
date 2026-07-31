@@ -40,7 +40,7 @@ export default function Register() {
     setLoading(true)
     try {
       await api.post('/auth/register', { name, email, password })
-      navigate('/login')
+      navigate('/signin')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao cadastrar.')
     } finally {
@@ -103,7 +103,7 @@ export default function Register() {
             </Button>
           </Box>
           <Box sx={{ textAlign: 'center', mt: 1 }}>
-            <Link component={RouterLink} to="/login" variant="body2">
+            <Link component={RouterLink} to="/signin" variant="body2">
               Já tem conta? Faça login
             </Link>
           </Box>

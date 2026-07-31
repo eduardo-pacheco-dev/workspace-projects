@@ -1,7 +1,7 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
-import Login from './pages/auth/Login'
+import SignIn from './pages/auth/SignIn'
 import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -16,7 +16,7 @@ import ContractDetail from './pages/contracts/ContractDetail'
 
 function ProtectedLayout() {
   const { isAuthenticated } = useAuth()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/signin" replace />
   return (
     <Layout>
       <Outlet />
@@ -28,7 +28,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

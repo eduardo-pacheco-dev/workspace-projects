@@ -7,6 +7,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import UsersPage from './pages/users/UsersPage'
+import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
 import FreelancerDetail from './pages/freelancers/FreelancerDetail'
 import JobDetail from './pages/jobs/JobDetail'
@@ -42,6 +43,7 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/service-orders" element={<ServiceOrdersPage />} />
           <Route path="/freelancers" element={<FreelancersPage />} />
           <Route path="/freelancers/:id" element={<FreelancerDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />

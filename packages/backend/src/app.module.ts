@@ -9,6 +9,7 @@ import { ContractsModule } from './contracts/contracts.module';
 import { LpuModule } from './lpu/lpu.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { CommentsModule } from './comments/comments.module';
+import { ServiceOrdersModule } from './service-orders/service-orders.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -46,6 +47,7 @@ const isProd = process.env.NODE_ENV === 'production';
     LpuModule,
     AttachmentsModule,
     CommentsModule,
+    ServiceOrdersModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

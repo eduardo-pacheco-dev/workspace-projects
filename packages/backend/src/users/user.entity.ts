@@ -20,6 +20,9 @@ export class User {
   @Column({ nullable: true, type: 'text' })
   phone: string | null;
 
+  @Column({ type: 'text', default: 'inactive' })
+  status: string;
+
   @Column({ unique: true, type: 'text' })
   email: string;
 

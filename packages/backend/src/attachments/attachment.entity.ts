@@ -7,18 +7,26 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Job } from '../jobs/job.entity';
+import { ServiceOrder } from '../service-orders/service-order.entity';
 
 @Entity()
 export class Attachment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'integer' })
-  jobId: number;
+  @Column({ type: 'integer', nullable: true })
+  jobId: number | null;
 
-  @ManyToOne(() => Job, (job) => job.attachments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Job, (job) => job.attachments, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'jobId' })
-  job: Job;
+  job: Job | null;
+
+  @Column({ type: 'integer', nullable: true })
+  serviceOrderId: number | null;
+
+  @ManyToOne(() => ServiceOrder, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'serviceOrderId' })
+  serviceOrder: ServiceOrder | null;
 
   @Column({ type: 'text' })
   filename: string;

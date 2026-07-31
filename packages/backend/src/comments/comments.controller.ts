@@ -34,6 +34,21 @@ export class CommentsController {
     return this.commentsService.findByJob(jobId);
   }
 
+  @Post('service-order/:serviceOrderId')
+  createForServiceOrder(
+    @Param('serviceOrderId', ParseIntPipe) serviceOrderId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForServiceOrder(serviceOrderId, dto, author);
+  }
+
+  @Get('service-order/:serviceOrderId')
+  findByServiceOrder(@Param('serviceOrderId', ParseIntPipe) serviceOrderId: number) {
+    return this.commentsService.findByServiceOrder(serviceOrderId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

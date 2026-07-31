@@ -11,30 +11,58 @@ export class AttachmentsService {
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
   ) {}
-  async upload(
-    jobId: number,
-    file: Express.Multer.File,
-  ): Promise<Attachment> {
-    const jobDir = path.resolve('uploads', `job-${jobId}`);
-    if (!fs.existsSync(jobDir)) {
-      fs.mkdirSync(jobDir, { recursive: true });
+
+  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId'>): string {
+    const subdir = attachment.serviceOrderId
+      ? `service-order-${attachment.serviceOrderId}`
+      : `job-${attachment.jobId}`;
+    return path.resolve('uploads', subdir);
+  }
+
+  private saveFile(dir: string, file: Express.Multer.File): string {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
 
     let filename = file.originalname;
     const ext = path.extname(filename);
     const base = path.basename(filename, ext);
-    let filePath = path.join(jobDir, filename);
+    let filePath = path.join(dir, filename);
     let counter = 1;
     while (fs.existsSync(filePath)) {
       filename = `${base} (${counter})${ext}`;
-      filePath = path.join(jobDir, filename);
+      filePath = path.join(dir, filename);
       counter++;
     }
 
     fs.writeFileSync(filePath, file.buffer);
+    return filename;
+  }
+
+  async upload(jobId: number, file: Express.Multer.File): Promise<Attachment> {
+    const dir = path.resolve('uploads', `job-${jobId}`);
+    const filename = this.saveFile(dir, file);
 
     const attachment = this.attachmentRepository.create({
       jobId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
+  async uploadForServiceOrder(
+    serviceOrderId: number,
+    file: Express.Multer.File,
+  ): Promise<Attachment> {
+    const dir = path.resolve('uploads', `service-order-${serviceOrderId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      serviceOrderId,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,
@@ -57,12 +85,17 @@ export class AttachmentsService {
     });
   }
 
-  async delete(id: number): Promise<void> {
-    const attachment = await this.attachmentRepository.findOne({ where: { id } });
-    if (!attachment) throw new NotFoundException('Anexo não encontrado');
+  async findByServiceOrder(serviceOrderId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { serviceOrderId },
+      order: { createdAt: 'DESC' },
+    });
+  }
 
-    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
-    const filePath = path.join(jobDir, attachment.filename);
+  async delete(id: number): Promise<void> {
+    const attachment = await this.findById(id);
+
+    const filePath = path.join(this.getStorageDir(attachment), attachment.filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

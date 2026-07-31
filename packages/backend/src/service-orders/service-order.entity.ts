@@ -1,0 +1,52 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+@Entity()
+export class ServiceOrder {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'text' })
+  numero: string;
+
+  @Column({ type: 'text' })
+  cliente: string;
+
+  @Column({ type: 'text', nullable: true })
+  descricao: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  siteId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  endId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  operadora: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  endereco: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  dataInicio: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  dataFim: string | null;
+
+  @Column({ type: 'text', default: 'aberta' })
+  status: string;
+
+  @Column({ type: 'text', nullable: true })
+  observacoes: string | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

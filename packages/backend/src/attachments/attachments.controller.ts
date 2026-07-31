@@ -29,9 +29,23 @@ export class AttachmentsController {
     return this.attachmentsService.upload(jobId, file);
   }
 
+  @Post('upload/service-order/:serviceOrderId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadForServiceOrder(
+    @Param('serviceOrderId', ParseIntPipe) serviceOrderId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadForServiceOrder(serviceOrderId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
+  }
+
+  @Get('service-order/:serviceOrderId')
+  findByServiceOrder(@Param('serviceOrderId', ParseIntPipe) serviceOrderId: number) {
+    return this.attachmentsService.findByServiceOrder(serviceOrderId);
   }
 
   @Get('file/:id')
@@ -40,8 +54,11 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
-    const filePath = path.join(jobDir, attachment.filename);
+    const filePath = path.join(
+      path.resolve('uploads'),
+      attachment.serviceOrderId ? `service-order-${attachment.serviceOrderId}` : `job-${attachment.jobId}`,
+      attachment.filename,
+    );
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }
@@ -56,8 +73,11 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const jobDir = path.resolve('uploads', `job-${attachment.jobId}`);
-    const filePath = path.join(jobDir, attachment.filename);
+    const filePath = path.join(
+      path.resolve('uploads'),
+      attachment.serviceOrderId ? `service-order-${attachment.serviceOrderId}` : `job-${attachment.jobId}`,
+      attachment.filename,
+    );
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }

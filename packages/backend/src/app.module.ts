@@ -9,6 +9,8 @@ import { ContractsModule } from './contracts/contracts.module';
 import { LpuModule } from './lpu/lpu.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { CommentsModule } from './comments/comments.module';
+import { ServiceOrdersModule } from './service-orders/service-orders.module';
+import { ServiceOrderObservationsModule } from './service-orders/observations/observations.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -46,7 +48,9 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     LpuModule,
     AttachmentsModule,
     CommentsModule,
-    ...(dbType === 'sqljs' ? [SeedModule] : []),
+    ServiceOrdersModule,
+    ServiceOrderObservationsModule,
+    ...(isProd ? [] : [SeedModule]),
   ],
 })
 export class AppModule {}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -56,6 +57,9 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function ServiceOrdersPage() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const editParam = searchParams.get('edit')
   const [orders, setOrders] = useState<ServiceOrder[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -66,6 +70,13 @@ export default function ServiceOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+
+  useEffect(() => {
+    if (editParam) {
+      setModal({ open: true, editId: Number(editParam) })
+      setSearchParams({}, { replace: true })
+    }
+  }, [editParam, setSearchParams])
 
   const fetchData = useCallback(async () => {
     try {
@@ -197,7 +208,7 @@ export default function ServiceOrdersPage() {
           </TableHead>
           <TableBody>
             {orders.map((so) => (
-              <TableRow key={so.id} hover>
+              <TableRow key={so.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/service-orders/${so.id}`)}>
                 <TableCell>{so.numero}</TableCell>
                 <TableCell>{so.cliente}</TableCell>
                 <TableCell>{so.descricao || '-'}</TableCell>
@@ -212,10 +223,10 @@ export default function ServiceOrdersPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: so.id })}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: so.id }) }}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(so.id)}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(so.id) }}>
                     <Delete />
                   </IconButton>
                 </TableCell>

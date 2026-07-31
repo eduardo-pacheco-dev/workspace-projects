@@ -17,6 +17,7 @@ import {
   Box,
   TextField,
   Stack,
+  Chip,
 } from '@mui/material'
 import { Edit, Delete, PersonAdd } from '@mui/icons-material'
 import api from '../../services/api'
@@ -28,10 +29,11 @@ interface User {
   lastName: string | null
   email: string
   phone: string | null
+  status: string
   createdAt: string
 }
 
-type SortBy = 'id' | 'name' | 'lastName' | 'email' | 'phone' | 'createdAt'
+type SortBy = 'id' | 'name' | 'lastName' | 'email' | 'phone' | 'status' | 'createdAt'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function UsersPage() {
@@ -105,6 +107,7 @@ export default function UsersPage() {
     { id: 'lastName', label: 'Sobrenome' },
     { id: 'email', label: 'Email' },
     { id: 'phone', label: 'Telefone' },
+    { id: 'status', label: 'Status' },
     { id: 'createdAt', label: 'Criado em' },
   ]
 
@@ -156,6 +159,13 @@ export default function UsersPage() {
                 <TableCell>{u.lastName || '-'}</TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>{u.phone || '-'}</TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={u.status === 'active' ? 'Ativo' : 'Inativo'}
+                    color={u.status === 'active' ? 'success' : 'default'}
+                  />
+                </TableCell>
                 <TableCell>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
@@ -169,7 +179,7 @@ export default function UsersPage() {
             ))}
             {users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>

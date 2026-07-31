@@ -12,6 +12,7 @@ import {
   Grid,
   InputAdornment,
   IconButton,
+  MenuItem,
 } from '@mui/material'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
@@ -54,6 +55,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [status, setStatus] = useState('inactive')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -70,6 +72,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
           setLastName(data.lastName || '')
           setEmail(data.email || '')
           setPhone(data.phone ? formatPhone(data.phone) : '')
+          setStatus(data.status || 'inactive')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
@@ -105,6 +108,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
 
     const payload: any = { name, lastName, email, phone: phone.replace(/\D/g, '') }
     if (password) payload.password = password
+    if (isEdit) payload.status = status
 
     setLoading(true)
     try {
@@ -132,6 +136,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     setPhone('')
     setPassword('')
     setConfirmPassword('')
+    setStatus('inactive')
     setShowPassword(false)
     onClose()
   }
@@ -287,6 +292,23 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               ),
             }}
           />
+          {isEdit ? (
+            <TextField
+              fullWidth
+              select
+              label="Status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              margin="normal"
+            >
+              <MenuItem value="active">Ativo</MenuItem>
+              <MenuItem value="inactive">Inativo</MenuItem>
+            </TextField>
+          ) : (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Novo usuário entra como <strong>inativo</strong> até ser ativado.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={loading}>Cancelar</Button>

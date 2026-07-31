@@ -15,6 +15,7 @@ export const updateUserSchema = z
     email: z.string().min(1, 'Email é obrigatório.').email('Email inválido.').optional(),
     phone: z.string().optional(),
     password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.').optional(),
+    status: z.enum(['active', 'inactive'], 'Status inválido.').optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Informe ao menos um campo para atualizar.',

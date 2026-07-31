@@ -64,6 +64,7 @@ export class UsersService {
       phone: dto.phone || null,
       email: dto.email,
       password: hashedPassword,
+      status: 'inactive',
     });
     return this.usersRepository.save(user);
   }
@@ -92,7 +93,7 @@ export class UsersService {
       );
     }
 
-    const allowedSort = ['id', 'name', 'lastName', 'email', 'phone', 'createdAt'];
+    const allowedSort = ['id', 'name', 'lastName', 'email', 'phone', 'status', 'createdAt'];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
@@ -120,6 +121,7 @@ export class UsersService {
     if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phone !== undefined) user.phone = dto.phone;
+    if (dto.status !== undefined) user.status = dto.status;
 
     return this.usersRepository.save(user);
   }

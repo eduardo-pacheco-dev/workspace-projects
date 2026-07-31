@@ -10,6 +10,7 @@ import { LpuModule } from './lpu/lpu.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { CommentsModule } from './comments/comments.module';
 import { ServiceOrdersModule } from './service-orders/service-orders.module';
+import { ServiceOrderObservationsModule } from './service-orders/observations/observations.module';
 import { SeedModule } from './seed/seed.module';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -48,6 +49,7 @@ const isProd = process.env.NODE_ENV === 'production';
     AttachmentsModule,
     CommentsModule,
     ServiceOrdersModule,
+    ServiceOrderObservationsModule,
     ...(isProd ? [] : [SeedModule]),
   ],
 })

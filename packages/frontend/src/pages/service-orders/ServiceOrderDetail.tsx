@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
@@ -21,6 +21,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Stack,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -32,6 +33,7 @@ import {
   PictureAsPdf,
   Visibility,
   Download,
+  NoteAdd,
 } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
@@ -49,6 +51,17 @@ interface Attachment {
   originalName: string
   mimetype: string
   size: number
+}
+
+interface Observation {
+  id: number
+  title: string
+  description: string | null
+  filename: string | null
+  originalName: string | null
+  mimetype: string | null
+  size: number | null
+  createdAt: string
 }
 
 interface ServiceOrder {
@@ -89,6 +102,13 @@ export default function ServiceOrderDetail() {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [observations, setObservations] = useState<Observation[]>([])
+  const [obsTitle, setObsTitle] = useState('')
+  const [obsDescription, setObsDescription] = useState('')
+  const [obsFile, setObsFile] = useState<File | null>(null)
+  const [obsError, setObsError] = useState('')
+  const [submittingObs, setSubmittingObs] = useState(false)
+  const obsFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     api
@@ -153,6 +173,58 @@ export default function ServiceOrderDetail() {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const fetchObservations = () => {
+    api.get(`/service-orders/${id}/observations`)
+      .then((res) => setObservations(res.data))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchObservations()
+  }, [id])
+
+  const handleSubmitObservation = async (e: FormEvent) => {
+    e.preventDefault()
+    setObsError('')
+    if (!obsTitle.trim()) {
+      setObsError('Informe o título da observação.')
+      return
+    }
+    setSubmittingObs(true)
+    try {
+      const form = new FormData()
+      form.append('title', obsTitle)
+      form.append('description', obsDescription)
+      if (obsFile) form.append('file', obsFile)
+      await api.post(`/service-orders/${id}/observations`, form)
+      setObsTitle('')
+      setObsDescription('')
+      setObsFile(null)
+      if (obsFileInputRef.current) obsFileInputRef.current.value = ''
+      fetchObservations()
+    } catch (err: any) {
+      setObsError(err.response?.data?.message || 'Não foi possível adicionar a observação.')
+    } finally {
+      setSubmittingObs(false)
+    }
+  }
+
+  const handlePreviewObservation = (obs: Observation) => {
+    if (obs.filename) {
+      setPreview({ url: `/api/service-orders/observations/${obs.id}/file`, type: obs.mimetype || '', name: obs.originalName || obs.title })
+    }
+  }
+
+  const handleDeleteObservation = async (obsId: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta observação?')) return
+    try {
+      await api.delete(`/service-orders/observations/${obsId}`)
+      fetchObservations()
+    } catch {
+      setObsError('Não foi possível excluir a observação.')
+    }
   }
 
   const handleEditComment = (c: Comment) => {
@@ -342,6 +414,125 @@ export default function ServiceOrderDetail() {
             })}
           </List>
         )}
+      </Paper>
+
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Observações</Typography>
+        <Divider sx={{ mb: 2 }} />
+        {obsError && <Alert severity="error" sx={{ mb: 2 }}>{obsError}</Alert>}
+        {observations.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhuma observação cadastrada.</Typography>
+        ) : (
+          <List dense disablePadding sx={{ mb: 2 }}>
+            {observations.map((obs) => {
+              const isImage = obs.mimetype?.startsWith('image/')
+              const isPdf = obs.mimetype === 'application/pdf'
+              return (
+                <ListItem key={obs.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch', mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{obs.title}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(obs.createdAt).toLocaleString('pt-BR')}
+                      </Typography>
+                      <IconButton size="small" onClick={() => handleDeleteObservation(obs.id)}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                  {obs.description && (
+                    <Typography variant="body2" color="text.secondary">{obs.description}</Typography>
+                  )}
+                  {obs.filename && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        {isImage ? (
+                          <Box
+                            component="img"
+                            src={`/api/service-orders/observations/${obs.id}/file`}
+                            sx={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 1 }}
+                          />
+                        ) : isPdf ? (
+                          <PictureAsPdf color="error" fontSize="small" />
+                        ) : (
+                          <AttachFile fontSize="small" />
+                        )}
+                      </ListItemIcon>
+                      <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                        {obs.originalName} {obs.size != null ? `(${formatSize(obs.size)})` : ''}
+                      </Typography>
+                      {(isImage || isPdf) && (
+                        <IconButton size="small" onClick={() => handlePreviewObservation(obs)}>
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        size="small"
+                        component="a"
+                        href={`/api/service-orders/observations/${obs.id}/file`}
+                        target="_blank"
+                      >
+                        <Download fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </ListItem>
+              )
+            })}
+          </List>
+        )}
+        <Box component="form" onSubmit={handleSubmitObservation}>
+          <Stack spacing={1.5}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Título"
+              value={obsTitle}
+              onChange={(e) => setObsTitle(e.target.value)}
+              required
+            />
+            <TextField
+              fullWidth
+              size="small"
+              label="Descrição"
+              multiline
+              rows={2}
+              value={obsDescription}
+              onChange={(e) => setObsDescription(e.target.value)}
+            />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AttachFile />}
+                onClick={() => obsFileInputRef.current?.click()}
+              >
+                {obsFile ? obsFile.name : 'Anexar arquivo'}
+              </Button>
+              {obsFile && (
+                <IconButton size="small" onClick={() => { setObsFile(null); if (obsFileInputRef.current) obsFileInputRef.current.value = '' }}>
+                  <Delete fontSize="small" />
+                </IconButton>
+              )}
+              <input
+                ref={obsFileInputRef}
+                type="file"
+                hidden
+                onChange={(e) => setObsFile(e.target.files?.[0] || null)}
+              />
+              <Box sx={{ flexGrow: 1 }} />
+              <Button
+                type="submit"
+                variant="contained"
+                size="small"
+                startIcon={<NoteAdd />}
+                disabled={submittingObs}
+              >
+                {submittingObs ? 'Adicionando...' : 'Adicionar Observação'}
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
       </Paper>
 
       <Paper sx={{ p: 4, mb: 3 }}>

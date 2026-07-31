@@ -74,7 +74,7 @@ export default function SignIn() {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-          Workspace
+          AFL Engenharia
         </Typography>
 
         <Box>

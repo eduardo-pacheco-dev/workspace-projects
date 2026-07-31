@@ -1,0 +1,64 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: app-backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: db_admin
+      DB_PASSWORD: db_password
+      DB_NAME: db_workspace
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npm run build -w packages/backend &&
+             npx --no-install typeorm migration:run -d packages/backend/dist/src/data-source.js &&
+             npm run dev -w packages/backend"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: app-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      VITE_API_PROXY_TARGET: http://backend:3001
+    depends_on:
+      - backend
+    command: npm run dev -w packages/frontend
+
+  db:
+    image: mariadb:10.11
+    container_name: app-db
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_DATABASE: db_workspace
+      MARIADB_USER: db_admin
+      MARIADB_PASSWORD: db_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mariadb_data:

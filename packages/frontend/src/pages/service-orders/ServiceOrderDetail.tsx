@@ -111,6 +111,11 @@ export default function ServiceOrderDetail() {
   const [obsError, setObsError] = useState('')
   const [submittingObs, setSubmittingObs] = useState(false)
   const obsFileInputRef = useRef<HTMLInputElement>(null)
+  const [editingObsId, setEditingObsId] = useState<number | null>(null)
+  const [editObsTitle, setEditObsTitle] = useState('')
+  const [editObsDesc, setEditObsDesc] = useState('')
+  const [editObsFile, setEditObsFile] = useState<File | null>(null)
+  const editObsFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     api
@@ -242,6 +247,43 @@ export default function ServiceOrderDetail() {
     } catch {
       setObsError('Não foi possível reordenar as observações.')
       fetchObservations()
+    }
+  }
+
+  const startEditObservation = (obs: Observation) => {
+    setEditingObsId(obs.id)
+    setEditObsTitle(obs.title)
+    setEditObsDesc(obs.description || '')
+    setEditObsFile(null)
+    if (editObsFileInputRef.current) editObsFileInputRef.current.value = ''
+  }
+
+  const cancelEditObservation = () => {
+    setEditingObsId(null)
+    setEditObsTitle('')
+    setEditObsDesc('')
+    setEditObsFile(null)
+  }
+
+  const handleSaveObservation = async (obsId: number) => {
+    setObsError('')
+    if (!editObsTitle.trim()) {
+      setObsError('Informe o título da observação.')
+      return
+    }
+    setSubmittingObs(true)
+    try {
+      const form = new FormData()
+      form.append('title', editObsTitle)
+      form.append('description', editObsDesc)
+      if (editObsFile) form.append('file', editObsFile)
+      await api.patch(`/service-orders/observations/${obsId}`, form)
+      cancelEditObservation()
+      fetchObservations()
+    } catch (err: any) {
+      setObsError(err.response?.data?.message || 'Não foi possível editar a observação.')
+    } finally {
+      setSubmittingObs(false)
     }
   }
 
@@ -447,62 +489,134 @@ export default function ServiceOrderDetail() {
               const isPdf = obs.mimetype === 'application/pdf'
               return (
                 <ListItem key={obs.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch', mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{obs.title}</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <IconButton size="small" disabled={index === 0} onClick={() => handleMoveObservation(index, -1)}>
-                        <ArrowUpward fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                  {editingObsId === obs.id ? (
+                    <Stack spacing={1.5}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Editar Observação</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(obs.createdAt).toLocaleString('pt-BR')}
+                        </Typography>
+                      </Box>
+                      <TextField
+                        fullWidth
                         size="small"
-                        disabled={index === observations.length - 1}
-                        onClick={() => handleMoveObservation(index, 1)}
-                      >
-                        <ArrowDownward fontSize="small" />
-                      </IconButton>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(obs.createdAt).toLocaleString('pt-BR')}
-                      </Typography>
-                      <IconButton size="small" onClick={() => handleDeleteObservation(obs.id)}>
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                  {obs.description && (
-                    <Typography variant="body2" color="text.secondary">{obs.description}</Typography>
-                  )}
-                  {obs.filename && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        {isImage ? (
-                          <Box
-                            component="img"
-                            src={`/api/service-orders/observations/${obs.id}/file`}
-                            sx={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 1 }}
-                          />
-                        ) : isPdf ? (
-                          <PictureAsPdf color="error" fontSize="small" />
-                        ) : (
-                          <AttachFile fontSize="small" />
+                        label="Título"
+                        value={editObsTitle}
+                        onChange={(e) => setEditObsTitle(e.target.value)}
+                        required
+                      />
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Descrição"
+                        multiline
+                        rows={2}
+                        value={editObsDesc}
+                        onChange={(e) => setEditObsDesc(e.target.value)}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AttachFile />}
+                          onClick={() => editObsFileInputRef.current?.click()}
+                        >
+                          {editObsFile ? editObsFile.name : (obs.originalName || 'Anexar arquivo')}
+                        </Button>
+                        {(editObsFile || obs.filename) && (
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setEditObsFile(null)
+                              if (editObsFileInputRef.current) editObsFileInputRef.current.value = ''
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
                         )}
-                      </ListItemIcon>
-                      <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                        {obs.originalName} {obs.size != null ? `(${formatSize(obs.size)})` : ''}
-                      </Typography>
-                      {(isImage || isPdf) && (
-                        <IconButton size="small" onClick={() => handlePreviewObservation(obs)}>
-                          <Visibility fontSize="small" />
-                        </IconButton>
+                        <input
+                          ref={editObsFileInputRef}
+                          type="file"
+                          hidden
+                          onChange={(e) => setEditObsFile(e.target.files?.[0] || null)}
+                        />
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Button size="small" onClick={cancelEditObservation} disabled={submittingObs}>
+                          Cancelar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => handleSaveObservation(obs.id)}
+                          disabled={submittingObs}
+                        >
+                          {submittingObs ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                      </Box>
+                    </Stack>
+                  ) : (
+                    <>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{obs.title}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <IconButton size="small" disabled={index === 0} onClick={() => handleMoveObservation(index, -1)}>
+                            <ArrowUpward fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            disabled={index === observations.length - 1}
+                            onClick={() => handleMoveObservation(index, 1)}
+                          >
+                            <ArrowDownward fontSize="small" />
+                          </IconButton>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(obs.createdAt).toLocaleString('pt-BR')}
+                          </Typography>
+                          <IconButton size="small" onClick={() => startEditObservation(obs)}>
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleDeleteObservation(obs.id)}>
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      {obs.description && (
+                        <Typography variant="body2" color="text.secondary">{obs.description}</Typography>
                       )}
-                      <IconButton
-                        size="small"
-                        component="a"
-                        href={`/api/service-orders/observations/${obs.id}/file`}
-                        target="_blank"
-                      >
-                        <Download fontSize="small" />
-                      </IconButton>
-                    </Box>
+                      {obs.filename && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <ListItemIcon sx={{ minWidth: 32 }}>
+                            {isImage ? (
+                              <Box
+                                component="img"
+                                src={`/api/service-orders/observations/${obs.id}/file`}
+                                sx={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 1 }}
+                              />
+                            ) : isPdf ? (
+                              <PictureAsPdf color="error" fontSize="small" />
+                            ) : (
+                              <AttachFile fontSize="small" />
+                            )}
+                          </ListItemIcon>
+                          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                            {obs.originalName} {obs.size != null ? `(${formatSize(obs.size)})` : ''}
+                          </Typography>
+                          {(isImage || isPdf) && (
+                            <IconButton size="small" onClick={() => handlePreviewObservation(obs)}>
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href={`/api/service-orders/observations/${obs.id}/file`}
+                            target="_blank"
+                          >
+                            <Download fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </>
                   )}
                 </ListItem>
               )

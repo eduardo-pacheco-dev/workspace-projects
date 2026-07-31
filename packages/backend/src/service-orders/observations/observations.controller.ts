@@ -66,4 +66,14 @@ export class ObservationsController {
   delete(@Param('observationId', ParseIntPipe) observationId: number) {
     return this.observationsService.delete(observationId);
   }
+
+  @Patch('observations/:observationId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  update(
+    @Param('observationId', ParseIntPipe) observationId: number,
+    @Body() body: { title?: string; description?: string },
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.observationsService.update(observationId, body, file);
+  }
 }

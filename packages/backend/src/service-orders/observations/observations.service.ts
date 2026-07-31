@@ -90,6 +90,46 @@ export class ServiceOrderObservationsService {
     }
   }
 
+  async update(
+    id: number,
+    body: { title?: string; description?: string },
+    file?: Express.Multer.File,
+  ): Promise<ServiceOrderObservation> {
+    const observation = await this.findById(id);
+
+    if (body.title !== undefined) {
+      const title = body.title.trim();
+      if (!title) throw new BadRequestException('Título é obrigatório.');
+      observation.title = title;
+    }
+    if (body.description !== undefined) {
+      observation.description = body.description;
+    }
+
+    if (file) {
+      if (observation.filename) {
+        const oldPath = this.getFilePath(observation);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+      const dir = this.storageDir(observation.serviceOrderId);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      const ext = path.extname(file.originalname);
+      const filename = `${randomUUID()}${ext}`;
+      fs.writeFileSync(path.join(dir, filename), file.buffer);
+
+      observation.filename = filename;
+      observation.originalName = file.originalname;
+      observation.mimetype = file.mimetype;
+      observation.size = file.size;
+    }
+
+    return this.observationRepository.save(observation);
+  }
+
   async findById(id: number): Promise<ServiceOrderObservation> {
     const observation = await this.observationRepository.findOne({ where: { id } });
     if (!observation) throw new NotFoundException('Observação não encontrada');

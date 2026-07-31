@@ -17,6 +17,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import WorkIcon from '@mui/icons-material/Work'
 import SendIcon from '@mui/icons-material/Send'
 import DescriptionIcon from '@mui/icons-material/Description'
+import GroupIcon from '@mui/icons-material/Group'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   const items = [
+    { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
     { label: 'Freelancers', path: '/freelancers', icon: <PersonIcon /> },
     { label: 'Jobs', path: '/freelancers?tab=1', icon: <WorkIcon /> },
     { label: 'Proposals', path: '/freelancers?tab=2', icon: <SendIcon /> },

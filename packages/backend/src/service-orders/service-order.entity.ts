@@ -17,17 +17,17 @@ export class ServiceOrder {
   @Column({ type: 'text' })
   cliente: string;
 
-  @Column({ type: 'text' })
-  descricao: string;
+  @Column({ type: 'text', nullable: true })
+  descricao: string | null;
 
   @Column({ type: 'text', nullable: true })
   endereco: string | null;
 
   @Column({ type: 'text', nullable: true })
-  data: string | null;
+  dataInicio: string | null;
 
-  @Column({ type: 'real', nullable: true })
-  valor: number | null;
+  @Column({ type: 'text', nullable: true })
+  dataFim: string | null;
 
   @Column({ type: 'text', default: 'aberta' })
   status: string;

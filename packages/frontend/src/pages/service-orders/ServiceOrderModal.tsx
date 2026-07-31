@@ -10,25 +10,21 @@ import {
   Box,
   CircularProgress,
   MenuItem,
+  Grid,
 } from '@mui/material'
 import { z } from 'zod'
 import api from '../../services/api'
 
 const baseSchema = z.object({
-  numero: z.string().min(1, 'Informe o número da OS.'),
   cliente: z.string().min(1, 'Informe o cliente.'),
-  descricao: z.string().min(1, 'Informe a descrição.'),
+  descricao: z.string().optional(),
   endereco: z.string().optional(),
-  data: z.string().optional(),
-  valor: z.string().optional(),
+  dataInicio: z.string().optional(),
+  dataFim: z.string().optional(),
   observacoes: z.string().optional(),
 })
 
-const createSchema = baseSchema.refine(
-  (data) => data.valor === '' || !isNaN(Number(data.valor)),
-  { message: 'Valor inválido.', path: ['valor'] },
-)
-
+const createSchema = baseSchema
 const editSchema = baseSchema.partial()
 
 interface ServiceOrderModalProps {
@@ -45,8 +41,8 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
   const [cliente, setCliente] = useState('')
   const [descricao, setDescricao] = useState('')
   const [endereco, setEndereco] = useState('')
-  const [data, setData] = useState('')
-  const [valor, setValor] = useState('')
+  const [dataInicio, setDataInicio] = useState('')
+  const [dataFim, setDataFim] = useState('')
   const [status, setStatus] = useState('aberta')
   const [observacoes, setObservacoes] = useState('')
   const [error, setError] = useState('')
@@ -64,8 +60,8 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
           setCliente(d.cliente || '')
           setDescricao(d.descricao || '')
           setEndereco(d.endereco || '')
-          setData(d.data || '')
-          setValor(d.valor != null ? String(d.valor) : '')
+          setDataInicio(d.dataInicio || '')
+          setDataFim(d.dataFim || '')
           setStatus(d.status || 'aberta')
           setObservacoes(d.observacoes || '')
         })
@@ -86,12 +82,11 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     setFieldErrors({})
 
     const formData = {
-      numero,
       cliente,
       descricao,
       endereco,
-      data,
-      valor,
+      dataInicio,
+      dataFim,
       observacoes,
     }
 
@@ -103,14 +98,13 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     }
 
     const payload: any = {
-      numero,
       cliente,
       descricao,
       endereco,
-      data,
+      dataInicio,
+      dataFim,
       observacoes,
     }
-    if (valor !== '') payload.valor = Number(valor)
     if (isEdit) payload.status = status
 
     setLoading(true)
@@ -137,8 +131,8 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     setCliente('')
     setDescricao('')
     setEndereco('')
-    setData('')
-    setValor('')
+    setDataInicio('')
+    setDataFim('')
     setStatus('aberta')
     setObservacoes('')
     onClose()
@@ -150,19 +144,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
         <DialogTitle>{isEdit ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <TextField
-            fullWidth
-            label="Número da OS"
-            value={numero}
-            onChange={(e) => {
-              setNumero(e.target.value)
-              clearFieldError('numero')
-            }}
-            margin="normal"
-            required
-            error={!!fieldErrors.numero}
-            helperText={fieldErrors.numero}
-          />
+          {isEdit && (
+            <TextField fullWidth label="Número da OS" value={numero} margin="normal" disabled />
+          )}
           <TextField
             fullWidth
             label="Cliente"
@@ -187,7 +171,6 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
               clearFieldError('descricao')
             }}
             margin="normal"
-            required
             error={!!fieldErrors.descricao}
             helperText={fieldErrors.descricao}
           />
@@ -203,33 +186,40 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
             error={!!fieldErrors.endereco}
             helperText={fieldErrors.endereco}
           />
-          <TextField
-            fullWidth
-            label="Data"
-            type="date"
-            value={data}
-            onChange={(e) => {
-              setData(e.target.value)
-              clearFieldError('data')
-            }}
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-            error={!!fieldErrors.data}
-            helperText={fieldErrors.data}
-          />
-          <TextField
-            fullWidth
-            label="Valor (R$)"
-            type="number"
-            value={valor}
-            onChange={(e) => {
-              setValor(e.target.value)
-              clearFieldError('valor')
-            }}
-            margin="normal"
-            error={!!fieldErrors.valor}
-            helperText={fieldErrors.valor}
-          />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Data de Início"
+                type="date"
+                value={dataInicio}
+                onChange={(e) => {
+                  setDataInicio(e.target.value)
+                  clearFieldError('dataInicio')
+                }}
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                error={!!fieldErrors.dataInicio}
+                helperText={fieldErrors.dataInicio}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Data de Fim"
+                type="date"
+                value={dataFim}
+                onChange={(e) => {
+                  setDataFim(e.target.value)
+                  clearFieldError('dataFim')
+                }}
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                error={!!fieldErrors.dataFim}
+                helperText={fieldErrors.dataFim}
+              />
+            </Grid>
+          </Grid>
           {isEdit && (
             <TextField
               fullWidth

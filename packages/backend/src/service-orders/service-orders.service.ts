@@ -18,8 +18,11 @@ export class ServiceOrdersService {
     const serviceOrder = this.serviceOrdersRepository.create({
       ...dto,
       status: dto.status ?? 'aberta',
+      numero: '',
     });
-    return this.serviceOrdersRepository.save(serviceOrder);
+    const saved = await this.serviceOrdersRepository.save(serviceOrder);
+    saved.numero = `OS-${String(saved.id).padStart(3, '0')}`;
+    return this.serviceOrdersRepository.save(saved);
   }
 
   async findAll(query: {
@@ -52,7 +55,7 @@ export class ServiceOrdersService {
       qb.andWhere('so.status = :status', { status });
     }
 
-    const allowedSort = ['id', 'numero', 'cliente', 'data', 'valor', 'status'];
+    const allowedSort = ['id', 'numero', 'cliente', 'dataInicio', 'status'];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 

@@ -28,15 +28,15 @@ interface ServiceOrder {
   id: number
   numero: string
   cliente: string
-  descricao: string
+  descricao: string | null
   endereco: string | null
-  data: string | null
-  valor: number | null
+  dataInicio: string | null
+  dataFim: string | null
   status: string
   observacoes: string | null
 }
 
-type SortBy = 'id' | 'numero' | 'cliente' | 'data' | 'valor' | 'status'
+type SortBy = 'id' | 'numero' | 'cliente' | 'dataInicio' | 'status'
 type SortOrder = 'ASC' | 'DESC'
 
 const statusColors: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
@@ -125,8 +125,7 @@ export default function ServiceOrdersPage() {
     { id: 'numero', label: 'Número' },
     { id: 'cliente', label: 'Cliente' },
     { id: 'descricao', label: 'Descrição', sortable: false },
-    { id: 'data', label: 'Data' },
-    { id: 'valor', label: 'Valor' },
+    { id: 'dataInicio', label: 'Data de Início' },
     { id: 'status', label: 'Status' },
   ]
 
@@ -197,13 +196,8 @@ export default function ServiceOrdersPage() {
               <TableRow key={so.id} hover>
                 <TableCell>{so.numero}</TableCell>
                 <TableCell>{so.cliente}</TableCell>
-                <TableCell>{so.descricao}</TableCell>
-                <TableCell>{so.data || '-'}</TableCell>
-                <TableCell>
-                  {so.valor != null
-                    ? so.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                    : '-'}
-                </TableCell>
+                <TableCell>{so.descricao || '-'}</TableCell>
+                <TableCell>{so.dataInicio || '-'}</TableCell>
                 <TableCell>
                   <Chip
                     size="small"
@@ -223,7 +217,7 @@ export default function ServiceOrdersPage() {
             ))}
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={6} align="center">
                   Nenhuma ordem de serviço encontrada.
                 </TableCell>
               </TableRow>

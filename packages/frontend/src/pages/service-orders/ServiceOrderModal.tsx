@@ -15,10 +15,14 @@ import {
 import { z } from 'zod'
 import api from '../../services/api'
 
+const operadoraOptions = ['TIM', 'CLARO', 'VIVO', 'Outras']
+
 const baseSchema = z.object({
   cliente: z.string().min(1, 'Informe o cliente.'),
   descricao: z.string().optional(),
-  endereco: z.string().optional(),
+  siteId: z.string().optional(),
+  endId: z.string().optional(),
+  operadora: z.string().optional(),
   dataInicio: z.string().optional(),
   dataFim: z.string().optional(),
   observacoes: z.string().optional(),
@@ -40,7 +44,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
   const [numero, setNumero] = useState('')
   const [cliente, setCliente] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [endereco, setEndereco] = useState('')
+  const [siteId, setSiteId] = useState('')
+  const [endId, setEndId] = useState('')
+  const [operadora, setOperadora] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [status, setStatus] = useState('aberta')
@@ -59,7 +65,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
           setNumero(d.numero || '')
           setCliente(d.cliente || '')
           setDescricao(d.descricao || '')
-          setEndereco(d.endereco || '')
+          setSiteId(d.siteId || '')
+          setEndId(d.endId || '')
+          setOperadora(d.operadora || '')
           setDataInicio(d.dataInicio || '')
           setDataFim(d.dataFim || '')
           setStatus(d.status || 'aberta')
@@ -84,7 +92,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     const formData = {
       cliente,
       descricao,
-      endereco,
+      siteId,
+      endId,
+      operadora,
       dataInicio,
       dataFim,
       observacoes,
@@ -100,7 +110,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     const payload: any = {
       cliente,
       descricao,
-      endereco,
+      siteId,
+      endId,
+      operadora,
       dataInicio,
       dataFim,
       observacoes,
@@ -130,7 +142,9 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     setNumero('')
     setCliente('')
     setDescricao('')
-    setEndereco('')
+    setSiteId('')
+    setEndId('')
+    setOperadora('')
     setDataInicio('')
     setDataFim('')
     setStatus('aberta')
@@ -174,18 +188,56 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
             error={!!fieldErrors.descricao}
             helperText={fieldErrors.descricao}
           />
-          <TextField
-            fullWidth
-            label="Endereço"
-            value={endereco}
-            onChange={(e) => {
-              setEndereco(e.target.value)
-              clearFieldError('endereco')
-            }}
-            margin="normal"
-            error={!!fieldErrors.endereco}
-            helperText={fieldErrors.endereco}
-          />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Site ID"
+                value={siteId}
+                onChange={(e) => {
+                  setSiteId(e.target.value)
+                  clearFieldError('siteId')
+                }}
+                margin="normal"
+                error={!!fieldErrors.siteId}
+                helperText={fieldErrors.siteId}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="End ID"
+                value={endId}
+                onChange={(e) => {
+                  setEndId(e.target.value)
+                  clearFieldError('endId')
+                }}
+                margin="normal"
+                error={!!fieldErrors.endId}
+                helperText={fieldErrors.endId}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                select
+                label="Operadora"
+                value={operadora}
+                onChange={(e) => {
+                  setOperadora(e.target.value)
+                  clearFieldError('operadora')
+                }}
+                margin="normal"
+                error={!!fieldErrors.operadora}
+                helperText={fieldErrors.operadora}
+              >
+                <MenuItem value="">Selecione</MenuItem>
+                {operadoraOptions.map((op) => (
+                  <MenuItem key={op} value={op}>{op}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField

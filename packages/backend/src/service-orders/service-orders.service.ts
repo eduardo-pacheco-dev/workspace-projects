@@ -55,7 +55,7 @@ export class ServiceOrdersService {
       qb.andWhere('so.status = :status', { status });
     }
 
-    const allowedSort = ['id', 'numero', 'cliente', 'dataInicio', 'status'];
+    const allowedSort = ['id', 'numero', 'cliente', 'dataInicio', 'status', 'siteId', 'operadora'];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 

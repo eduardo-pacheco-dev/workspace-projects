@@ -29,14 +29,16 @@ interface ServiceOrder {
   numero: string
   cliente: string
   descricao: string | null
-  endereco: string | null
+  siteId: string | null
+  endId: string | null
+  operadora: string | null
   dataInicio: string | null
   dataFim: string | null
   status: string
   observacoes: string | null
 }
 
-type SortBy = 'id' | 'numero' | 'cliente' | 'dataInicio' | 'status'
+type SortBy = 'id' | 'numero' | 'cliente' | 'dataInicio' | 'status' | 'siteId' | 'operadora'
 type SortOrder = 'ASC' | 'DESC'
 
 const statusColors: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
@@ -125,6 +127,8 @@ export default function ServiceOrdersPage() {
     { id: 'numero', label: 'Número' },
     { id: 'cliente', label: 'Cliente' },
     { id: 'descricao', label: 'Descrição', sortable: false },
+    { id: 'siteId', label: 'Site ID' },
+    { id: 'operadora', label: 'Operadora' },
     { id: 'dataInicio', label: 'Data de Início' },
     { id: 'status', label: 'Status' },
   ]
@@ -197,6 +201,8 @@ export default function ServiceOrdersPage() {
                 <TableCell>{so.numero}</TableCell>
                 <TableCell>{so.cliente}</TableCell>
                 <TableCell>{so.descricao || '-'}</TableCell>
+                <TableCell>{so.siteId || '-'}</TableCell>
+                <TableCell>{so.operadora || '-'}</TableCell>
                 <TableCell>{so.dataInicio || '-'}</TableCell>
                 <TableCell>
                   <Chip
@@ -217,7 +223,7 @@ export default function ServiceOrdersPage() {
             ))}
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={8} align="center">
                   Nenhuma ordem de serviço encontrada.
                 </TableCell>
               </TableRow>

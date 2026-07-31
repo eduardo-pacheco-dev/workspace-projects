@@ -21,6 +21,15 @@ export class ServiceOrder {
   descricao: string | null;
 
   @Column({ type: 'text', nullable: true })
+  siteId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  endId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  operadora: string | null;
+
+  @Column({ type: 'text', nullable: true })
   endereco: string | null;
 
   @Column({ type: 'text', nullable: true })

@@ -12,7 +12,7 @@ import {
   Link,
   CircularProgress,
 } from '@mui/material'
-import api from '../services/api'
+import api from '../../services/api'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()

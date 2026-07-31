@@ -14,6 +14,12 @@ export class User {
   @Column({ type: 'text' })
   name: string;
 
+  @Column({ nullable: true, type: 'text' })
+  lastName: string | null;
+
+  @Column({ nullable: true, type: 'text' })
+  phone: string | null;
+
   @Column({ unique: true, type: 'text' })
   email: string;
 

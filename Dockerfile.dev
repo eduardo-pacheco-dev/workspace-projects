@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+COPY package*.json .
+COPY packages/backend/package.json packages/backend/
+COPY packages/frontend/package.json packages/frontend/
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3001 5173

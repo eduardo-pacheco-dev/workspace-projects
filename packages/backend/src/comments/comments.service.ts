@@ -16,9 +16,29 @@ export class CommentsService {
     return this.commentRepository.save(comment);
   }
 
+  async createForServiceOrder(
+    serviceOrderId: number,
+    dto: CreateCommentDto,
+    author: string,
+  ): Promise<Comment> {
+    const comment = this.commentRepository.create({
+      serviceOrderId,
+      content: dto.content,
+      author,
+    });
+    return this.commentRepository.save(comment);
+  }
+
   async findByJob(jobId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { jobId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByServiceOrder(serviceOrderId: number): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { serviceOrderId },
       order: { createdAt: 'DESC' },
     });
   }

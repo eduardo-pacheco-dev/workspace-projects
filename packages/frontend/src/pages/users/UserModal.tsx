@@ -22,21 +22,21 @@ import { z } from 'zod'
 import api from '../../services/api'
 import { formatPhone } from '../../utils/phone'
 
-const userSchema = z
-  .object({
-    name: z.string().min(1, 'Informe o nome.'),
-    lastName: z.string().min(1, 'Informe o sobrenome.'),
-    email: z.string().min(1, 'Informe o email.').email('Email inválido.'),
-    phone: z.string().min(1, 'Informe o telefone.'),
-    password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
-    confirmPassword: z.string().min(1, 'Confirme a senha.'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'As senhas não conferem.',
-    path: ['confirmPassword'],
-  })
+const baseUserSchema = z.object({
+  name: z.string().min(1, 'Informe o nome.'),
+  lastName: z.string().min(1, 'Informe o sobrenome.'),
+  email: z.string().min(1, 'Informe o email.').email('Email inválido.'),
+  phone: z.string().min(1, 'Informe o telefone.'),
+  password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+  confirmPassword: z.string().min(1, 'Confirme a senha.'),
+})
 
-const editSchema = userSchema.partial()
+const createSchema = baseUserSchema.refine((data) => data.password === data.confirmPassword, {
+  message: 'As senhas não conferem.',
+  path: ['confirmPassword'],
+})
+
+const editSchema = baseUserSchema.partial()
 
 interface UserModalProps {
   open: boolean
@@ -96,7 +96,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       confirmPassword: confirmPassword || undefined,
     }
 
-    const schema = isEdit ? editSchema : userSchema
+    const schema = isEdit ? editSchema : createSchema
     const result = schema.safeParse(data)
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error))

@@ -23,6 +23,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import api from '../../services/api'
 import { signUpSchema, getFieldErrors } from '../../schemas/authSchemas'
+import { formatPhone } from '../../utils/phone'
 
 export default function SignUp() {
   const [name, setName] = useState('')
@@ -57,7 +58,13 @@ export default function SignUp() {
 
     setLoading(true)
     try {
-      await api.post('/auth/register', { name, lastName, email, phone, password })
+      await api.post('/auth/register', {
+        name,
+        lastName,
+        email,
+        phone: phone.replace(/\D/g, ''),
+        password,
+      })
       navigate('/signin')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao cadastrar.')
@@ -204,13 +211,14 @@ export default function SignUp() {
                 label="Telefone"
                 value={phone}
                 onChange={(e) => {
-                  setPhone(e.target.value)
+                  setPhone(formatPhone(e.target.value))
                   setFieldErrors((prev) => ({ ...prev, phone: '' }))
                 }}
                 margin="normal"
                 required
                 error={!!fieldErrors.phone}
                 helperText={fieldErrors.phone}
+                placeholder="(11) 99999-9999"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">

@@ -27,10 +27,18 @@ export class ServiceOrderObservationsService {
       throw new BadRequestException('Título é obrigatório.');
     }
 
+    const maxResult = await this.observationRepository
+      .createQueryBuilder('o')
+      .select('MAX(o.position)', 'max')
+      .where('o.serviceOrderId = :serviceOrderId', { serviceOrderId })
+      .getRawOne();
+    const position = (Number(maxResult?.max) || 0) + 1;
+
     const data: Partial<ServiceOrderObservation> = {
       serviceOrderId,
       title,
       description: body.description || null,
+      position,
       filename: null,
       originalName: null,
       mimetype: null,
@@ -59,8 +67,27 @@ export class ServiceOrderObservationsService {
   async findByServiceOrder(serviceOrderId: number): Promise<ServiceOrderObservation[]> {
     return this.observationRepository.find({
       where: { serviceOrderId },
-      order: { createdAt: 'DESC' },
+      order: { position: 'ASC', createdAt: 'DESC' },
     });
+  }
+
+  async reorder(serviceOrderId: number, ids: number[]): Promise<void> {
+    const observations = await this.observationRepository.find({
+      where: { serviceOrderId },
+    });
+    const byId = new Map(observations.map((o) => [o.id, o]));
+
+    let changed = false;
+    for (let i = 0; i < ids.length; i++) {
+      const observation = byId.get(ids[i]);
+      if (observation && observation.position !== i) {
+        observation.position = i;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await this.observationRepository.save(Array.from(byId.values()));
+    }
   }
 
   async findById(id: number): Promise<ServiceOrderObservation> {

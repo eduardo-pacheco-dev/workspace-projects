@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   ParseIntPipe,
@@ -33,6 +34,14 @@ export class ObservationsController {
   @Get(':serviceOrderId/observations')
   findByServiceOrder(@Param('serviceOrderId', ParseIntPipe) serviceOrderId: number) {
     return this.observationsService.findByServiceOrder(serviceOrderId);
+  }
+
+  @Patch(':serviceOrderId/observations/reorder')
+  reorder(
+    @Param('serviceOrderId', ParseIntPipe) serviceOrderId: number,
+    @Body() body: { ids: number[] },
+  ) {
+    return this.observationsService.reorder(serviceOrderId, body.ids);
   }
 
   @Get('observations/:observationId/file')

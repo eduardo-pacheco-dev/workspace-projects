@@ -34,6 +34,8 @@ import {
   Visibility,
   Download,
   NoteAdd,
+  ArrowUpward,
+  ArrowDownward,
 } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
@@ -224,6 +226,22 @@ export default function ServiceOrderDetail() {
       fetchObservations()
     } catch {
       setObsError('Não foi possível excluir a observação.')
+    }
+  }
+
+  const handleMoveObservation = async (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= observations.length) return
+    const next = [...observations]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    setObservations(next)
+    try {
+      await api.patch(`/service-orders/${id}/observations/reorder`, {
+        ids: next.map((o) => o.id),
+      })
+    } catch {
+      setObsError('Não foi possível reordenar as observações.')
+      fetchObservations()
     }
   }
 
@@ -424,7 +442,7 @@ export default function ServiceOrderDetail() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhuma observação cadastrada.</Typography>
         ) : (
           <List dense disablePadding sx={{ mb: 2 }}>
-            {observations.map((obs) => {
+            {observations.map((obs, index) => {
               const isImage = obs.mimetype?.startsWith('image/')
               const isPdf = obs.mimetype === 'application/pdf'
               return (
@@ -432,6 +450,16 @@ export default function ServiceOrderDetail() {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{obs.title}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <IconButton size="small" disabled={index === 0} onClick={() => handleMoveObservation(index, -1)}>
+                        <ArrowUpward fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        disabled={index === observations.length - 1}
+                        onClick={() => handleMoveObservation(index, 1)}
+                      >
+                        <ArrowDownward fontSize="small" />
+                      </IconButton>
                       <Typography variant="caption" color="text.secondary">
                         {new Date(obs.createdAt).toLocaleString('pt-BR')}
                       </Typography>

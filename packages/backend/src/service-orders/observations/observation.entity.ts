@@ -26,6 +26,9 @@ export class ServiceOrderObservation {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  @Column({ type: 'integer', default: 0 })
+  position: number;
+
   @Column({ type: 'text', nullable: true })
   filename: string | null;
 

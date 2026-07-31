@@ -13,6 +13,7 @@ import {
   Paper,
   Avatar,
   Grid,
+  LinearProgress,
 } from '@mui/material'
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
@@ -24,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import api from '../../services/api'
 import { signUpSchema, getFieldErrors } from '../../schemas/authSchemas'
 import { formatPhone } from '../../utils/phone'
+import { getPasswordStrength, getStrengthColor } from '../../utils/password'
 
 export default function SignUp() {
   const [name, setName] = useState('')
@@ -37,6 +39,7 @@ export default function SignUp() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const passwordStrength = getPasswordStrength(password)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -254,6 +257,46 @@ export default function SignUp() {
                   ),
                 }}
               />
+              {password && (
+                <Box sx={{ mt: 0.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Nível de segurança
+                    </Typography>
+                    <Typography variant="caption" fontWeight={600} sx={{ color: getStrengthColor(passwordStrength.score) }}>
+                      {passwordStrength.label}
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={passwordStrength.score}
+                    color={getStrengthColor(passwordStrength.score).replace('.main', '') as any}
+                    sx={{ height: 6, borderRadius: 3 }}
+                  />
+                  <Box component="ul" sx={{ m: 0, mt: 1, p: 0, listStyle: 'none' }}>
+                    {passwordStrength.criteria.map((criterion) => (
+                      <Box
+                        component="li"
+                        key={criterion.label}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.75,
+                          py: 0.25,
+                          color: criterion.met ? 'success.main' : 'text.disabled',
+                        }}
+                      >
+                        <Typography variant="caption" sx={{ fontSize: 14 }}>
+                          {criterion.met ? '✓' : '•'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ textDecoration: criterion.met ? 'line-through' : 'none' }}>
+                          {criterion.label}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
               <TextField
                 fullWidth
                 label="Confirmar Senha"

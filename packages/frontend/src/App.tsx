@@ -1,10 +1,10 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
+import SignIn from './pages/auth/SignIn'
+import SignUp from './pages/auth/SignUp'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
 import FreelancerDetail from './pages/freelancers/FreelancerDetail'
@@ -13,10 +13,13 @@ import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
 import ContractForm from './pages/contracts/ContractForm'
 import ContractDetail from './pages/contracts/ContractDetail'
+import NotFound from './pages/errors/NotFound'
+import InternalError from './pages/errors/InternalError'
+import Unauthorized from './pages/errors/Unauthorized'
 
 function ProtectedLayout() {
   const { isAuthenticated } = useAuth()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/signin" replace />
   return (
     <Layout>
       <Outlet />
@@ -28,10 +31,13 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/500" element={<InternalError />} />
+        <Route path="/401" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/freelancers" element={<FreelancersPage />} />

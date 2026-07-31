@@ -1,31 +1,42 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UsePipes } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  RegisterInput,
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from './schemas/auth.schemas';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
+  @UsePipes(new ZodValidationPipe(registerSchema))
+  async register(@Body() dto: RegisterInput) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto) {
+  @UsePipes(new ZodValidationPipe(loginSchema))
+  async login(@Body() dto: LoginInput) {
     return this.authService.login(dto);
   }
 
   @Post('forgot-password')
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+  @UsePipes(new ZodValidationPipe(forgotPasswordSchema))
+  async forgotPassword(@Body() dto: ForgotPasswordInput) {
     return this.authService.forgotPassword(dto);
   }
 
   @Post('reset-password')
-  async resetPassword(@Body() dto: ResetPasswordDto) {
+  @UsePipes(new ZodValidationPipe(resetPasswordSchema))
+  async resetPassword(@Body() dto: ResetPasswordInput) {
     return this.authService.resetPassword(dto);
   }
 }

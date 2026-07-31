@@ -36,6 +36,7 @@ import {
   NoteAdd,
   ArrowUpward,
   ArrowDownward,
+  FileDownload,
 } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
@@ -287,6 +288,32 @@ export default function ServiceOrderDetail() {
     }
   }
 
+  const handleExportObservations = () => {
+    if (observations.length === 0) return
+    const lines = observations.map((obs, index) => {
+      const attachment = obs.originalName ? `Anexo: ${obs.originalName}` : 'Anexo: -'
+      return [
+        `${index + 1}. ${obs.title}`,
+        `Data: ${new Date(obs.createdAt).toLocaleString('pt-BR')}`,
+        `Descrição: ${obs.description || '-'}`,
+        attachment,
+      ].join('\n')
+    })
+    const header = `Observações da Ordem de Serviço ${order?.numero || id}`
+    const separator = '='.repeat(header.length)
+    const content = `${header}\n${separator}\n\n${lines.join('\n\n')}\n`
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `observacoes-${order?.numero || id}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const handleEditComment = (c: Comment) => {
     setEditingId(c.id)
     setEditContent(c.content)
@@ -477,7 +504,18 @@ export default function ServiceOrderDetail() {
       </Paper>
 
       <Paper sx={{ p: 4, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Observações</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">Observações</Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<FileDownload />}
+            onClick={handleExportObservations}
+            disabled={observations.length === 0}
+          >
+            Exportar TXT
+          </Button>
+        </Box>
         <Divider sx={{ mb: 2 }} />
         {obsError && <Alert severity="error" sx={{ mb: 2 }}>{obsError}</Alert>}
         {observations.length === 0 ? (

@@ -13,6 +13,9 @@ import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
 import ContractForm from './pages/contracts/ContractForm'
 import ContractDetail from './pages/contracts/ContractDetail'
+import NotFound from './pages/errors/NotFound'
+import InternalError from './pages/errors/InternalError'
+import Unauthorized from './pages/errors/Unauthorized'
 
 function ProtectedLayout() {
   const { isAuthenticated } = useAuth()
@@ -32,6 +35,9 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/500" element={<InternalError />} />
+        <Route path="/401" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/freelancers" element={<FreelancersPage />} />

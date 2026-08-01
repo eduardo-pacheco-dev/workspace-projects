@@ -79,6 +79,7 @@ export default function OverviewPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [entries, setEntries] = useState<FinanceEntry[]>([])
   const [payables, setPayables] = useState<FinanceEntry[]>([])
+  const [receivables, setReceivables] = useState<FinanceEntry[]>([])
   const [topExpenses, setTopExpenses] = useState<FinanceEntry[]>([])
   const [limits, setLimits] = useState<LimitReportItem[]>([])
   const [error, setError] = useState('')
@@ -86,11 +87,14 @@ export default function OverviewPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [summaryRes, entriesRes, payablesRes, topExpensesRes, limitsRes] = await Promise.all([
+      const [summaryRes, entriesRes, payablesRes, receivablesRes, topExpensesRes, limitsRes] = await Promise.all([
         api.get('/finance/reports/summary', { params: { month, year } }),
         api.get('/finance/entries', { params: { month, year, limit: 5 } }),
         api.get('/finance/entries', {
           params: { month, year, type: 'expense', status: 'pending', limit: 10 },
+        }),
+        api.get('/finance/entries', {
+          params: { month, year, type: 'income', status: 'pending', limit: 10 },
         }),
         api.get('/finance/entries', {
           params: { month, year, type: 'expense', sortBy: 'amount', sortOrder: 'DESC', limit: 10 },
@@ -100,6 +104,7 @@ export default function OverviewPage() {
       setSummary(summaryRes.data)
       setEntries(Array.isArray(entriesRes.data) ? entriesRes.data : (entriesRes.data.data ?? []))
       setPayables(Array.isArray(payablesRes.data) ? payablesRes.data : (payablesRes.data.data ?? []))
+      setReceivables(Array.isArray(receivablesRes.data) ? receivablesRes.data : (receivablesRes.data.data ?? []))
       setTopExpenses(
         (Array.isArray(topExpensesRes.data) ? topExpensesRes.data : (topExpensesRes.data.data ?? []))
           .filter((e: FinanceEntry) => e.status !== 'canceled')
@@ -231,7 +236,7 @@ export default function OverviewPage() {
       </Grid>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="h6">Lançamentos Recentes</Typography>
             <Button size="small" onClick={() => navigate('/finance?tab=3')}>
@@ -270,42 +275,60 @@ export default function OverviewPage() {
             </Table>
           </TableContainer>
         </Grid>
-        <Grid item xs={12} md={5}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6">Limites de Gastos</Typography>
-            <Button size="small" onClick={() => navigate('/finance?tab=5')}>
-              Ver todos
-            </Button>
-          </Box>
-          <Paper sx={{ p: 2 }}>
-            {limits.map((limit) => (
-              <Box key={limit.id} sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">{limit.category}</Typography>
-                  <Typography variant="caption">
-                    {formatCurrency(limit.spent)} / {formatCurrency(limit.amount)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={Math.min(limit.percentage, 100)}
-                      color={progressColor(limit.percentage)}
-                    />
-                  </Box>
-                  <Typography variant="caption">{limit.percentage.toFixed(0)}%</Typography>
-                </Box>
-              </Box>
-            ))}
-            {limits.length === 0 && (
-              <Typography variant="body2" color="text.secondary" align="center">
-                Nenhum limite de gastos para este período.
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
       </Grid>
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">
+            Limite de Gastos de {monthNames[month - 1]} de {year}
+          </Typography>
+          <Button size="small" onClick={() => navigate('/finance?tab=5')}>
+            Ver todos
+          </Button>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Categoria</TableCell>
+                <TableCell align="right">Limite</TableCell>
+                <TableCell align="right">Gasto</TableCell>
+                <TableCell align="right">Restante</TableCell>
+                <TableCell sx={{ width: '30%' }}>Progresso</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {limits.map((limit) => (
+                <TableRow key={limit.id} hover>
+                  <TableCell>{limit.category}</TableCell>
+                  <TableCell align="right">{formatCurrency(limit.amount)}</TableCell>
+                  <TableCell align="right">{formatCurrency(limit.spent)}</TableCell>
+                  <TableCell align="right">{formatCurrency(limit.remaining)}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min(limit.percentage, 100)}
+                          color={progressColor(limit.percentage)}
+                        />
+                      </Box>
+                      <Typography variant="caption">{limit.percentage.toFixed(0)}%</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {limits.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    Nenhum limite de gastos para este período.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -342,6 +365,49 @@ export default function OverviewPage() {
                 <TableRow>
                   <TableCell colSpan={4} align="center">
                     Nenhuma conta a pagar para este período.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Contas a Receber</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total: {formatCurrency(receivables.reduce((sum, e) => sum + e.amount, 0))}
+            </Typography>
+            <Button size="small" onClick={() => navigate('/finance?tab=3')}>
+              Ver todos
+            </Button>
+          </Box>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Data</TableCell>
+                <TableCell>Descrição</TableCell>
+                <TableCell>Categoria</TableCell>
+                <TableCell align="right">Valor</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {receivables.map((entry) => (
+                <TableRow key={entry.id} hover>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
+                  <TableCell>{entry.description}</TableCell>
+                  <TableCell>{entry.category}</TableCell>
+                  <TableCell align="right">{formatCurrency(entry.amount)}</TableCell>
+                </TableRow>
+              ))}
+              {receivables.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    Nenhuma conta a receber para este período.
                   </TableCell>
                 </TableRow>
               )}

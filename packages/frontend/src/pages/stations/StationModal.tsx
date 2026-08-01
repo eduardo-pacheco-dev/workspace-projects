@@ -18,7 +18,7 @@ interface StationModalProps {
   open: boolean
   editId?: number | null
   onClose: () => void
-  onSaved: () => void
+  onSaved: (record?: any) => void
 }
 
 const operadoras = ['TIM', 'CLARO', 'VIVO', 'Outras']
@@ -65,12 +65,13 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
     if (longitude) payload.longitude = Number(longitude)
 
     try {
+      let saved: any
       if (isEdit) {
-        await api.patch(`/stations/${editId}`, payload)
+        saved = await api.patch(`/stations/${editId}`, payload)
       } else {
-        await api.post('/stations', payload)
+        saved = await api.post('/stations', payload)
       }
-      onSaved()
+      onSaved(saved.data)
       handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')

@@ -13,6 +13,7 @@ import { ServiceOrdersModule } from './service-orders/service-orders.module';
 import { ServiceOrderObservationsModule } from './service-orders/observations/observations.module';
 import { FinanceModule } from './finance/finance.module';
 import { StationsModule } from './stations/stations.module';
+import { RadioLinksModule } from './radio-links/radio-links.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -54,6 +55,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     ServiceOrderObservationsModule,
     FinanceModule,
     StationsModule,
+    RadioLinksModule,
     ...(dbType === 'sqljs' ? [SeedModule] : []),
   ],
 })

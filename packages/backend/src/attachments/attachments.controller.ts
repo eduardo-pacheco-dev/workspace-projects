@@ -65,6 +65,15 @@ export class AttachmentsController {
     return this.attachmentsService.uploadForProject(projectId, file);
   }
 
+  @Post('upload/client/:clientId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadForClient(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadForClient(clientId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
@@ -90,6 +99,11 @@ export class AttachmentsController {
     return this.attachmentsService.findByProject(projectId);
   }
 
+  @Get('client/:clientId')
+  findByClient(@Param('clientId', ParseIntPipe) clientId: number) {
+    return this.attachmentsService.findByClient(clientId);
+  }
+
   @Get('file/:id')
   async getFile(
     @Param('id', ParseIntPipe) id: number,
@@ -98,15 +112,17 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.projectId
-        ? `project-${attachment.projectId}`
-        : attachment.radioLinkId
-          ? `radio-link-${attachment.radioLinkId}`
-          : attachment.stationId
-            ? `station-${attachment.stationId}`
-            : attachment.serviceOrderId
-              ? `service-order-${attachment.serviceOrderId}`
-              : `job-${attachment.jobId}`,
+      attachment.clientId
+        ? `client-${attachment.clientId}`
+        : attachment.projectId
+          ? `project-${attachment.projectId}`
+          : attachment.radioLinkId
+            ? `radio-link-${attachment.radioLinkId}`
+            : attachment.stationId
+              ? `station-${attachment.stationId}`
+              : attachment.serviceOrderId
+                ? `service-order-${attachment.serviceOrderId}`
+                : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {
@@ -125,15 +141,17 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.projectId
-        ? `project-${attachment.projectId}`
-        : attachment.radioLinkId
-          ? `radio-link-${attachment.radioLinkId}`
-          : attachment.stationId
-            ? `station-${attachment.stationId}`
-            : attachment.serviceOrderId
-              ? `service-order-${attachment.serviceOrderId}`
-              : `job-${attachment.jobId}`,
+      attachment.clientId
+        ? `client-${attachment.clientId}`
+        : attachment.projectId
+          ? `project-${attachment.projectId}`
+          : attachment.radioLinkId
+            ? `radio-link-${attachment.radioLinkId}`
+            : attachment.stationId
+              ? `station-${attachment.stationId}`
+              : attachment.serviceOrderId
+                ? `service-order-${attachment.serviceOrderId}`
+                : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {

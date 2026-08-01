@@ -38,6 +38,15 @@ export class AttachmentsController {
     return this.attachmentsService.uploadForServiceOrder(serviceOrderId, file);
   }
 
+  @Post('upload/station/:stationId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadForStation(
+    @Param('stationId', ParseIntPipe) stationId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadForStation(stationId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
@@ -48,6 +57,11 @@ export class AttachmentsController {
     return this.attachmentsService.findByServiceOrder(serviceOrderId);
   }
 
+  @Get('station/:stationId')
+  findByStation(@Param('stationId', ParseIntPipe) stationId: number) {
+    return this.attachmentsService.findByStation(stationId);
+  }
+
   @Get('file/:id')
   async getFile(
     @Param('id', ParseIntPipe) id: number,
@@ -56,7 +70,11 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.serviceOrderId ? `service-order-${attachment.serviceOrderId}` : `job-${attachment.jobId}`,
+      attachment.stationId
+        ? `station-${attachment.stationId}`
+        : attachment.serviceOrderId
+          ? `service-order-${attachment.serviceOrderId}`
+          : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {
@@ -75,7 +93,11 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.serviceOrderId ? `service-order-${attachment.serviceOrderId}` : `job-${attachment.jobId}`,
+      attachment.stationId
+        ? `station-${attachment.stationId}`
+        : attachment.serviceOrderId
+          ? `service-order-${attachment.serviceOrderId}`
+          : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {

@@ -94,6 +94,21 @@ export class CommentsController {
     return this.commentsService.findByProject(projectId);
   }
 
+  @Post('client/:clientId')
+  createForClient(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForClient(clientId, dto, author);
+  }
+
+  @Get('client/:clientId')
+  findByClient(@Param('clientId', ParseIntPipe) clientId: number) {
+    return this.commentsService.findByClient(clientId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

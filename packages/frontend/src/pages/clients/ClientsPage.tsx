@@ -21,6 +21,7 @@ import {
   MenuItem,
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import ClientModal from './ClientModal'
 
@@ -41,6 +42,7 @@ type SortBy = 'id' | 'nome' | 'documento' | 'email' | 'telefone' | 'cidade' | 's
 type SortOrder = 'ASC' | 'DESC'
 
 export default function ClientsPage() {
+  const navigate = useNavigate()
   const [clients, setClients] = useState<Client[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -176,7 +178,12 @@ export default function ClientsPage() {
           </TableHead>
           <TableBody>
             {clients.map((c) => (
-              <TableRow key={c.id} hover>
+              <TableRow
+                key={c.id}
+                hover
+                onClick={() => navigate(`/clients/${c.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{c.nome}</TableCell>
                 <TableCell>{c.documento || '-'}</TableCell>
                 <TableCell>{c.email || '-'}</TableCell>
@@ -193,10 +200,20 @@ export default function ClientsPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: c.id })}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setModal({ open: true, editId: c.id })
+                    }}
+                  >
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(c.id)}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(c.id)
+                    }}
+                  >
                     <Delete />
                   </IconButton>
                 </TableCell>

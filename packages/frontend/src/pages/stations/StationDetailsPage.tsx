@@ -20,6 +20,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  TextField,
+  CircularProgress,
 } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -31,7 +33,9 @@ import AttachFileIcon from '@mui/icons-material/AttachFile'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import DownloadIcon from '@mui/icons-material/Download'
+import SendIcon from '@mui/icons-material/Send'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatDateTime } from '../../utils/format'
 import StationModal from './StationModal'
 
@@ -57,6 +61,13 @@ interface Attachment {
   size: number
 }
 
+interface Comment {
+  id: number
+  content: string
+  author: string
+  createdAt: string
+}
+
 const operadoraColors: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
   TIM: 'info',
   CLARO: 'warning',
@@ -67,6 +78,7 @@ const operadoraColors: Record<string, 'success' | 'info' | 'warning' | 'default'
 export default function StationDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const stationId = Number(id)
   const [station, setStation] = useState<Station | null>(null)
   const [error, setError] = useState('')
@@ -75,6 +87,11 @@ export default function StationDetailsPage() {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editContent, setEditContent] = useState('')
 
   const fetchData = useCallback(async () => {
     try {
@@ -98,6 +115,62 @@ export default function StationDetailsPage() {
   useEffect(() => {
     fetchAttachments()
   }, [fetchAttachments])
+
+  const fetchComments = useCallback(() => {
+    api.get(`/comments/station/${stationId}`)
+      .then((res) => setComments(res.data))
+      .catch(() => {})
+  }, [stationId])
+
+  useEffect(() => {
+    fetchComments()
+  }, [fetchComments])
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return
+    setSubmitting(true)
+    try {
+      await api.post(`/comments/station/${stationId}`, { content: newComment })
+      setNewComment('')
+      fetchComments()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível enviar o comentário.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleEditComment = (c: Comment) => {
+    setEditingId(c.id)
+    setEditContent(c.content)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditContent('')
+  }
+
+  const handleSaveEdit = async (commentId: number) => {
+    if (!editContent.trim()) return
+    try {
+      await api.patch(`/comments/${commentId}`, { content: editContent })
+      setEditingId(null)
+      setEditContent('')
+      fetchComments()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível editar o comentário.')
+    }
+  }
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este comentário?')) return
+    try {
+      await api.delete(`/comments/${commentId}`)
+      fetchComments()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível excluir o comentário.')
+    }
+  }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -333,6 +406,75 @@ export default function StationDetailsPage() {
                 })}
               </List>
             )}
+          </Paper>
+
+          <Paper sx={{ p: 3, mt: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+            <Divider sx={{ mb: 2 }} />
+            {comments.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhum comentário ainda.</Typography>
+            ) : (
+              <List dense disablePadding sx={{ mb: 2 }}>
+                {comments.map((c) => {
+                  const isOwner = user?.email === c.author
+                  return (
+                    <ListItem key={c.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="subtitle2">{c.author}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(c.createdAt).toLocaleString('pt-BR')}
+                          </Typography>
+                          {isOwner && editingId !== c.id && (
+                            <>
+                              <IconButton size="small" onClick={() => handleEditComment(c)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" onClick={() => handleDeleteComment(c.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+                      {editingId === c.id ? (
+                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            autoFocus
+                          />
+                          <IconButton size="small" color="primary" onClick={() => handleSaveEdit(c.id)}>
+                            <SendIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={handleCancelEdit}>
+                            <ArrowBackIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ) : (
+                        <Typography variant="body2">{c.content}</Typography>
+                      )}
+                    </ListItem>
+                  )
+                })}
+              </List>
+            )}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Escreva um comentário..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment() } }}
+                disabled={submitting}
+              />
+              <IconButton color="primary" onClick={handleSubmitComment} disabled={submitting || !newComment.trim()}>
+                {submitting ? <CircularProgress size={20} /> : <SendIcon />}
+              </IconButton>
+            </Box>
           </Paper>
 
           <StationModal

@@ -49,6 +49,21 @@ export class CommentsController {
     return this.commentsService.findByServiceOrder(serviceOrderId);
   }
 
+  @Post('station/:stationId')
+  createForStation(
+    @Param('stationId', ParseIntPipe) stationId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForStation(stationId, dto, author);
+  }
+
+  @Get('station/:stationId')
+  findByStation(@Param('stationId', ParseIntPipe) stationId: number) {
+    return this.commentsService.findByStation(stationId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

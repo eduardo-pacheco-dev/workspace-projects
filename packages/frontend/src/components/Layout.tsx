@@ -20,8 +20,6 @@ import DescriptionIcon from '@mui/icons-material/Description'
 import GroupIcon from '@mui/icons-material/Group'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -44,9 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Jobs', path: '/freelancers?tab=1', icon: <WorkIcon /> },
     { label: 'Proposals', path: '/freelancers?tab=2', icon: <SendIcon /> },
     { label: 'Contracts', path: '/freelancers?tab=3', icon: <DescriptionIcon /> },
-    { label: 'Entries', path: '/entries', icon: <AttachMoneyIcon /> },
-    { label: 'Reports', path: '/reports', icon: <BarChartIcon /> },
-    { label: 'Spending Limits', path: '/limits', icon: <AccountBalanceWalletIcon /> },
+    { label: 'Finance', path: '/finance', icon: <AttachMoneyIcon /> },
   ]
 
   return (

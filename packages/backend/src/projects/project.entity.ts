@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { Station } from '../stations/station.entity';
 
 @Entity()
 export class Project {
@@ -34,6 +37,10 @@ export class Project {
 
   @Column({ type: 'text', default: 'ativo' })
   status: string;
+
+  @ManyToMany(() => Station)
+  @JoinTable({ name: 'project_station' })
+  stations: Station[];
 
   @CreateDateColumn()
   createdAt: Date;

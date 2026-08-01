@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './project.entity';
+import { Station } from '../stations/station.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
@@ -20,6 +21,8 @@ export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private readonly projectsRepository: Repository<Project>,
+    @InjectRepository(Station)
+    private readonly stationsRepository: Repository<Station>,
   ) {}
 
   async create(dto: CreateProjectDto): Promise<Project> {
@@ -88,5 +91,34 @@ export class ProjectsService {
   async delete(id: number): Promise<void> {
     const result = await this.projectsRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Projeto não encontrado');
+  }
+
+  async addStation(projectId: number, stationId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const station = await this.stationsRepository.findOne({ where: { id: stationId } });
+    if (!station) throw new NotFoundException('Estação não encontrada');
+
+    const stations = await this.findStations(projectId);
+    if (!stations.some((s) => s.id === stationId)) {
+      stations.push(station);
+    }
+    project.stations = stations;
+    return this.projectsRepository.save(project);
+  }
+
+  async removeStation(projectId: number, stationId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const stations = await this.findStations(projectId);
+    project.stations = stations.filter((s) => s.id !== stationId);
+    return this.projectsRepository.save(project);
+  }
+
+  async findStations(projectId: number): Promise<Station[]> {
+    const project = await this.projectsRepository.findOne({
+      where: { id: projectId },
+      relations: ['stations'],
+    });
+    if (!project) throw new NotFoundException('Projeto não encontrado');
+    return project.stations;
   }
 }

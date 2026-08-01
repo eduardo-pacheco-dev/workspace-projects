@@ -49,4 +49,25 @@ export class ProjectsController {
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.projectsService.delete(id);
   }
+
+  @Get(':id/stations')
+  findStations(@Param('id', ParseIntPipe) id: number) {
+    return this.projectsService.findStations(id);
+  }
+
+  @Post(':id/stations')
+  addStation(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { stationId: number },
+  ) {
+    return this.projectsService.addStation(id, Number(body.stationId));
+  }
+
+  @Delete(':id/stations/:stationId')
+  removeStation(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('stationId', ParseIntPipe) stationId: number,
+  ) {
+    return this.projectsService.removeStation(id, stationId);
+  }
 }

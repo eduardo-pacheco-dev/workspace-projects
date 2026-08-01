@@ -19,11 +19,11 @@ const typeOptions = ['income', 'expense', 'transfer']
 const statusOptions = ['pending', 'paid', 'canceled']
 
 const baseSchema = z.object({
-  type: z.enum(['income', 'expense', 'transfer'], 'Invalid type.'),
-  description: z.string().min(1, 'Enter a description.'),
-  category: z.string().min(1, 'Enter a category.'),
-  amount: z.number().positive('Enter an amount greater than zero.'),
-  date: z.string().min(1, 'Enter a date.'),
+  type: z.enum(['income', 'expense', 'transfer'], 'Tipo inválido.'),
+  description: z.string().min(1, 'Informe uma descrição.'),
+  category: z.string().min(1, 'Informe uma categoria.'),
+  amount: z.number().positive('Informe um valor maior que zero.'),
+  date: z.string().min(1, 'Informe uma data.'),
   paymentMethod: z.string().optional(),
   status: z.string().optional(),
   notes: z.string().optional(),
@@ -33,15 +33,15 @@ const createSchema = baseSchema
 const editSchema = baseSchema.partial()
 
 const typeLabels: Record<string, string> = {
-  income: 'Income',
-  expense: 'Expense',
-  transfer: 'Transfer',
+  income: 'Receita',
+  expense: 'Despesa',
+  transfer: 'Transferência',
 }
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pending',
-  paid: 'Paid',
-  canceled: 'Canceled',
+  pending: 'Pendente',
+  paid: 'Pago',
+  canceled: 'Cancelado',
 }
 
 interface EntryModalProps {
@@ -95,7 +95,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             setStatus(d.status || 'paid')
             setNotes(d.notes || '')
           })
-          .catch((err) => setError(err.response?.data?.message || 'Could not load data.'))
+          .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
           .finally(() => setLoading(false))
       }
     }
@@ -140,7 +140,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not save. Try again.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -156,7 +156,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Edit Entry' : 'New Entry'}</DialogTitle>
+        <DialogTitle>{isEdit ? 'Editar Lançamento' : 'Novo Lançamento'}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0 }}>
@@ -164,7 +164,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
               <TextField
                 fullWidth
                 select
-                label="Type"
+                label="Tipo"
                 value={type}
                 onChange={(e) => { setType(e.target.value); clearFieldError('type') }}
                 margin="normal"
@@ -193,7 +193,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
           </Grid>
           <TextField
             fullWidth
-            label="Description"
+            label="Descrição"
             value={description}
             onChange={(e) => { setDescription(e.target.value); clearFieldError('description') }}
             margin="normal"
@@ -205,7 +205,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Category"
+                label="Categoria"
                 value={category}
                 onChange={(e) => { setCategory(e.target.value); clearFieldError('category') }}
                 margin="normal"
@@ -217,7 +217,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Amount (R$)"
+                label="Valor (R$)"
                 type="number"
                 inputProps={{ step: '0.01', min: '0' }}
                 value={amount}
@@ -233,7 +233,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Date"
+                label="Data"
                 type="date"
                 value={date}
                 onChange={(e) => { setDate(e.target.value); clearFieldError('date') }}
@@ -247,17 +247,17 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Payment Method"
+                label="Forma de Pagamento"
                 value={paymentMethod}
                 onChange={(e) => { setPaymentMethod(e.target.value); clearFieldError('paymentMethod') }}
                 margin="normal"
-                placeholder="e.g. Pix, Credit Card, Cash"
+                placeholder="ex.: Pix, Cartão de Crédito, Dinheiro"
               />
             </Grid>
           </Grid>
           <TextField
             fullWidth
-            label="Notes"
+            label="Observações"
             value={notes}
             onChange={(e) => { setNotes(e.target.value); clearFieldError('notes') }}
             margin="normal"
@@ -266,9 +266,9 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+          <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
           <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Save' : 'Create')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
           </Button>
         </DialogActions>
       </Box>

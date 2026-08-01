@@ -88,7 +88,7 @@ export class FinanceService {
 
   async findById(id: number): Promise<FinanceEntry> {
     const entry = await this.entriesRepository.findOne({ where: { id } });
-    if (!entry) throw new NotFoundException('Entry not found');
+    if (!entry) throw new NotFoundException('Lançamento não encontrado');
     return entry;
   }
 
@@ -101,7 +101,7 @@ export class FinanceService {
   async delete(id: number): Promise<void> {
     const result = await this.entriesRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException('Entry not found');
+      throw new NotFoundException('Lançamento não encontrado');
     }
   }
 }

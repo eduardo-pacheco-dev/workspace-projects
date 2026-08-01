@@ -17,10 +17,10 @@ import api from '../../services/api'
 import { monthNames } from '../../utils/format'
 
 const baseSchema = z.object({
-  category: z.string().min(1, 'Enter a category.'),
-  month: z.number().int().min(1, 'Invalid month.').max(12, 'Invalid month.'),
-  year: z.number().int().min(2000, 'Invalid year.').max(2100, 'Invalid year.'),
-  amount: z.number().positive('Enter an amount greater than zero.'),
+  category: z.string().min(1, 'Informe uma categoria.'),
+  month: z.number().int().min(1, 'Mês inválido.').max(12, 'Mês inválido.'),
+  year: z.number().int().min(2000, 'Ano inválido.').max(2100, 'Ano inválido.'),
+  amount: z.number().positive('Informe um valor maior que zero.'),
 })
 
 const createSchema = baseSchema
@@ -65,7 +65,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
             setYear(d.year || defaultYear || new Date().getFullYear())
             setAmount(d.amount != null ? String(d.amount) : '')
           })
-          .catch((err) => setError(err.response?.data?.message || 'Could not load data.'))
+          .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
           .finally(() => setLoading(false))
       }
     }
@@ -106,7 +106,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not save. Try again.')
+      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -122,12 +122,12 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Edit Spending Limit' : 'New Spending Limit'}</DialogTitle>
+        <DialogTitle>{isEdit ? 'Editar Limite de Gasto' : 'Novo Limite de Gasto'}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             fullWidth
-            label="Category"
+            label="Categoria"
             value={category}
             onChange={(e) => { setCategory(e.target.value); clearFieldError('category') }}
             margin="normal"
@@ -140,7 +140,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
               <TextField
                 fullWidth
                 select
-                label="Month"
+                label="Mês"
                 value={month}
                 onChange={(e) => { setMonth(Number(e.target.value)); clearFieldError('month') }}
                 margin="normal"
@@ -155,7 +155,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Year"
+                label="Ano"
                 type="number"
                 value={year}
                 onChange={(e) => { setYear(Number(e.target.value)); clearFieldError('year') }}
@@ -168,7 +168,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
           </Grid>
           <TextField
             fullWidth
-            label="Limit Amount (R$)"
+            label="Valor do Limite (R$)"
             type="number"
             inputProps={{ step: '0.01', min: '0' }}
             value={amount}
@@ -180,9 +180,9 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+          <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
           <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Save' : 'Create')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
           </Button>
         </DialogActions>
       </Box>

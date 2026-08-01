@@ -4,65 +4,65 @@ export const financeEntryTypes = ['income', 'expense', 'transfer'] as const;
 export const financeEntryStatus = ['pending', 'paid', 'canceled'] as const;
 
 export const createFinanceEntrySchema = z.object({
-  type: z.enum(financeEntryTypes, 'Invalid type.'),
-  description: z.string().min(1, 'Description is required.'),
-  category: z.string().min(1, 'Category is required.'),
-  amount: z.number().positive('Amount must be greater than zero.'),
-  date: z.string().min(1, 'Date is required.'),
+  type: z.enum(financeEntryTypes, 'Tipo inválido.'),
+  description: z.string().min(1, 'Informe uma descrição.'),
+  category: z.string().min(1, 'Informe uma categoria.'),
+  amount: z.number().positive('O valor deve ser maior que zero.'),
+  date: z.string().min(1, 'Informe uma data.'),
   paymentMethod: z.string().optional(),
-  status: z.enum(financeEntryStatus, 'Invalid status.').optional(),
+  status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
   notes: z.string().optional(),
 });
 
 export const updateFinanceEntrySchema = z
   .object({
-    type: z.enum(financeEntryTypes, 'Invalid type.').optional(),
-    description: z.string().min(1, 'Description is required.').optional(),
-    category: z.string().min(1, 'Category is required.').optional(),
-    amount: z.number().positive('Amount must be greater than zero.').optional(),
-    date: z.string().min(1, 'Date is required.').optional(),
+    type: z.enum(financeEntryTypes, 'Tipo inválido.').optional(),
+    description: z.string().min(1, 'Informe uma descrição.').optional(),
+    category: z.string().min(1, 'Informe uma categoria.').optional(),
+    amount: z.number().positive('O valor deve ser maior que zero.').optional(),
+    date: z.string().min(1, 'Informe uma data.').optional(),
     paymentMethod: z.string().optional(),
-    status: z.enum(financeEntryStatus, 'Invalid status.').optional(),
+    status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
     notes: z.string().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
-    message: 'Provide at least one field to update.',
+    message: 'Informe ao menos um campo para atualizar.',
   });
 
 export const createSpendingLimitSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
+  category: z.string().min(1, 'Informe uma categoria.'),
   month: z
     .number()
-    .int('Invalid month.')
-    .min(1, 'Invalid month.')
-    .max(12, 'Invalid month.'),
+    .int('Mês inválido.')
+    .min(1, 'Mês inválido.')
+    .max(12, 'Mês inválido.'),
   year: z
     .number()
-    .int('Invalid year.')
-    .min(2000, 'Invalid year.')
-    .max(2100, 'Invalid year.'),
-  amount: z.number().positive('Amount must be greater than zero.'),
+    .int('Ano inválido.')
+    .min(2000, 'Ano inválido.')
+    .max(2100, 'Ano inválido.'),
+  amount: z.number().positive('O valor deve ser maior que zero.'),
 });
 
 export const updateSpendingLimitSchema = z
   .object({
-    category: z.string().min(1, 'Category is required.').optional(),
+    category: z.string().min(1, 'Informe uma categoria.').optional(),
     month: z
       .number()
-      .int('Invalid month.')
-      .min(1, 'Invalid month.')
-      .max(12, 'Invalid month.')
+      .int('Mês inválido.')
+      .min(1, 'Mês inválido.')
+      .max(12, 'Mês inválido.')
       .optional(),
     year: z
       .number()
-      .int('Invalid year.')
-      .min(2000, 'Invalid year.')
-      .max(2100, 'Invalid year.')
+      .int('Ano inválido.')
+      .min(2000, 'Ano inválido.')
+      .max(2100, 'Ano inválido.')
       .optional(),
-    amount: z.number().positive('Amount must be greater than zero.').optional(),
+    amount: z.number().positive('O valor deve ser maior que zero.').optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
-    message: 'Provide at least one field to update.',
+    message: 'Informe ao menos um campo para atualizar.',
   });
 
 export type CreateFinanceEntryInput = z.infer<typeof createFinanceEntrySchema>;

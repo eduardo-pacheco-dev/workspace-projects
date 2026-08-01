@@ -47,9 +47,9 @@ const typeColors: Record<string, 'success' | 'error' | 'info' | 'default'> = {
 }
 
 const typeLabels: Record<string, string> = {
-  income: 'Income',
-  expense: 'Expense',
-  transfer: 'Transfer',
+  income: 'Receita',
+  expense: 'Despesa',
+  transfer: 'Transferência',
 }
 
 const statusColors: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
@@ -59,9 +59,9 @@ const statusColors: Record<string, 'default' | 'warning' | 'success' | 'error'> 
 }
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pending',
-  paid: 'Paid',
-  canceled: 'Canceled',
+  pending: 'Pendente',
+  paid: 'Pago',
+  canceled: 'Cancelado',
 }
 
 export default function EntriesPage() {
@@ -103,7 +103,7 @@ export default function EntriesPage() {
         setTotal(res.data.total ?? 0)
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not load the list.')
+      setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
   }, [page, rowsPerPage, sortBy, sortOrder, search, typeFilter, statusFilter, month, year])
 
@@ -121,12 +121,12 @@ export default function EntriesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this entry?')) return
+    if (!confirm('Tem certeza que deseja excluir este lançamento?')) return
     try {
       await api.delete(`/finance/entries/${id}`)
       fetchData()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not delete. Try again.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 
@@ -140,31 +140,31 @@ export default function EntriesPage() {
   }
 
   const columns: { id: SortBy; label: string }[] = [
-    { id: 'date', label: 'Date' },
-    { id: 'type', label: 'Type' },
-    { id: 'description', label: 'Description' },
-    { id: 'category', label: 'Category' },
-    { id: 'amount', label: 'Amount' },
+    { id: 'date', label: 'Data' },
+    { id: 'type', label: 'Tipo' },
+    { id: 'description', label: 'Descrição' },
+    { id: 'category', label: 'Categoria' },
+    { id: 'amount', label: 'Valor' },
     { id: 'status', label: 'Status' },
   ]
 
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Entries</Typography>
+        <Typography variant="h4">Lançamentos</Typography>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => setModal({ open: true, editId: null })}
         >
-          New Entry
+          Novo Lançamento
         </Button>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }}>
         <TextField
           size="small"
-          label="Search"
+          label="Buscar"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value)
@@ -174,7 +174,7 @@ export default function EntriesPage() {
         <TextField
           size="small"
           select
-          label="Type"
+          label="Tipo"
           value={typeFilter}
           onChange={(e) => {
             setTypeFilter(e.target.value)
@@ -182,10 +182,10 @@ export default function EntriesPage() {
           }}
           sx={{ minWidth: 140 }}
         >
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="income">Income</MenuItem>
-          <MenuItem value="expense">Expense</MenuItem>
-          <MenuItem value="transfer">Transfer</MenuItem>
+          <MenuItem value="">Todos</MenuItem>
+          <MenuItem value="income">Receita</MenuItem>
+          <MenuItem value="expense">Despesa</MenuItem>
+          <MenuItem value="transfer">Transferência</MenuItem>
         </TextField>
         <TextField
           size="small"
@@ -198,15 +198,15 @@ export default function EntriesPage() {
           }}
           sx={{ minWidth: 140 }}
         >
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="paid">Paid</MenuItem>
-          <MenuItem value="canceled">Canceled</MenuItem>
+          <MenuItem value="">Todos</MenuItem>
+          <MenuItem value="pending">Pendente</MenuItem>
+          <MenuItem value="paid">Pago</MenuItem>
+          <MenuItem value="canceled">Cancelado</MenuItem>
         </TextField>
         <TextField
           size="small"
           select
-          label="Month"
+          label="Mês"
           value={month}
           onChange={(e) => {
             setMonth(Number(e.target.value))
@@ -220,7 +220,7 @@ export default function EntriesPage() {
         </TextField>
         <TextField
           size="small"
-          label="Year"
+          label="Ano"
           type="number"
           value={year}
           onChange={(e) => {
@@ -248,7 +248,7 @@ export default function EntriesPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
-              <TableCell>Actions</TableCell>
+              <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -277,7 +277,7 @@ export default function EntriesPage() {
             {entries.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center">
-                  No entries found.
+                  Nenhum lançamento encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -292,8 +292,8 @@ export default function EntriesPage() {
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        labelRowsPerPage="Rows per page:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+        labelRowsPerPage="Linhas por página:"
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
       />
 
       <EntryModal

@@ -48,7 +48,7 @@ export default function LimitsPage() {
       const res = await api.get('/finance/reports/limits', { params: { month, year } })
       setLimits(res.data.data ?? [])
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not load the limits.')
+      setError(err.response?.data?.message || 'Não foi possível carregar os limites.')
     }
   }, [month, year])
 
@@ -57,12 +57,12 @@ export default function LimitsPage() {
   }, [fetchData])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this spending limit?')) return
+    if (!confirm('Tem certeza que deseja excluir este limite de gasto?')) return
     try {
       await api.delete(`/finance/limits/${id}`)
       fetchData()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not delete. Try again.')
+      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     }
   }
 
@@ -75,13 +75,13 @@ export default function LimitsPage() {
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Spending Limits</Typography>
+        <Typography variant="h4">Limites de Gastos</Typography>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => setModal({ open: true, editId: null })}
         >
-          New Limit
+          Novo Limite
         </Button>
       </Box>
 
@@ -89,7 +89,7 @@ export default function LimitsPage() {
         <TextField
           size="small"
           select
-          label="Month"
+          label="Mês"
           value={month}
           onChange={(e) => setMonth(Number(e.target.value))}
           sx={{ minWidth: 130 }}
@@ -100,7 +100,7 @@ export default function LimitsPage() {
         </TextField>
         <TextField
           size="small"
-          label="Year"
+          label="Ano"
           type="number"
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
@@ -114,13 +114,13 @@ export default function LimitsPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Category</TableCell>
-              <TableCell>Period</TableCell>
-              <TableCell align="right">Limit</TableCell>
-              <TableCell align="right">Spent</TableCell>
-              <TableCell align="right">Remaining</TableCell>
-              <TableCell sx={{ minWidth: 180 }}>Progress</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Categoria</TableCell>
+              <TableCell>Período</TableCell>
+              <TableCell align="right">Limite</TableCell>
+              <TableCell align="right">Gasto</TableCell>
+              <TableCell align="right">Restante</TableCell>
+              <TableCell sx={{ minWidth: 180 }}>Progresso</TableCell>
+              <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -134,7 +134,7 @@ export default function LimitsPage() {
                   {limit.remaining >= 0 ? (
                     formatCurrency(limit.remaining)
                   ) : (
-                    <Chip size="small" label="Over limit" color="error" />
+                    <Chip size="small" label="Acima do limite" color="error" />
                   )}
                 </TableCell>
                 <TableCell>
@@ -162,7 +162,7 @@ export default function LimitsPage() {
             {limits.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center">
-                  No spending limits found for this period.
+                  Nenhum limite de gastos encontrado para este período.
                 </TableCell>
               </TableRow>
             )}

@@ -59,6 +59,6 @@ export class FinanceController {
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.financeService.delete(id);
-    return { message: 'Entry deleted successfully' };
+    return { message: 'Lançamento excluído com sucesso' };
   }
 }

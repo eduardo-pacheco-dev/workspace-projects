@@ -21,10 +21,10 @@ export default function FinancePage() {
   return (
     <Box>
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label="Overview" />
-        <Tab label="Entries" />
-        <Tab label="Reports" />
-        <Tab label="Spending Limits" />
+        <Tab label="Visão Geral" />
+        <Tab label="Lançamentos" />
+        <Tab label="Relatórios" />
+        <Tab label="Limites de Gastos" />
       </Tabs>
       {tab === 0 && <OverviewPage />}
       {tab === 1 && <EntriesPage />}

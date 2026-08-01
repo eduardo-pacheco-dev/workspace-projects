@@ -56,7 +56,7 @@ export default function ReportsPage() {
       setSummary(summaryRes.data)
       setCategories(categoryRes.data.data ?? [])
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not load the report.')
+      setError(err.response?.data?.message || 'Não foi possível carregar o relatório.')
     }
   }, [month, year])
 
@@ -68,28 +68,28 @@ export default function ReportsPage() {
 
   const cards = [
     {
-      label: 'Income',
+      label: 'Receitas',
       value: summary?.income ?? 0,
       icon: <TrendingUpIcon sx={{ fontSize: 40 }} />,
       color: '#2e7d32',
       bg: 'rgba(46, 125, 50, 0.12)',
     },
     {
-      label: 'Expenses',
+      label: 'Despesas',
       value: summary?.expenses ?? 0,
       icon: <TrendingDownIcon sx={{ fontSize: 40 }} />,
       color: '#c62828',
       bg: 'rgba(198, 40, 40, 0.12)',
     },
     {
-      label: 'Balance',
+      label: 'Saldo',
       value: summary?.balance ?? 0,
       icon: <AccountBalanceWalletIcon sx={{ fontSize: 40 }} />,
       color: '#1565c0',
       bg: 'rgba(21, 101, 192, 0.12)',
     },
     {
-      label: 'Pending',
+      label: 'Pendentes',
       value: summary?.pending ?? 0,
       icon: <ScheduleIcon sx={{ fontSize: 40 }} />,
       color: '#e65100',
@@ -99,13 +99,13 @@ export default function ReportsPage() {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>Reports</Typography>
+      <Typography variant="h4" sx={{ mb: 2 }}>Relatórios</Typography>
 
       <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
         <TextField
           size="small"
           select
-          label="Month"
+          label="Mês"
           value={month}
           onChange={(e) => setMonth(Number(e.target.value))}
           sx={{ minWidth: 130 }}
@@ -116,7 +116,7 @@ export default function ReportsPage() {
         </TextField>
         <TextField
           size="small"
-          label="Year"
+          label="Ano"
           type="number"
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
@@ -144,15 +144,15 @@ export default function ReportsPage() {
         ))}
       </Grid>
 
-      <Typography variant="h5" sx={{ mb: 2 }}>Expenses by Category</Typography>
+      <Typography variant="h5" sx={{ mb: 2 }}>Despesas por Categoria</Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Category</TableCell>
-              <TableCell align="right"># Entries</TableCell>
+              <TableCell>Categoria</TableCell>
+              <TableCell align="right"># Lançamentos</TableCell>
               <TableCell align="right">Total</TableCell>
-              <TableCell sx={{ minWidth: 180 }}>Share</TableCell>
+              <TableCell sx={{ minWidth: 180 }}>Participação</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -180,7 +180,7 @@ export default function ReportsPage() {
             {categories.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  No expenses recorded for this period.
+                  Nenhuma despesa registrada para este período.
                 </TableCell>
               </TableRow>
             )}

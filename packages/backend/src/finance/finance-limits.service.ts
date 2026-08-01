@@ -67,7 +67,7 @@ export class FinanceLimitsService {
 
   async findById(id: number): Promise<SpendingLimit> {
     const limit = await this.limitsRepository.findOne({ where: { id } });
-    if (!limit) throw new NotFoundException('Spending limit not found');
+    if (!limit) throw new NotFoundException('Limite de gasto não encontrado');
     return limit;
   }
 
@@ -80,7 +80,7 @@ export class FinanceLimitsService {
   async delete(id: number): Promise<void> {
     const result = await this.limitsRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException('Spending limit not found');
+      throw new NotFoundException('Limite de gasto não encontrado');
     }
   }
 }

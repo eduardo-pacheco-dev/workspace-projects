@@ -56,6 +56,6 @@ export class FinanceLimitsController {
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.financeLimitsService.delete(id);
-    return { message: 'Spending limit deleted successfully' };
+    return { message: 'Limite de gasto excluído com sucesso' };
   }
 }

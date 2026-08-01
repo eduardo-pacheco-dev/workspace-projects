@@ -60,9 +60,9 @@ interface LimitReportItem {
 }
 
 const typeLabels: Record<string, string> = {
-  income: 'Income',
-  expense: 'Expense',
-  transfer: 'Transfer',
+  income: 'Receita',
+  expense: 'Despesa',
+  transfer: 'Transferência',
 }
 
 const typeColors: Record<string, 'success' | 'error' | 'info' | 'default'> = {
@@ -93,7 +93,7 @@ export default function OverviewPage() {
       setEntries(Array.isArray(entriesRes.data) ? entriesRes.data : (entriesRes.data.data ?? []))
       setLimits(limitsRes.data.data ?? [])
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not load the overview.')
+      setError(err.response?.data?.message || 'Não foi possível carregar a visão geral.')
     }
   }, [month, year])
 
@@ -109,28 +109,28 @@ export default function OverviewPage() {
 
   const cards = [
     {
-      label: 'Income',
+      label: 'Receitas',
       value: summary?.income ?? 0,
       icon: <TrendingUpIcon sx={{ fontSize: 40 }} />,
       color: '#2e7d32',
       bg: 'rgba(46, 125, 50, 0.12)',
     },
     {
-      label: 'Expenses',
+      label: 'Despesas',
       value: summary?.expenses ?? 0,
       icon: <TrendingDownIcon sx={{ fontSize: 40 }} />,
       color: '#c62828',
       bg: 'rgba(198, 40, 40, 0.12)',
     },
     {
-      label: 'Balance',
+      label: 'Saldo',
       value: summary?.balance ?? 0,
       icon: <AccountBalanceWalletIcon sx={{ fontSize: 40 }} />,
       color: '#1565c0',
       bg: 'rgba(21, 101, 192, 0.12)',
     },
     {
-      label: 'Pending',
+      label: 'Pendentes',
       value: summary?.pending ?? 0,
       icon: <ScheduleIcon sx={{ fontSize: 40 }} />,
       color: '#e65100',
@@ -144,7 +144,7 @@ export default function OverviewPage() {
         <TextField
           size="small"
           select
-          label="Month"
+          label="Mês"
           value={month}
           onChange={(e) => setMonth(Number(e.target.value))}
           sx={{ minWidth: 130 }}
@@ -155,7 +155,7 @@ export default function OverviewPage() {
         </TextField>
         <TextField
           size="small"
-          label="Year"
+          label="Ano"
           type="number"
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
@@ -166,7 +166,7 @@ export default function OverviewPage() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Quick Access</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>Acesso Rápido</Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Button
             fullWidth
@@ -175,7 +175,7 @@ export default function OverviewPage() {
             startIcon={<ArrowUpwardIcon />}
             onClick={() => setModal({ open: true, type: 'income' })}
           >
-            New Income
+            Nova Receita
           </Button>
           <Button
             fullWidth
@@ -184,7 +184,7 @@ export default function OverviewPage() {
             startIcon={<ArrowDownwardIcon />}
             onClick={() => setModal({ open: true, type: 'expense' })}
           >
-            New Expense
+            Nova Despesa
           </Button>
           <Button
             fullWidth
@@ -193,7 +193,7 @@ export default function OverviewPage() {
             startIcon={<SwapHorizIcon />}
             onClick={() => setModal({ open: true, type: 'transfer' })}
           >
-            New Transfer
+            Nova Transferência
           </Button>
         </Stack>
       </Paper>
@@ -219,19 +219,19 @@ export default function OverviewPage() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={7}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6">Recent Entries</Typography>
+            <Typography variant="h6">Lançamentos Recentes</Typography>
             <Button size="small" onClick={() => navigate('/finance?tab=1')}>
-              View all
+              Ver todos
             </Button>
           </Box>
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell align="right">Amount</TableCell>
+                  <TableCell>Data</TableCell>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Descrição</TableCell>
+                  <TableCell align="right">Valor</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -247,9 +247,9 @@ export default function OverviewPage() {
                 ))}
                 {entries.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      No entries for this period.
-                    </TableCell>
+                  <TableCell colSpan={4} align="center">
+                    Nenhum lançamento para este período.
+                  </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -258,9 +258,9 @@ export default function OverviewPage() {
         </Grid>
         <Grid item xs={12} md={5}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6">Spending Limits</Typography>
+            <Typography variant="h6">Limites de Gastos</Typography>
             <Button size="small" onClick={() => navigate('/finance?tab=3')}>
-              View all
+              Ver todos
             </Button>
           </Box>
           <Paper sx={{ p: 2 }}>
@@ -286,7 +286,7 @@ export default function OverviewPage() {
             ))}
             {limits.length === 0 && (
               <Typography variant="body2" color="text.secondary" align="center">
-                No spending limits for this period.
+                Nenhum limite de gastos para este período.
               </Typography>
             )}
           </Paper>

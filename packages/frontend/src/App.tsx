@@ -1,5 +1,6 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ProjectProvider } from './contexts/ProjectContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -27,6 +28,7 @@ import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailsPage from './pages/projects/ProjectDetailsPage'
 import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailsPage from './pages/clients/ClientDetailsPage'
+import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -44,7 +46,8 @@ function ProtectedLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <ProjectProvider>
+        <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -77,8 +80,10 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetailsPage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
-      </Routes>
+        </Routes>
+      </ProjectProvider>
     </AuthProvider>
   )
 }

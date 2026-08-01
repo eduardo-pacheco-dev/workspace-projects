@@ -23,9 +23,11 @@ import AssignmentIcon from '@mui/icons-material/Assignment'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import DescriptionIcon from '@mui/icons-material/Description'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import AddIcon from '@mui/icons-material/Add'
 import { useAuth } from '../contexts/AuthContext'
+import { useProject } from '../contexts/ProjectContext'
 import api from '../services/api'
 import { formatCurrency } from '../utils/format'
 
@@ -44,8 +46,31 @@ interface RecentProject {
   status: string
 }
 
-export default function Dashboard() {
-  const { user } = useAuth()
+interface Station {
+  id: number
+  siteId: string
+  endId: string
+  operadora: string | null
+}
+
+interface RadioLink {
+  id: number
+  nome: string
+  frequencia: string | null
+  siteIdA: string | null
+  siteIdB: string | null
+}
+
+interface Project {
+  id: number
+  nome: string
+  codigo: string | null
+  cliente: string | null
+  status: string
+  descricao: string | null
+}
+
+function GlobalDashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({
     clients: 0,
@@ -102,13 +127,6 @@ export default function Dashboard() {
     { label: 'Saldo do mês', value: formatCurrency(stats.balance), icon: <AccountBalanceWalletIcon />, gradient: 'linear-gradient(135deg, #1565c0, #42a5f5)', path: '/finance' },
   ]
 
-  const today = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-
   const financeCards = [
     { label: 'Receitas', value: formatCurrency(stats.income), color: '#2e7d32' },
     { label: 'Despesas', value: formatCurrency(stats.expenses), color: '#c62828' },
@@ -116,77 +134,8 @@ export default function Dashboard() {
   ]
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Paper
-        sx={{
-          p: 4,
-          mb: 3,
-          borderRadius: 4,
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #6d28d9 100%)',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)',
-            top: -100,
-            right: -60,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            width: 180,
-            height: 180,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-            bottom: -60,
-            left: 80,
-          }}
-        />
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{today}</Typography>
-            <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
-              Bem-vindo, {user?.name}!
-            </Typography>
-            <Typography sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
-              Visão geral dos seus projetos, estações e enlaces de telecomunicações.
-            </Typography>
-          </Box>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{
-                bgcolor: 'white',
-                color: '#312e81',
-                fontWeight: 600,
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
-              }}
-              onClick={() => navigate('/projects')}
-            >
-              Novo Projeto
-            </Button>
-            <Button
-              variant="outlined"
-              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
-              onClick={() => navigate('/finance')}
-            >
-              Ver Finanças
-            </Button>
-          </Stack>
-        </Box>
-      </Paper>
-
+    <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {statsCards.map((item) => (
           <Grid item xs={12} sm={6} md={3} key={item.label}>
@@ -226,11 +175,7 @@ export default function Dashboard() {
           <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>Projetos Recentes</Typography>
-              <Button
-                size="small"
-                endIcon={<ArrowForwardIcon />}
-                onClick={() => navigate('/projects')}
-              >
+              <Button size="small" endIcon={<ArrowForwardIcon />} onClick={() => navigate('/projects')}>
                 Ver todos
               </Button>
             </Box>
@@ -292,39 +237,266 @@ export default function Dashboard() {
                       {card.value}
                     </Typography>
                   </Box>
-                  <Box
-                    sx={{
-                      mt: 0.5,
-                      height: 6,
-                      borderRadius: 3,
-                      background: 'rgba(0,0,0,0.06)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: 3,
-                        background: card.color,
-                        opacity: 0.7,
-                      }}
-                    />
+                  <Box sx={{ mt: 0.5, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                    <Box sx={{ width: '100%', height: '100%', borderRadius: 3, background: card.color, opacity: 0.7 }} />
                   </Box>
                 </Box>
               ))}
             </Stack>
-            <Button
-              fullWidth
-              sx={{ mt: 3 }}
-              endIcon={<ArrowForwardIcon />}
-              onClick={() => navigate('/finance')}
-            >
+            <Button fullWidth sx={{ mt: 3 }} endIcon={<ArrowForwardIcon />} onClick={() => navigate('/finance')}>
               Abrir Finanças
             </Button>
           </Paper>
         </Grid>
       </Grid>
+    </>
+  )
+}
+
+function ProjectDashboard({ projectId }: { projectId: number }) {
+  const navigate = useNavigate()
+  const [project, setProject] = useState<Project | null>(null)
+  const [stations, setStations] = useState<Station[]>([])
+  const [radioLinks, setRadioLinks] = useState<RadioLink[]>([])
+  const [documentsCount, setDocumentsCount] = useState(0)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    Promise.all([
+      api.get(`/projects/${projectId}`),
+      api.get(`/projects/${projectId}/stations`),
+      api.get(`/projects/${projectId}/radio-links`),
+      api.get(`/projects/${projectId}/documents`),
+    ])
+      .then(([projectRes, stationsRes, radioLinksRes, documentsRes]) => {
+        setProject(projectRes.data)
+        setStations(stationsRes.data ?? [])
+        setRadioLinks(radioLinksRes.data ?? [])
+        setDocumentsCount((documentsRes.data ?? []).length)
+      })
+      .catch((err: any) => setError(err.response?.data?.message || 'Não foi possível carregar o projeto.'))
+  }, [projectId])
+
+  const statsCards: StatCard[] = [
+    { label: 'Estações', value: String(stations.length), icon: <CellTowerIcon />, gradient: 'linear-gradient(135deg, #6a1b9a, #ab47bc)', path: `/projects/${projectId}` },
+    { label: 'Enlaces de Rádio', value: String(radioLinks.length), icon: <SettingsInputAntennaIcon />, gradient: 'linear-gradient(135deg, #e65100, #ff9800)', path: `/projects/${projectId}` },
+    { label: 'Documentos', value: String(documentsCount), icon: <DescriptionIcon />, gradient: 'linear-gradient(135deg, #00695c, #26a69a)', path: `/projects/${projectId}` },
+    { label: 'Status', value: project?.status === 'ativo' ? 'Ativo' : 'Inativo', icon: <AssignmentIcon />, gradient: 'linear-gradient(135deg, #1565c0, #42a5f5)', path: `/projects/${projectId}` },
+  ]
+
+  return (
+    <>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {statsCards.map((item) => (
+          <Grid item xs={12} sm={6} md={3} key={item.label}>
+            <Card
+              onClick={() => navigate(item.path)}
+              sx={{
+                borderRadius: 3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(0,0,0,0.04)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.12)' },
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ width: 44, height: 44, background: item.gradient, boxShadow: 2 }}>
+                    {item.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      {item.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Estações do Projeto</Typography>
+              <Button size="small" endIcon={<ArrowForwardIcon />} onClick={() => navigate(`/projects/${projectId}`)}>
+                Ver projeto
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {stations.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Nenhuma estação vinculada.
+              </Typography>
+            ) : (
+              stations.map((s, index) => (
+                <Box key={s.id}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      py: 1.5,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.03)' },
+                    }}
+                    onClick={() => navigate(`/stations/${s.id}`)}
+                  >
+                    <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #6a1b9a, #ab47bc)' }}>
+                      <CellTowerIcon fontSize="small" />
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {s.siteId} · {s.endId}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">{s.operadora || 'Sem operadora'}</Typography>
+                    </Box>
+                  </Box>
+                  {index < stations.length - 1 && <Divider />}
+                </Box>
+              ))
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Enlaces de Rádio do Projeto</Typography>
+            <Divider sx={{ mb: 2 }} />
+            {radioLinks.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Nenhum enlace vinculado.
+              </Typography>
+            ) : (
+              radioLinks.map((rl, index) => (
+                <Box key={rl.id}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      py: 1.5,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.03)' },
+                    }}
+                    onClick={() => navigate(`/radio-links/${rl.id}`)}
+                  >
+                    <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #e65100, #ff9800)' }}>
+                      <SettingsInputAntennaIcon fontSize="small" />
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {rl.nome}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {rl.siteIdA || '-'} ↔ {rl.siteIdB || '-'}
+                        {rl.frequencia ? ` · ${rl.frequencia}` : ''}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {index < radioLinks.length - 1 && <Divider />}
+                </Box>
+              ))
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </>
+  )
+}
+
+export default function Dashboard() {
+  const { user } = useAuth()
+  const { projectId, setProjectId } = useProject()
+  const navigate = useNavigate()
+
+  const today = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Paper
+        sx={{
+          p: 4,
+          mb: 3,
+          borderRadius: 4,
+          background: projectId
+            ? 'linear-gradient(135deg, #065f46 0%, #047857 45%, #059669 100%)'
+            : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #6d28d9 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Box sx={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', top: -100, right: -60 }} />
+        <Box sx={{ position: 'absolute', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', bottom: -60, left: 80 }} />
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{today}</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+              {projectId ? 'Dashboard do Projeto' : `Bem-vindo, ${user?.name}!`}
+            </Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
+              {projectId
+                ? 'Resumo das estações, enlaces e documentos deste projeto.'
+                : 'Visão geral dos seus projetos, estações e enlaces de telecomunicações.'}
+            </Typography>
+          </Box>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            {projectId ? (
+              <>
+                <Button
+                  variant="contained"
+                  sx={{ bgcolor: 'white', color: '#047857', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
+                  onClick={() => navigate(`/projects/${projectId}`)}
+                >
+                  Abrir Projeto
+                </Button>
+                <Button
+                  variant="outlined"
+                  sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
+                  onClick={() => setProjectId(null)}
+                >
+                  Limpar Seleção
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  sx={{ bgcolor: 'white', color: '#312e81', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
+                  onClick={() => navigate('/projects')}
+                >
+                  Novo Projeto
+                </Button>
+                <Button
+                  variant="outlined"
+                  sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
+                  onClick={() => navigate('/finance')}
+                >
+                  Ver Finanças
+                </Button>
+              </>
+            )}
+          </Stack>
+        </Box>
+      </Paper>
+
+      {projectId ? <ProjectDashboard projectId={projectId} /> : <GlobalDashboard />}
     </Container>
   )
 }

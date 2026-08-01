@@ -1,14 +1,330 @@
-import { Typography, Box } from '@mui/material'
+import { useState, useEffect } from 'react'
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Box,
+  Avatar,
+  Alert,
+  Paper,
+  Chip,
+  Button,
+  Stack,
+  Divider,
+} from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import BusinessIcon from '@mui/icons-material/Business'
+import FolderIcon from '@mui/icons-material/Folder'
+import CellTowerIcon from '@mui/icons-material/CellTower'
+import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
+import AssignmentIcon from '@mui/icons-material/Assignment'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import TrendingDownIcon from '@mui/icons-material/TrendingDown'
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import AddIcon from '@mui/icons-material/Add'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../services/api'
+import { formatCurrency } from '../utils/format'
+
+interface StatCard {
+  label: string
+  value: string
+  icon: React.ReactNode
+  gradient: string
+  path: string
+}
+
+interface RecentProject {
+  id: number
+  nome: string
+  codigo: string | null
+  status: string
+}
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const [stats, setStats] = useState({
+    clients: 0,
+    projects: 0,
+    stations: 0,
+    radioLinks: 0,
+    serviceOrders: 0,
+    income: 0,
+    expenses: 0,
+    balance: 0,
+  })
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const today = new Date()
+    Promise.all([
+      api.get('/clients', { params: { limit: 1 } }),
+      api.get('/projects', { params: { limit: 1 } }),
+      api.get('/stations', { params: { limit: 1 } }),
+      api.get('/radio-links', { params: { limit: 1 } }),
+      api.get('/service-orders', { params: { limit: 1 } }),
+      api.get('/projects', { params: { limit: 4, sortBy: 'createdAt', sortOrder: 'DESC' } }),
+      api.get('/finance/reports/summary', {
+        params: { month: today.getMonth() + 1, year: today.getFullYear() },
+      }),
+    ])
+      .then(([clients, projects, stations, radioLinks, serviceOrders, recent, summary]) => {
+        const totalOf = (res: any) => (Array.isArray(res.data) ? res.data.length : (res.data.total ?? 0))
+        setStats({
+          clients: totalOf(clients),
+          projects: totalOf(projects),
+          stations: totalOf(stations),
+          radioLinks: totalOf(radioLinks),
+          serviceOrders: totalOf(serviceOrders),
+          income: summary.data.income ?? 0,
+          expenses: summary.data.expenses ?? 0,
+          balance: summary.data.balance ?? 0,
+        })
+        const data = Array.isArray(recent.data) ? recent.data : (recent.data.data ?? [])
+        setRecentProjects(data)
+      })
+      .catch((err: any) => setError(err.response?.data?.message || 'Não foi possível carregar o dashboard.'))
+  }, [])
+
+  const statsCards: StatCard[] = [
+    { label: 'Clientes', value: String(stats.clients), icon: <BusinessIcon />, gradient: 'linear-gradient(135deg, #1976d2, #42a5f5)', path: '/clients' },
+    { label: 'Projetos', value: String(stats.projects), icon: <FolderIcon />, gradient: 'linear-gradient(135deg, #2e7d32, #66bb6a)', path: '/projects' },
+    { label: 'Estações', value: String(stats.stations), icon: <CellTowerIcon />, gradient: 'linear-gradient(135deg, #6a1b9a, #ab47bc)', path: '/stations' },
+    { label: 'Enlaces de Rádio', value: String(stats.radioLinks), icon: <SettingsInputAntennaIcon />, gradient: 'linear-gradient(135deg, #e65100, #ff9800)', path: '/radio-links' },
+    { label: 'Ordens de Serviço', value: String(stats.serviceOrders), icon: <AssignmentIcon />, gradient: 'linear-gradient(135deg, #00695c, #26a69a)', path: '/service-orders' },
+    { label: 'Receitas do mês', value: formatCurrency(stats.income), icon: <TrendingUpIcon />, gradient: 'linear-gradient(135deg, #2e7d32, #66bb6a)', path: '/finance' },
+    { label: 'Despesas do mês', value: formatCurrency(stats.expenses), icon: <TrendingDownIcon />, gradient: 'linear-gradient(135deg, #c62828, #ef5350)', path: '/finance' },
+    { label: 'Saldo do mês', value: formatCurrency(stats.balance), icon: <AccountBalanceWalletIcon />, gradient: 'linear-gradient(135deg, #1565c0, #42a5f5)', path: '/finance' },
+  ]
+
+  const today = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  const financeCards = [
+    { label: 'Receitas', value: formatCurrency(stats.income), color: '#2e7d32' },
+    { label: 'Despesas', value: formatCurrency(stats.expenses), color: '#c62828' },
+    { label: 'Saldo', value: formatCurrency(stats.balance), color: '#1565c0' },
+  ]
 
   return (
-    <Box sx={{ textAlign: 'center', mt: 8 }}>
-      <Typography variant="h4">
-        Bem-vindo, {user?.name}!
-      </Typography>
-    </Box>
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Paper
+        sx={{
+          p: 4,
+          mb: 3,
+          borderRadius: 4,
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #6d28d9 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            width: 300,
+            height: 300,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)',
+            top: -100,
+            right: -60,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: 180,
+            height: 180,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.05)',
+            bottom: -60,
+            left: 80,
+          }}
+        />
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{today}</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+              Bem-vindo, {user?.name}!
+            </Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
+              Visão geral dos seus projetos, estações e enlaces de telecomunicações.
+            </Typography>
+          </Box>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{
+                bgcolor: 'white',
+                color: '#312e81',
+                fontWeight: 600,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+              }}
+              onClick={() => navigate('/projects')}
+            >
+              Novo Projeto
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
+              onClick={() => navigate('/finance')}
+            >
+              Ver Finanças
+            </Button>
+          </Stack>
+        </Box>
+      </Paper>
+
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {statsCards.map((item) => (
+          <Grid item xs={12} sm={6} md={3} key={item.label}>
+            <Card
+              onClick={() => navigate(item.path)}
+              sx={{
+                borderRadius: 3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(0,0,0,0.04)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.12)' },
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ width: 44, height: 44, background: item.gradient, boxShadow: 2 }}>
+                    {item.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      {item.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={7}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Projetos Recentes</Typography>
+              <Button
+                size="small"
+                endIcon={<ArrowForwardIcon />}
+                onClick={() => navigate('/projects')}
+              >
+                Ver todos
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {recentProjects.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Nenhum projeto cadastrado.
+              </Typography>
+            ) : (
+              recentProjects.map((p, index) => (
+                <Box key={p.id}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      py: 1.5,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.03)' },
+                    }}
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                  >
+                    <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #2e7d32, #66bb6a)' }}>
+                      <FolderIcon fontSize="small" />
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.nome}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">{p.codigo || 'Sem código'}</Typography>
+                    </Box>
+                    <Chip
+                      size="small"
+                      label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      color={p.status === 'ativo' ? 'success' : 'default'}
+                      variant="outlined"
+                    />
+                  </Box>
+                  {index < recentProjects.length - 1 && <Divider />}
+                </Box>
+              ))
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={5}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Finanças do Mês</Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Stack spacing={2}>
+              {financeCards.map((card) => (
+                <Box key={card.label}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {card.label}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: card.color, fontWeight: 700 }}>
+                      {card.value}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      mt: 0.5,
+                      height: 6,
+                      borderRadius: 3,
+                      background: 'rgba(0,0,0,0.06)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 3,
+                        background: card.color,
+                        opacity: 0.7,
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+            <Button
+              fullWidth
+              sx={{ mt: 3 }}
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => navigate('/finance')}
+            >
+              Abrir Finanças
+            </Button>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Container>
   )
 }

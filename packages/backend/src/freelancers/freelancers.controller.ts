@@ -8,10 +8,16 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { FreelancersService } from './freelancers.service';
 import { CreateFreelancerDto } from './dto/create-freelancer.dto';
 import { UpdateFreelancerDto } from './dto/update-freelancer.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller('freelancers')
 export class FreelancersController {
@@ -20,6 +26,45 @@ export class FreelancersController {
   @Post()
   create(@Body() dto: CreateFreelancerDto) {
     return this.freelancersService.create(dto);
+  }
+
+  @Post(':id/photo')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadPhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const dir = path.resolve('uploads', `freelancer-${id}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const ext = path.extname(file.originalname) || '.jpg';
+    const filename = `photo-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+    const url = `/uploads/freelancer-${id}/${filename}`;
+    return this.freelancersService.updatePhoto(id, url);
+  }
+
+  @Post(':id/document/:tipo')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('tipo') tipo: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const allowed = ['rg', 'carteira', 'habilitacao'];
+    if (!allowed.includes(tipo)) {
+      return { message: 'Tipo de documento inválido' };
+    }
+    const dir = path.resolve('uploads', `freelancer-${id}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const ext = path.extname(file.originalname) || '';
+    const filename = `${tipo}-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+    const url = `/uploads/freelancer-${id}/${filename}`;
+    return this.freelancersService.updateDocument(id, tipo, url);
   }
 
   @Get()

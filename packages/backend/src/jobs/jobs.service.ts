@@ -5,6 +5,17 @@ import { Job } from './job.entity';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 
+export interface JobQuery {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  search?: string;
+  status?: string;
+  experienceLevel?: string;
+  budgetType?: string;
+}
+
 @Injectable()
 export class JobsService {
   constructor(
@@ -22,8 +33,50 @@ export class JobsService {
     return this.jobsRepository.save(job);
   }
 
-  async findAll(): Promise<Job[]> {
-    return this.jobsRepository.find();
+  async findAll(query: JobQuery): Promise<{ data: Job[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'id',
+      sortOrder = 'DESC' as 'ASC' | 'DESC',
+      search,
+      status,
+      experienceLevel,
+      budgetType,
+    } = query;
+
+    const qb = this.jobsRepository.createQueryBuilder('j');
+
+    if (search) {
+      qb.where(
+        'j.title LIKE :search OR j.description LIKE :search OR j.skills LIKE :search',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (status) {
+      qb.andWhere('j.status = :status', { status });
+    }
+
+    if (experienceLevel) {
+      qb.andWhere('j.experienceLevel = :experienceLevel', { experienceLevel });
+    }
+
+    if (budgetType) {
+      qb.andWhere('j.budgetType = :budgetType', { budgetType });
+    }
+
+    const allowedSort = ['id', 'title', 'budget', 'status', 'experienceLevel', 'budgetType', 'createdAt'];
+    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
+    const safeOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    const [data, total] = await qb
+      .orderBy(`j.${safeSort}`, safeOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(id: number): Promise<Job> {

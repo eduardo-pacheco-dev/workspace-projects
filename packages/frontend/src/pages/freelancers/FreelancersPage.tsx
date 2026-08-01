@@ -3,8 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import { Tabs, Tab, Box } from '@mui/material'
 import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
-import JobList from '../jobs/JobList'
-import JobModal from '../jobs/JobModal'
 import LpuList from '../lpu/LpuList'
 
 export default function FreelancersPage() {
@@ -14,7 +12,6 @@ export default function FreelancersPage() {
     return t ? Number(t) : 0
   })
   const [freelancerModal, setFreelancerModal] = useState({ open: false, editId: null as number | null })
-  const [jobModal, setJobModal] = useState({ open: false, editId: null as number | null })
 
   const handleTabChange = (_: any, v: number) => {
     setTab(v)
@@ -27,7 +24,6 @@ export default function FreelancersPage() {
     <Box>
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Freelancers" />
-        <Tab label="Jobs" />
         <Tab label="LPU" />
       </Tabs>
       {tab === 0 && (
@@ -36,23 +32,11 @@ export default function FreelancersPage() {
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />
       )}
-      {tab === 1 && (
-        <JobList
-          onNew={() => setJobModal({ open: true, editId: null })}
-          onEdit={(id) => setJobModal({ open: true, editId: id })}
-        />
-      )}
-      {tab === 2 && <LpuList />}
+      {tab === 1 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}
         onClose={() => setFreelancerModal({ open: false, editId: null })}
-        onSaved={refresh}
-      />
-      <JobModal
-        open={jobModal.open}
-        editId={jobModal.editId}
-        onClose={() => setJobModal({ open: false, editId: null })}
         onSaved={refresh}
       />
     </Box>

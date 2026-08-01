@@ -47,6 +47,15 @@ export class AttachmentsController {
     return this.attachmentsService.uploadForStation(stationId, file);
   }
 
+  @Post('upload/radio-link/:radioLinkId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadForRadioLink(
+    @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadForRadioLink(radioLinkId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
@@ -62,6 +71,11 @@ export class AttachmentsController {
     return this.attachmentsService.findByStation(stationId);
   }
 
+  @Get('radio-link/:radioLinkId')
+  findByRadioLink(@Param('radioLinkId', ParseIntPipe) radioLinkId: number) {
+    return this.attachmentsService.findByRadioLink(radioLinkId);
+  }
+
   @Get('file/:id')
   async getFile(
     @Param('id', ParseIntPipe) id: number,
@@ -70,11 +84,13 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.stationId
-        ? `station-${attachment.stationId}`
-        : attachment.serviceOrderId
-          ? `service-order-${attachment.serviceOrderId}`
-          : `job-${attachment.jobId}`,
+      attachment.radioLinkId
+        ? `radio-link-${attachment.radioLinkId}`
+        : attachment.stationId
+          ? `station-${attachment.stationId}`
+          : attachment.serviceOrderId
+            ? `service-order-${attachment.serviceOrderId}`
+            : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {
@@ -93,11 +109,13 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.stationId
-        ? `station-${attachment.stationId}`
-        : attachment.serviceOrderId
-          ? `service-order-${attachment.serviceOrderId}`
-          : `job-${attachment.jobId}`,
+      attachment.radioLinkId
+        ? `radio-link-${attachment.radioLinkId}`
+        : attachment.stationId
+          ? `station-${attachment.stationId}`
+          : attachment.serviceOrderId
+            ? `service-order-${attachment.serviceOrderId}`
+            : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {

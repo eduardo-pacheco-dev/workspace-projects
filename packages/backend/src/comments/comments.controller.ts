@@ -64,6 +64,21 @@ export class CommentsController {
     return this.commentsService.findByStation(stationId);
   }
 
+  @Post('radio-link/:radioLinkId')
+  createForRadioLink(
+    @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForRadioLink(radioLinkId, dto, author);
+  }
+
+  @Get('radio-link/:radioLinkId')
+  findByRadioLink(@Param('radioLinkId', ParseIntPipe) radioLinkId: number) {
+    return this.commentsService.findByRadioLink(radioLinkId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

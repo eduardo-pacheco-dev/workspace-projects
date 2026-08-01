@@ -9,6 +9,7 @@ import {
 import { Job } from '../jobs/job.entity';
 import { ServiceOrder } from '../service-orders/service-order.entity';
 import { Station } from '../stations/station.entity';
+import { RadioLink } from '../radio-links/radio-link.entity';
 
 @Entity()
 export class Comment {
@@ -35,6 +36,13 @@ export class Comment {
   @ManyToOne(() => Station, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'stationId' })
   station: Station | null;
+
+  @Column({ type: 'integer', nullable: true })
+  radioLinkId: number | null;
+
+  @ManyToOne(() => RadioLink, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'radioLinkId' })
+  radioLink: RadioLink | null;
 
   @Column({ type: 'text' })
   content: string;

@@ -71,6 +71,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
   const [notes, setNotes] = useState('')
   const [accountId, setAccountId] = useState<number | ''>('')
   const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -94,6 +95,14 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
         .then((res) => {
           const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
           setAccounts(data)
+        })
+        .catch(() => {})
+
+      api
+        .get('/finance/categories', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+        .then((res) => {
+          const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+          setCategories(data.map((c: { name: string }) => c.name))
         })
         .catch(() => {})
 
@@ -224,6 +233,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                select
                 label="Categoria"
                 value={category}
                 onChange={(e) => { setCategory(e.target.value); clearFieldError('category') }}
@@ -231,7 +241,14 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
                 required
                 error={!!fieldErrors.category}
                 helperText={fieldErrors.category}
-              />
+              >
+                {category && !categories.includes(category) && (
+                  <MenuItem key={`current-${category}`} value={category}>{category}</MenuItem>
+                )}
+                {categories.map((name) => (
+                  <MenuItem key={name} value={name}>{name}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField

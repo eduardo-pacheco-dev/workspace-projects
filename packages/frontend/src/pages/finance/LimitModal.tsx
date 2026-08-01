@@ -41,6 +41,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
   const [month, setMonth] = useState(defaultMonth || new Date().getMonth() + 1)
   const [year, setYear] = useState(defaultYear || new Date().getFullYear())
   const [amount, setAmount] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -53,6 +54,14 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
       setAmount('')
       setError('')
       setFieldErrors({})
+
+      api
+        .get('/finance/categories', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+        .then((res) => {
+          const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+          setCategories(data.map((c: { name: string }) => c.name))
+        })
+        .catch(() => {})
 
       if (editId) {
         setLoading(true)
@@ -127,6 +136,7 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             fullWidth
+            select
             label="Categoria"
             value={category}
             onChange={(e) => { setCategory(e.target.value); clearFieldError('category') }}
@@ -134,7 +144,14 @@ export default function LimitModal({ open, editId, defaultMonth, defaultYear, on
             required
             error={!!fieldErrors.category}
             helperText={fieldErrors.category}
-          />
+          >
+            {category && !categories.includes(category) && (
+              <MenuItem key={`current-${category}`} value={category}>{category}</MenuItem>
+            )}
+            {categories.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </TextField>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField

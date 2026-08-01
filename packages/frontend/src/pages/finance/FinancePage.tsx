@@ -6,6 +6,7 @@ import AccountsPage from './AccountsPage'
 import EntriesPage from './EntriesPage'
 import ReportsPage from './ReportsPage'
 import LimitsPage from './LimitsPage'
+import CategoriesPage from './CategoriesPage'
 
 export default function FinancePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -27,12 +28,14 @@ export default function FinancePage() {
         <Tab label="Lançamentos" />
         <Tab label="Relatórios" />
         <Tab label="Limites de Gastos" />
+        <Tab label="Configurações" />
       </Tabs>
       {tab === 0 && <OverviewPage />}
       {tab === 1 && <AccountsPage />}
       {tab === 2 && <EntriesPage />}
       {tab === 3 && <ReportsPage />}
       {tab === 4 && <LimitsPage />}
+      {tab === 5 && <CategoriesPage />}
     </Box>
   )
 }

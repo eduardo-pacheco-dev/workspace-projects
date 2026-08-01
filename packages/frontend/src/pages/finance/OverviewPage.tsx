@@ -78,19 +78,33 @@ export default function OverviewPage() {
   const [year, setYear] = useState(today.getFullYear())
   const [summary, setSummary] = useState<Summary | null>(null)
   const [entries, setEntries] = useState<FinanceEntry[]>([])
+  const [payables, setPayables] = useState<FinanceEntry[]>([])
+  const [topExpenses, setTopExpenses] = useState<FinanceEntry[]>([])
   const [limits, setLimits] = useState<LimitReportItem[]>([])
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, type: 'expense' })
 
   const fetchData = useCallback(async () => {
     try {
-      const [summaryRes, entriesRes, limitsRes] = await Promise.all([
+      const [summaryRes, entriesRes, payablesRes, topExpensesRes, limitsRes] = await Promise.all([
         api.get('/finance/reports/summary', { params: { month, year } }),
         api.get('/finance/entries', { params: { month, year, limit: 5 } }),
+        api.get('/finance/entries', {
+          params: { month, year, type: 'expense', status: 'pending', limit: 10 },
+        }),
+        api.get('/finance/entries', {
+          params: { month, year, type: 'expense', sortBy: 'amount', sortOrder: 'DESC', limit: 10 },
+        }),
         api.get('/finance/reports/limits', { params: { month, year } }),
       ])
       setSummary(summaryRes.data)
       setEntries(Array.isArray(entriesRes.data) ? entriesRes.data : (entriesRes.data.data ?? []))
+      setPayables(Array.isArray(payablesRes.data) ? payablesRes.data : (payablesRes.data.data ?? []))
+      setTopExpenses(
+        (Array.isArray(topExpensesRes.data) ? topExpensesRes.data : (topExpensesRes.data.data ?? []))
+          .filter((e: FinanceEntry) => e.status !== 'canceled')
+          .slice(0, 5),
+      )
       setLimits(limitsRes.data.data ?? [])
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a visão geral.')
@@ -292,6 +306,92 @@ export default function OverviewPage() {
           </Paper>
         </Grid>
       </Grid>
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Contas a Pagar</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total: {formatCurrency(payables.reduce((sum, e) => sum + e.amount, 0))}
+            </Typography>
+            <Button size="small" onClick={() => navigate('/finance?tab=3')}>
+              Ver todos
+            </Button>
+          </Box>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Data</TableCell>
+                <TableCell>Descrição</TableCell>
+                <TableCell>Categoria</TableCell>
+                <TableCell align="right">Valor</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {payables.map((entry) => (
+                <TableRow key={entry.id} hover>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
+                  <TableCell>{entry.description}</TableCell>
+                  <TableCell>{entry.category}</TableCell>
+                  <TableCell align="right">{formatCurrency(entry.amount)}</TableCell>
+                </TableRow>
+              ))}
+              {payables.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    Nenhuma conta a pagar para este período.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6">Maiores Gastos do Mês</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total: {formatCurrency(topExpenses.reduce((sum, e) => sum + e.amount, 0))}
+            </Typography>
+            <Button size="small" onClick={() => navigate('/finance?tab=3')}>
+              Ver todos
+            </Button>
+          </Box>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Data</TableCell>
+                <TableCell>Descrição</TableCell>
+                <TableCell>Categoria</TableCell>
+                <TableCell align="right">Valor</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {topExpenses.map((entry) => (
+                <TableRow key={entry.id} hover>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
+                  <TableCell>{entry.description}</TableCell>
+                  <TableCell>{entry.category}</TableCell>
+                  <TableCell align="right">{formatCurrency(entry.amount)}</TableCell>
+                </TableRow>
+              ))}
+              {topExpenses.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    Nenhum gasto para este período.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       <EntryModal
         open={modal.open}

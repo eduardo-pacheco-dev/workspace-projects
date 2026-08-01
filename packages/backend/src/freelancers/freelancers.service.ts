@@ -19,8 +19,14 @@ export class FreelancersService {
       portfolio: dto.portfolio ?? '[]',
       experienceLevel: dto.experienceLevel ?? 'junior',
       availability: dto.availability ?? 'available',
+      status: dto.status ?? 'ativo',
     });
-    return this.freelancersRepository.save(freelancer);
+    const saved = await this.freelancersRepository.save(freelancer);
+    if (!saved.codigo) {
+      saved.codigo = `FR-${String(saved.id).padStart(4, '0')}`;
+      return this.freelancersRepository.save(saved);
+    }
+    return saved;
   }
 
   async findAll(query: {
@@ -88,5 +94,11 @@ export class FreelancersService {
   async delete(id: number): Promise<void> {
     const result = await this.freelancersRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Freelancer not found');
+  }
+
+  async updatePhoto(id: number, url: string): Promise<Freelancer> {
+    const freelancer = await this.findById(id);
+    freelancer.foto = url;
+    return this.freelancersRepository.save(freelancer);
   }
 }

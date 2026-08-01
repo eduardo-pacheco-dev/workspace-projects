@@ -11,6 +11,34 @@ export class CreateFreelancerDto {
   @IsNumber()
   userId?: number;
 
+  @IsOptional()
+  @IsString()
+  codigo?: string;
+
+  @IsOptional()
+  @IsString()
+  razaoSocial?: string;
+
+  @IsOptional()
+  @IsString()
+  tipoContrato?: string;
+
+  @IsOptional()
+  @IsString()
+  regional?: string;
+
+  @IsOptional()
+  @IsString()
+  funcao?: string;
+
+  @IsOptional()
+  @IsString()
+  foto?: string;
+
+  @IsOptional()
+  @IsIn(['ativo', 'inativo'])
+  status?: string;
+
   @IsString()
   firstName: string;
 

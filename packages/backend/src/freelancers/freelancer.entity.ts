@@ -16,6 +16,27 @@ export class Freelancer {
   @Column({ type: 'integer', nullable: true })
   userId?: number;
 
+  @Column({ type: 'text', nullable: true })
+  codigo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  razaoSocial?: string;
+
+  @Column({ type: 'text', nullable: true })
+  tipoContrato?: string;
+
+  @Column({ type: 'text', nullable: true })
+  regional?: string;
+
+  @Column({ type: 'text', nullable: true })
+  funcao?: string;
+
+  @Column({ type: 'text', nullable: true })
+  foto?: string;
+
+  @Column({ type: 'text', default: 'ativo' })
+  status: string;
+
   @Column({ type: 'text' })
   firstName: string;
 

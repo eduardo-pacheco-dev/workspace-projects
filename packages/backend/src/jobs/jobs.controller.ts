@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -22,8 +23,17 @@ export class JobsController {
   }
 
   @Get()
-  findAll() {
-    return this.jobsService.findAll();
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('experienceLevel') experienceLevel?: string,
+    @Query('budgetType') budgetType?: string,
+  ) {
+    return this.jobsService.findAll({ page, limit, sortBy, sortOrder, search, status, experienceLevel, budgetType });
   }
 
   @Get(':id')

@@ -60,7 +60,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     RadioLinksModule,
     ProjectsModule,
     ClientsModule,
-    ...(dbType === 'sqljs' ? [SeedModule] : []),
+    SeedModule,
   ],
 })
 export class AppModule {}

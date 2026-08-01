@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const financeEntryTypes = ['income', 'expense'] as const;
+export const financeEntryTypes = ['income', 'expense', 'transfer'] as const;
 export const financeEntryStatus = ['pending', 'paid', 'canceled'] as const;
 
 export const createFinanceEntrySchema = z.object({

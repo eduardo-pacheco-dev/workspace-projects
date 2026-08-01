@@ -15,11 +15,11 @@ import {
 import { z } from 'zod'
 import api from '../../services/api'
 
-const typeOptions = ['income', 'expense']
+const typeOptions = ['income', 'expense', 'transfer']
 const statusOptions = ['pending', 'paid', 'canceled']
 
 const baseSchema = z.object({
-  type: z.enum(['income', 'expense'], 'Invalid type.'),
+  type: z.enum(['income', 'expense', 'transfer'], 'Invalid type.'),
   description: z.string().min(1, 'Enter a description.'),
   category: z.string().min(1, 'Enter a category.'),
   amount: z.number().positive('Enter an amount greater than zero.'),
@@ -35,6 +35,7 @@ const editSchema = baseSchema.partial()
 const typeLabels: Record<string, string> = {
   income: 'Income',
   expense: 'Expense',
+  transfer: 'Transfer',
 }
 
 const statusLabels: Record<string, string> = {
@@ -46,14 +47,15 @@ const statusLabels: Record<string, string> = {
 interface EntryModalProps {
   open: boolean
   editId?: number | null
+  defaultType?: string
   defaultDate?: string
   onClose: () => void
   onSaved: () => void
 }
 
-export default function EntryModal({ open, editId, defaultDate, onClose, onSaved }: EntryModalProps) {
+export default function EntryModal({ open, editId, defaultType, defaultDate, onClose, onSaved }: EntryModalProps) {
   const isEdit = Boolean(editId)
-  const [type, setType] = useState('expense')
+  const [type, setType] = useState(defaultType || 'expense')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [amount, setAmount] = useState('')
@@ -67,7 +69,7 @@ export default function EntryModal({ open, editId, defaultDate, onClose, onSaved
 
   useEffect(() => {
     if (open) {
-      setType('expense')
+      setType(defaultType || 'expense')
       setDescription('')
       setCategory('')
       setAmount('')
@@ -97,7 +99,7 @@ export default function EntryModal({ open, editId, defaultDate, onClose, onSaved
           .finally(() => setLoading(false))
       }
     }
-  }, [open, editId, defaultDate])
+  }, [open, editId, defaultType, defaultDate])
 
   const getFieldErrors = (err: z.ZodError) =>
     Object.fromEntries(err.issues.map((issue) => [issue.path[0], issue.message]))

@@ -40,14 +40,16 @@ interface FinanceEntry {
 type SortBy = 'id' | 'date' | 'type' | 'category' | 'amount' | 'status' | 'description'
 type SortOrder = 'ASC' | 'DESC'
 
-const typeColors: Record<string, 'success' | 'error' | 'default'> = {
+const typeColors: Record<string, 'success' | 'error' | 'info' | 'default'> = {
   income: 'success',
   expense: 'error',
+  transfer: 'info',
 }
 
 const typeLabels: Record<string, string> = {
   income: 'Income',
   expense: 'Expense',
+  transfer: 'Transfer',
 }
 
 const statusColors: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
@@ -183,6 +185,7 @@ export default function EntriesPage() {
           <MenuItem value="">All</MenuItem>
           <MenuItem value="income">Income</MenuItem>
           <MenuItem value="expense">Expense</MenuItem>
+          <MenuItem value="transfer">Transfer</MenuItem>
         </TextField>
         <TextField
           size="small"

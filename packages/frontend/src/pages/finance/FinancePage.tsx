@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Tabs, Tab, Box } from '@mui/material'
+import OverviewPage from './OverviewPage'
 import EntriesPage from './EntriesPage'
 import ReportsPage from './ReportsPage'
 import LimitsPage from './LimitsPage'
@@ -20,13 +21,15 @@ export default function FinancePage() {
   return (
     <Box>
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
+        <Tab label="Overview" />
         <Tab label="Entries" />
         <Tab label="Reports" />
         <Tab label="Spending Limits" />
       </Tabs>
-      {tab === 0 && <EntriesPage />}
-      {tab === 1 && <ReportsPage />}
-      {tab === 2 && <LimitsPage />}
+      {tab === 0 && <OverviewPage />}
+      {tab === 1 && <EntriesPage />}
+      {tab === 2 && <ReportsPage />}
+      {tab === 3 && <LimitsPage />}
     </Box>
   )
 }

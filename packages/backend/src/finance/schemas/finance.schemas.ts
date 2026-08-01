@@ -12,6 +12,7 @@ export const createFinanceEntrySchema = z.object({
   paymentMethod: z.string().optional(),
   status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
   notes: z.string().optional(),
+  accountId: z.number().int('Conta inválida.').nullable().optional(),
 });
 
 export const updateFinanceEntrySchema = z
@@ -24,6 +25,7 @@ export const updateFinanceEntrySchema = z
     paymentMethod: z.string().optional(),
     status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
     notes: z.string().optional(),
+    accountId: z.number().int('Conta inválida.').nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Informe ao menos um campo para atualizar.',

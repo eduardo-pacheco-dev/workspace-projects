@@ -18,6 +18,7 @@ export interface FinanceEntryQuery {
   category?: string;
   month?: number;
   year?: number;
+  accountId?: number;
 }
 
 @Injectable()
@@ -47,9 +48,12 @@ export class FinanceService {
       category,
       month,
       year,
+      accountId,
     } = query;
 
-    const qb = this.entriesRepository.createQueryBuilder('fe');
+    const qb = this.entriesRepository
+      .createQueryBuilder('fe')
+      .leftJoinAndSelect('fe.account', 'account');
 
     if (search) {
       qb.where(
@@ -65,6 +69,9 @@ export class FinanceService {
     }
     if (category) {
       qb.andWhere('fe.category = :category', { category });
+    }
+    if (accountId) {
+      qb.andWhere('fe.accountId = :accountId', { accountId });
     }
     if (month) {
       qb.andWhere('MONTH(fe.date) = :month', { month });
@@ -87,7 +94,10 @@ export class FinanceService {
   }
 
   async findById(id: number): Promise<FinanceEntry> {
-    const entry = await this.entriesRepository.findOne({ where: { id } });
+    const entry = await this.entriesRepository.findOne({
+      where: { id },
+      relations: ['account'],
+    });
     if (!entry) throw new NotFoundException('Lançamento não encontrado');
     return entry;
   }

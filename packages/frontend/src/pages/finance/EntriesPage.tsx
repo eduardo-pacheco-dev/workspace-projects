@@ -35,6 +35,13 @@ interface FinanceEntry {
   paymentMethod: string | null
   status: string
   notes: string | null
+  accountId: number | null
+  account?: { id: number; name: string } | null
+}
+
+interface AccountOption {
+  id: number
+  name: string
 }
 
 type SortBy = 'id' | 'date' | 'type' | 'category' | 'amount' | 'status' | 'description'
@@ -75,6 +82,8 @@ export default function EntriesPage() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [accountFilter, setAccountFilter] = useState('')
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [year, setYear] = useState(today.getFullYear())
   const [error, setError] = useState('')
@@ -91,6 +100,7 @@ export default function EntriesPage() {
       if (search) params.search = search
       if (typeFilter) params.type = typeFilter
       if (statusFilter) params.status = statusFilter
+      if (accountFilter) params.accountId = accountFilter
       params.month = month
       params.year = year
 
@@ -105,11 +115,21 @@ export default function EntriesPage() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, search, typeFilter, statusFilter, month, year])
+  }, [page, rowsPerPage, sortBy, sortOrder, search, typeFilter, statusFilter, accountFilter, month, year])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    api
+      .get('/finance/accounts', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setAccounts(data)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSort = (col: SortBy) => {
     if (sortBy === col) {
@@ -147,7 +167,6 @@ export default function EntriesPage() {
     { id: 'amount', label: 'Valor' },
     { id: 'status', label: 'Status' },
   ]
-
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -206,6 +225,22 @@ export default function EntriesPage() {
         <TextField
           size="small"
           select
+          label="Conta"
+          value={accountFilter}
+          onChange={(e) => {
+            setAccountFilter(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="">Todas</MenuItem>
+          {accounts.map((acc) => (
+            <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          size="small"
+          select
           label="Mês"
           value={month}
           onChange={(e) => {
@@ -248,6 +283,7 @@ export default function EntriesPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
+              <TableCell>Conta</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -264,6 +300,7 @@ export default function EntriesPage() {
                 <TableCell>
                   <Chip size="small" label={statusLabels[entry.status] || entry.status} color={statusColors[entry.status] || 'default'} />
                 </TableCell>
+                <TableCell>{entry.account?.name || '-'}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => setModal({ open: true, editId: entry.id })}>
                     <Edit />
@@ -276,7 +313,7 @@ export default function EntriesPage() {
             ))}
             {entries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   Nenhum lançamento encontrado.
                 </TableCell>
               </TableRow>

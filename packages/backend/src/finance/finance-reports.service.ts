@@ -13,7 +13,7 @@ export class FinanceReportsService {
     private readonly limitsRepository: Repository<SpendingLimit>,
   ) {}
 
-  async summary(month: number, year: number) {
+  async summary(month: number, year: number, accountId?: number) {
     const qb = this.entriesRepository
       .createQueryBuilder('fe')
       .select('fe.type', 'type')
@@ -21,9 +21,13 @@ export class FinanceReportsService {
       .addSelect('fe.status', 'status')
       .where('YEAR(fe.date) = :year', { year })
       .andWhere('MONTH(fe.date) = :month', { month })
-      .andWhere("fe.status != 'canceled'")
-      .groupBy('fe.type')
-      .addGroupBy('fe.status');
+      .andWhere("fe.status != 'canceled'");
+
+    if (accountId) {
+      qb.andWhere('fe.accountId = :accountId', { accountId });
+    }
+
+    qb.groupBy('fe.type').addGroupBy('fe.status');
 
     const rows = await qb.getRawMany();
 

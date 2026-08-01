@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { BankAccount } from './bank-account.entity';
 
 @Entity()
 export class FinanceEntry {
@@ -34,6 +37,13 @@ export class FinanceEntry {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ type: 'integer', nullable: true })
+  accountId: number | null;
+
+  @ManyToOne(() => BankAccount, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'accountId' })
+  account: BankAccount | null;
 
   @CreateDateColumn()
   createdAt: Date;

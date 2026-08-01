@@ -39,8 +39,9 @@ export class FinanceController {
     @Query('category') category?: string,
     @Query('month') month?: number,
     @Query('year') year?: number,
+    @Query('accountId') accountId?: number,
   ) {
-    return this.financeService.findAll({ page, limit, sortBy, sortOrder, search, type, status, category, month, year });
+    return this.financeService.findAll({ page, limit, sortBy, sortOrder, search, type, status, category, month, year, accountId });
   }
 
   @Get(':id')

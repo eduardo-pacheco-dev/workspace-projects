@@ -9,8 +9,9 @@ export class FinanceReportsController {
   async summary(
     @Query('month', ParseIntPipe) month: number,
     @Query('year', ParseIntPipe) year: number,
+    @Query('accountId') accountId?: number,
   ) {
-    return this.financeReportsService.summary(month, year);
+    return this.financeReportsService.summary(month, year, accountId);
   }
 
   @Get('by-category')

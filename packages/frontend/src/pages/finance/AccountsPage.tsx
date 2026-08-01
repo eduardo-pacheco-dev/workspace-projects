@@ -19,6 +19,7 @@ import {
   Stack,
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { formatCurrency } from '../../utils/format'
 import AccountModal from './AccountModal'
@@ -34,6 +35,7 @@ type SortBy = 'id' | 'name' | 'bank' | 'balance'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function AccountsPage() {
+  const navigate = useNavigate()
   const [accounts, setAccounts] = useState<BankAccount[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -157,15 +159,20 @@ export default function AccountsPage() {
           </TableHead>
           <TableBody>
             {accounts.map((account) => (
-              <TableRow key={account.id} hover>
+              <TableRow
+                key={account.id}
+                hover
+                onClick={() => navigate(`/finance/accounts/${account.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{account.name}</TableCell>
                 <TableCell>{account.bank || '-'}</TableCell>
                 <TableCell>{formatCurrency(account.balance)}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: account.id })}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: account.id }) }}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(account.id)}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(account.id) }}>
                     <Delete />
                   </IconButton>
                 </TableCell>

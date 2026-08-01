@@ -27,6 +27,7 @@ const baseSchema = z.object({
   paymentMethod: z.string().optional(),
   status: z.string().optional(),
   notes: z.string().optional(),
+  accountId: z.number().int('Conta inválida.').nullable().optional(),
 })
 
 const createSchema = baseSchema
@@ -42,6 +43,11 @@ const statusLabels: Record<string, string> = {
   pending: 'Pendente',
   paid: 'Pago',
   canceled: 'Cancelado',
+}
+
+interface AccountOption {
+  id: number
+  name: string
 }
 
 interface EntryModalProps {
@@ -63,6 +69,8 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
   const [paymentMethod, setPaymentMethod] = useState('')
   const [status, setStatus] = useState('paid')
   const [notes, setNotes] = useState('')
+  const [accountId, setAccountId] = useState<number | ''>('')
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -77,8 +85,17 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       setPaymentMethod('')
       setStatus('paid')
       setNotes('')
+      setAccountId('')
       setError('')
       setFieldErrors({})
+
+      api
+        .get('/finance/accounts', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+        .then((res) => {
+          const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+          setAccounts(data)
+        })
+        .catch(() => {})
 
       if (editId) {
         setLoading(true)
@@ -94,6 +111,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             setPaymentMethod(d.paymentMethod || '')
             setStatus(d.status || 'paid')
             setNotes(d.notes || '')
+            setAccountId(d.accountId ?? '')
           })
           .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
           .finally(() => setLoading(false))
@@ -121,6 +139,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       paymentMethod: paymentMethod || undefined,
       status,
       notes: notes || undefined,
+      accountId: accountId === '' ? null : accountId,
     }
 
     const schema = isEdit ? editSchema : createSchema
@@ -253,6 +272,21 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
                 margin="normal"
                 placeholder="ex.: Pix, Cartão de Crédito, Dinheiro"
               />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Conta"
+                value={accountId}
+                onChange={(e) => { setAccountId(e.target.value === '' ? '' : Number(e.target.value)); clearFieldError('accountId') }}
+                margin="normal"
+              >
+                <MenuItem value="">Sem conta</MenuItem>
+                {accounts.map((acc) => (
+                  <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
           </Grid>
           <TextField

@@ -63,6 +63,38 @@ export class CreateFreelancerDto {
 
   @IsOptional()
   @IsString()
+  orgaoEmissor?: string;
+
+  @IsOptional()
+  @IsString()
+  naturalidade?: string;
+
+  @IsOptional()
+  @IsString()
+  sexo?: string;
+
+  @IsOptional()
+  @IsString()
+  cnpj?: string;
+
+  @IsOptional()
+  @IsString()
+  tituloEleitor?: string;
+
+  @IsOptional()
+  @IsString()
+  rgArquivo?: string;
+
+  @IsOptional()
+  @IsString()
+  carteiraArquivo?: string;
+
+  @IsOptional()
+  @IsString()
+  habilitacaoArquivo?: string;
+
+  @IsOptional()
+  @IsString()
   cnh?: string;
 
   @IsOptional()
@@ -80,6 +112,18 @@ export class CreateFreelancerDto {
   @IsOptional()
   @IsString()
   whatsapp?: string;
+
+  @IsOptional()
+  @IsString()
+  contatoEmergenciaNome?: string;
+
+  @IsOptional()
+  @IsString()
+  contatoEmergenciaTelefone?: string;
+
+  @IsOptional()
+  @IsString()
+  contatoEmergenciaParentesco?: string;
 
   @IsOptional()
   @IsString()
@@ -124,6 +168,74 @@ export class CreateFreelancerDto {
   @IsOptional()
   @IsString()
   trainings?: string;
+
+  @IsOptional()
+  @IsString()
+  dataAso?: string;
+
+  @IsOptional()
+  @IsString()
+  dataNr06?: string;
+
+  @IsOptional()
+  @IsString()
+  dataNr35?: string;
+
+  @IsOptional()
+  @IsString()
+  dataNr10?: string;
+
+  @IsOptional()
+  @IsString()
+  dataNr75?: string;
+
+  @IsOptional()
+  @IsString()
+  dataNr01?: string;
+
+  @IsOptional()
+  @IsString()
+  dataIntegracao?: string;
+
+  @IsOptional()
+  @IsString()
+  dataListaFerramental?: string;
+
+  @IsOptional()
+  @IsIn(['sim', 'nao'])
+  cracha?: string;
+
+  @IsOptional()
+  @IsString()
+  dataHs?: string;
+
+  @IsOptional()
+  @IsString()
+  dataLtw?: string;
+
+  @IsOptional()
+  @IsString()
+  dataCadastroNokia?: string;
+
+  @IsOptional()
+  @IsString()
+  dataCadastroEricsson?: string;
+
+  @IsOptional()
+  @IsString()
+  dataCadastroTelebit?: string;
+
+  @IsOptional()
+  @IsString()
+  vencimentoAso?: string;
+
+  @IsOptional()
+  @IsString()
+  vencimentoNr35?: string;
+
+  @IsOptional()
+  @IsString()
+  vencimentoNr10?: string;
 
   @IsOptional()
   @IsString()

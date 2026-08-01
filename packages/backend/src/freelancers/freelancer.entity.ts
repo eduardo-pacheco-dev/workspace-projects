@@ -56,6 +56,30 @@ export class Freelancer {
   rg?: string;
 
   @Column({ type: 'text', nullable: true })
+  orgaoEmissor?: string;
+
+  @Column({ type: 'text', nullable: true })
+  naturalidade?: string;
+
+  @Column({ type: 'text', nullable: true })
+  sexo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cnpj?: string;
+
+  @Column({ type: 'text', nullable: true })
+  tituloEleitor?: string;
+
+  @Column({ type: 'text', nullable: true })
+  rgArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  carteiraArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  habilitacaoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
   cnh?: string;
 
   @Column({ type: 'text', nullable: true })
@@ -69,6 +93,15 @@ export class Freelancer {
 
   @Column({ type: 'text', nullable: true })
   whatsapp?: string;
+
+  @Column({ type: 'text', nullable: true })
+  contatoEmergenciaNome?: string;
+
+  @Column({ type: 'text', nullable: true })
+  contatoEmergenciaTelefone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  contatoEmergenciaParentesco?: string;
 
   @Column({ type: 'text', nullable: true })
   endereco?: string;
@@ -102,6 +135,57 @@ export class Freelancer {
 
   @Column({ type: 'text', nullable: true })
   trainings?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataAso?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataNr06?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataNr35?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataNr10?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataNr75?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataNr01?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataIntegracao?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataListaFerramental?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cracha?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataHs?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataLtw?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataCadastroNokia?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataCadastroEricsson?: string;
+
+  @Column({ type: 'text', nullable: true })
+  dataCadastroTelebit?: string;
+
+  @Column({ type: 'text', nullable: true })
+  vencimentoAso?: string;
+
+  @Column({ type: 'text', nullable: true })
+  vencimentoNr35?: string;
+
+  @Column({ type: 'text', nullable: true })
+  vencimentoNr10?: string;
 
   @Column({ type: 'text', nullable: true })
   uniforms?: string;

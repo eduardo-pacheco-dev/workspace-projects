@@ -101,4 +101,18 @@ export class FreelancersService {
     freelancer.foto = url;
     return this.freelancersRepository.save(freelancer);
   }
+
+  async updateDocument(id: number, tipo: string, url: string): Promise<Freelancer> {
+    const freelancer = await this.findById(id);
+    if (tipo === 'rg') {
+      freelancer.rgArquivo = url;
+    } else if (tipo === 'carteira') {
+      freelancer.carteiraArquivo = url;
+    } else if (tipo === 'habilitacao') {
+      freelancer.habilitacaoArquivo = url;
+    } else {
+      throw new NotFoundException('Tipo de documento inválido');
+    }
+    return this.freelancersRepository.save(freelancer);
+  }
 }

@@ -45,6 +45,28 @@ export class FreelancersController {
     return this.freelancersService.updatePhoto(id, url);
   }
 
+  @Post(':id/document/:tipo')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('tipo') tipo: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const allowed = ['rg', 'carteira', 'habilitacao'];
+    if (!allowed.includes(tipo)) {
+      return { message: 'Tipo de documento inválido' };
+    }
+    const dir = path.resolve('uploads', `freelancer-${id}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const ext = path.extname(file.originalname) || '';
+    const filename = `${tipo}-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+    const url = `/uploads/freelancer-${id}/${filename}`;
+    return this.freelancersService.updateDocument(id, tipo, url);
+  }
+
   @Get()
   findAll(
     @Query('page') page?: number,

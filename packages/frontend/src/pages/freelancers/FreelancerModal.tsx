@@ -30,11 +30,6 @@ interface FreelancerModalProps {
   onSaved: () => void
 }
 
-interface Training {
-  nome: string
-  validade: string
-}
-
 interface Uniform {
   tipo: string
   tamanho: string
@@ -94,13 +89,27 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
 
   const [cpf, setCpf] = useState('')
   const [rg, setRg] = useState('')
+  const [orgaoEmissor, setOrgaoEmissor] = useState('')
+  const [naturalidade, setNaturalidade] = useState('')
+  const [sexo, setSexo] = useState('')
+  const [cnpj, setCnpj] = useState('')
+  const [tituloEleitor, setTituloEleitor] = useState('')
   const [cnh, setCnh] = useState('')
   const [cnhValidade, setCnhValidade] = useState('')
   const [pis, setPis] = useState('')
+  const [rgArquivo, setRgArquivo] = useState('')
+  const [carteiraArquivo, setCarteiraArquivo] = useState('')
+  const [habilitacaoArquivo, setHabilitacaoArquivo] = useState('')
+  const [rgFile, setRgFile] = useState<File | null>(null)
+  const [carteiraFile, setCarteiraFile] = useState<File | null>(null)
+  const [habilitacaoFile, setHabilitacaoFile] = useState<File | null>(null)
 
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
+  const [contatoEmergenciaNome, setContatoEmergenciaNome] = useState('')
+  const [contatoEmergenciaTelefone, setContatoEmergenciaTelefone] = useState('')
+  const [contatoEmergenciaParentesco, setContatoEmergenciaParentesco] = useState('')
   const [endereco, setEndereco] = useState('')
   const [cidade, setCidade] = useState('')
   const [uf, setUf] = useState('')
@@ -113,9 +122,23 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   const [pix, setPix] = useState('')
   const [titular, setTitular] = useState('')
 
-  const [trainings, setTrainings] = useState<Training[]>([])
-  const [trainingNome, setTrainingNome] = useState('')
-  const [trainingValidade, setTrainingValidade] = useState('')
+  const [dataAso, setDataAso] = useState('')
+  const [dataNr06, setDataNr06] = useState('')
+  const [dataNr35, setDataNr35] = useState('')
+  const [dataNr10, setDataNr10] = useState('')
+  const [dataNr75, setDataNr75] = useState('')
+  const [dataNr01, setDataNr01] = useState('')
+  const [dataIntegracao, setDataIntegracao] = useState('')
+  const [dataListaFerramental, setDataListaFerramental] = useState('')
+  const [cracha, setCracha] = useState('')
+  const [dataHs, setDataHs] = useState('')
+  const [dataLtw, setDataLtw] = useState('')
+  const [dataCadastroNokia, setDataCadastroNokia] = useState('')
+  const [dataCadastroEricsson, setDataCadastroEricsson] = useState('')
+  const [dataCadastroTelebit, setDataCadastroTelebit] = useState('')
+  const [vencimentoAso, setVencimentoAso] = useState('')
+  const [vencimentoNr35, setVencimentoNr35] = useState('')
+  const [vencimentoNr10, setVencimentoNr10] = useState('')
 
   const [uniforms, setUniforms] = useState<Uniform[]>([])
   const [uniformTipo, setUniformTipo] = useState('')
@@ -149,11 +172,22 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     status,
     cpf,
     rg,
+    orgaoEmissor,
+    naturalidade,
+    sexo,
+    cnpj,
+    tituloEleitor,
     cnh,
     cnhValidade,
     pis,
+    rgArquivo,
+    carteiraArquivo,
+    habilitacaoArquivo,
     phone,
     whatsapp,
+    contatoEmergenciaNome,
+    contatoEmergenciaTelefone,
+    contatoEmergenciaParentesco,
     endereco,
     cidade,
     uf,
@@ -164,7 +198,23 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     tipoConta,
     pix,
     titular,
-    trainings: JSON.stringify(trainings),
+    dataAso,
+    dataNr06,
+    dataNr35,
+    dataNr10,
+    dataNr75,
+    dataNr01,
+    dataIntegracao,
+    dataListaFerramental,
+    cracha: cracha || undefined,
+    dataHs,
+    dataLtw,
+    dataCadastroNokia,
+    dataCadastroEricsson,
+    dataCadastroTelebit,
+    vencimentoAso,
+    vencimentoNr35,
+    vencimentoNr10,
     uniforms: JSON.stringify(uniforms),
     epis: JSON.stringify(epis),
   })
@@ -177,6 +227,22 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     setFoto(res.data.foto || '')
   }
 
+  const uploadDocument = async (id: number, tipo: 'rg' | 'carteira' | 'habilitacao', file: File | null) => {
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file)
+    const res = await api.post(`/freelancers/${id}/document/${tipo}`, form)
+    if (tipo === 'rg') setRgArquivo(res.data.rgArquivo || '')
+    if (tipo === 'carteira') setCarteiraArquivo(res.data.carteiraArquivo || '')
+    if (tipo === 'habilitacao') setHabilitacaoArquivo(res.data.habilitacaoArquivo || '')
+  }
+
+  const uploadDocuments = async (id: number) => {
+    await uploadDocument(id, 'rg', rgFile)
+    await uploadDocument(id, 'carteira', carteiraFile)
+    await uploadDocument(id, 'habilitacao', habilitacaoFile)
+  }
+
   const saveCurrent = async (): Promise<number> => {
     setError('')
     setLoading(true)
@@ -185,6 +251,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
       if (savedId != null) {
         const res = await api.patch(`/freelancers/${savedId}`, payload)
         await uploadPhoto(savedId)
+        await uploadDocuments(savedId)
         setCreatedAt(res.data.createdAt || createdAt)
         setUpdatedAt(res.data.updatedAt || updatedAt)
         return savedId
@@ -196,6 +263,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
       setCreatedAt(res.data.createdAt || '')
       setUpdatedAt(res.data.updatedAt || '')
       await uploadPhoto(id)
+      await uploadDocuments(id)
       return id
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
@@ -257,12 +325,23 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
 
           setCpf(data.cpf || '')
           setRg(data.rg || '')
+          setOrgaoEmissor(data.orgaoEmissor || '')
+          setNaturalidade(data.naturalidade || '')
+          setSexo(data.sexo || '')
+          setCnpj(data.cnpj || '')
+          setTituloEleitor(data.tituloEleitor || '')
           setCnh(data.cnh || '')
           setCnhValidade(data.cnhValidade || '')
           setPis(data.pis || '')
+          setRgArquivo(data.rgArquivo || '')
+          setCarteiraArquivo(data.carteiraArquivo || '')
+          setHabilitacaoArquivo(data.habilitacaoArquivo || '')
 
           setPhone(data.phone || '')
           setWhatsapp(data.whatsapp || '')
+          setContatoEmergenciaNome(data.contatoEmergenciaNome || '')
+          setContatoEmergenciaTelefone(data.contatoEmergenciaTelefone || '')
+          setContatoEmergenciaParentesco(data.contatoEmergenciaParentesco || '')
           setEndereco(data.endereco || '')
           setCidade(data.cidade || '')
           setUf(data.uf || '')
@@ -275,7 +354,23 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
           setPix(data.pix || '')
           setTitular(data.titular || '')
 
-          setTrainings(parseJsonList(data.trainings, []))
+          setDataAso(data.dataAso || '')
+          setDataNr06(data.dataNr06 || '')
+          setDataNr35(data.dataNr35 || '')
+          setDataNr10(data.dataNr10 || '')
+          setDataNr75(data.dataNr75 || '')
+          setDataNr01(data.dataNr01 || '')
+          setDataIntegracao(data.dataIntegracao || '')
+          setDataListaFerramental(data.dataListaFerramental || '')
+          setCracha(data.cracha || '')
+          setDataHs(data.dataHs || '')
+          setDataLtw(data.dataLtw || '')
+          setDataCadastroNokia(data.dataCadastroNokia || '')
+          setDataCadastroEricsson(data.dataCadastroEricsson || '')
+          setDataCadastroTelebit(data.dataCadastroTelebit || '')
+          setVencimentoAso(data.vencimentoAso || '')
+          setVencimentoNr35(data.vencimentoNr35 || '')
+          setVencimentoNr10(data.vencimentoNr10 || '')
           setUniforms(parseJsonList(data.uniforms, []))
           setEpis(parseJsonList(data.epis, []))
         })
@@ -300,13 +395,6 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
 
   const handleRemoveSkill = (skill: string) => {
     setSkills(skills.filter((s) => s !== skill))
-  }
-
-  const addTraining = () => {
-    if (!trainingNome.trim()) return
-    setTrainings([...trainings, { nome: trainingNome.trim(), validade: trainingValidade }])
-    setTrainingNome('')
-    setTrainingValidade('')
   }
 
   const addUniform = () => {
@@ -342,11 +430,25 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     setAvailability('available')
     setCpf('')
     setRg('')
+    setOrgaoEmissor('')
+    setNaturalidade('')
+    setSexo('')
+    setCnpj('')
+    setTituloEleitor('')
     setCnh('')
     setCnhValidade('')
     setPis('')
+    setRgArquivo('')
+    setCarteiraArquivo('')
+    setHabilitacaoArquivo('')
+    setRgFile(null)
+    setCarteiraFile(null)
+    setHabilitacaoFile(null)
     setPhone('')
     setWhatsapp('')
+    setContatoEmergenciaNome('')
+    setContatoEmergenciaTelefone('')
+    setContatoEmergenciaParentesco('')
     setEndereco('')
     setCidade('')
     setUf('')
@@ -357,13 +459,27 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     setTipoConta('')
     setPix('')
     setTitular('')
-    setTrainings([])
-    setTrainingNome('')
-    setTrainingValidade('')
     setUniforms([])
     setUniformTipo('')
     setUniformTamanho('')
     setUniformQtd('')
+    setDataAso('')
+    setDataNr06('')
+    setDataNr35('')
+    setDataNr10('')
+    setDataNr75('')
+    setDataNr01('')
+    setDataIntegracao('')
+    setDataListaFerramental('')
+    setCracha('')
+    setDataHs('')
+    setDataLtw('')
+    setDataCadastroNokia('')
+    setDataCadastroEricsson('')
+    setDataCadastroTelebit('')
+    setVencimentoAso('')
+    setVencimentoNr35('')
+    setVencimentoNr10('')
     setEpis([])
     setEpiNome('')
     setEpiTamanho('')
@@ -462,9 +578,6 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
           </TextField>
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Data de Nascimento" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} InputLabelProps={{ shrink: true }} />
-        </Grid>
-        <Grid item xs={12} sm={4}>
           <TextField fullWidth label="Valor Hora" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} />
         </Grid>
         <Grid item xs={12} sm={4}>
@@ -509,49 +622,136 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   )
 
   const renderDocs = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+    <Box>
+      {sectionTitle('Identificação Pessoal')}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="RG" value={rg} onChange={(e) => setRg(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Órgão Emissor" value={orgaoEmissor} onChange={(e) => setOrgaoEmissor(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Data de Nascimento" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} InputLabelProps={{ shrink: true }} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Naturalidade" value={naturalidade} onChange={(e) => setNaturalidade(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth select label="Sexo" value={sexo} onChange={(e) => setSexo(e.target.value)}>
+            <MenuItem value="">Selecione</MenuItem>
+            <MenuItem value="masculino">Masculino</MenuItem>
+            <MenuItem value="feminino">Feminino</MenuItem>
+            <MenuItem value="outro">Outro</MenuItem>
+          </TextField>
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="RG" value={rg} onChange={(e) => setRg(e.target.value)} />
+
+      {sectionTitle('Vínculos Trabalhistas')}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="PIS" value={pis} onChange={(e) => setPis(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Título de Eleitor" value={tituloEleitor} onChange={(e) => setTituloEleitor(e.target.value)} />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="CNH" value={cnh} onChange={(e) => setCnh(e.target.value)} />
+
+      {sectionTitle('Habilitação')}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="CNH" value={cnh} onChange={(e) => setCnh(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="Validade CNH" type="date" value={cnhValidade} onChange={(e) => setCnhValidade(e.target.value)} InputLabelProps={{ shrink: true }} />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="Validade CNH" type="date" value={cnhValidade} onChange={(e) => setCnhValidade(e.target.value)} InputLabelProps={{ shrink: true }} />
+
+      {sectionTitle('Documentos Anexos')}
+      <Grid container spacing={2}>
+        {[
+          { label: 'RG', arquivo: rgArquivo, file: rgFile, setFile: setRgFile, tipo: 'rg' },
+          { label: 'Carteira de Trabalho', arquivo: carteiraArquivo, file: carteiraFile, setFile: setCarteiraFile, tipo: 'carteira' },
+          { label: 'Habilitação', arquivo: habilitacaoArquivo, file: habilitacaoFile, setFile: setHabilitacaoFile, tipo: 'habilitacao' },
+        ].map((item) => (
+          <Grid item xs={12} sm={4} key={item.tipo}>
+            <Box sx={{ border: '1px dashed rgba(0,0,0,0.2)', borderRadius: 2, p: 2, textAlign: 'center' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>{item.label}</Typography>
+              <Button size="small" variant="outlined" component="label">
+                Anexar Arquivo
+                <input type="file" hidden onChange={(e) => item.setFile(e.target.files?.[0] ?? null)} />
+              </Button>
+              {item.file && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  {item.file.name}
+                </Typography>
+              )}
+              {!item.file && item.arquivo && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  <a href={item.arquivo} target="_blank" rel="noreferrer">Ver anexo</a>
+                </Typography>
+              )}
+            </Box>
+          </Grid>
+        ))}
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="PIS/PASEP" value={pis} onChange={(e) => setPis(e.target.value)} />
-      </Grid>
-    </Grid>
+    </Box>
   )
 
   const renderContacts = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+    <Box>
+      {sectionTitle('Contatos')}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="WhatsApp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField fullWidth label="CEP" value={cep} onChange={(e) => setCep(e.target.value)} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField fullWidth label="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={8}>
+          <TextField fullWidth label="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="UF" value={uf} onChange={(e) => setUf(e.target.value)} inputProps={{ maxLength: 2 }} />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+      {sectionTitle('Contato de Emergência')}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Nome" value={contatoEmergenciaNome} onChange={(e) => setContatoEmergenciaNome(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth label="Telefone" value={contatoEmergenciaTelefone} onChange={(e) => setContatoEmergenciaTelefone(e.target.value)} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField fullWidth select label="Parentesco" value={contatoEmergenciaParentesco} onChange={(e) => setContatoEmergenciaParentesco(e.target.value)}>
+            <MenuItem value="">Selecione</MenuItem>
+            <MenuItem value="conjuge">Cônjuge</MenuItem>
+            <MenuItem value="pai">Pai</MenuItem>
+            <MenuItem value="mae">Mãe</MenuItem>
+            <MenuItem value="filho">Filho(a)</MenuItem>
+            <MenuItem value="irmao">Irmão(ã)</MenuItem>
+            <MenuItem value="outro">Outro</MenuItem>
+          </TextField>
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="WhatsApp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField fullWidth label="CEP" value={cep} onChange={(e) => setCep(e.target.value)} />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField fullWidth label="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
-      </Grid>
-      <Grid item xs={12} sm={8}>
-        <TextField fullWidth label="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
-      </Grid>
-      <Grid item xs={12} sm={4}>
-        <TextField fullWidth label="UF" value={uf} onChange={(e) => setUf(e.target.value)} inputProps={{ maxLength: 2 }} />
-      </Grid>
-    </Grid>
+    </Box>
   )
 
   const renderBank = () => (
@@ -581,43 +781,56 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     </Grid>
   )
 
+  const dateField = (label: string, value: string, setter: (v: string) => void, cols = 3) => (
+    <Grid item xs={12} sm={6} md={cols}>
+      <TextField fullWidth label={label} type="date" value={value} onChange={(e) => setter(e.target.value)} InputLabelProps={{ shrink: true }} />
+    </Grid>
+  )
+
   const renderTrainings = () => (
     <Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mb: 1 }}>
-        <TextField
-          fullWidth
-          label="Treinamento"
-          value={trainingNome}
-          onChange={(e) => setTrainingNome(e.target.value)}
-          placeholder="Ex.: Trabalho em Altura"
-        />
-        <TextField
-          label="Validade"
-          type="date"
-          value={trainingValidade}
-          onChange={(e) => setTrainingValidade(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 170 }}
-        />
-        <Button variant="outlined" startIcon={<AddIcon />} onClick={addTraining} sx={{ height: 56 }}>
-          Adicionar
-        </Button>
-      </Box>
-      {trainings.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">Nenhum treinamento cadastrado.</Typography>
-      ) : (
-        trainings.map((t, i) => (
-          <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
-            <Typography variant="body2" sx={{ flexGrow: 1 }}>
-              {t.nome}
-              {t.validade ? ` · Validade: ${t.validade}` : ''}
-            </Typography>
-            <IconButton size="small" onClick={() => setTrainings(trainings.filter((_, idx) => idx !== i))}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        ))
-      )}
+      {sectionTitle('Saúde e Segurança')}
+      <Grid container spacing={2}>
+        {dateField('Data ASO', dataAso, setDataAso)}
+        {dateField('Data NR06 Ficha de EPI', dataNr06, setDataNr06)}
+        {dateField('Data NR35 Trabalho em Altura', dataNr35, setDataNr35)}
+        {dateField('Data NR10 Eletricidade', dataNr10, setDataNr10)}
+        {dateField('Data NR75 Primeiros Socorros', dataNr75, setDataNr75)}
+        {dateField('Data NR01 Ordem de Serviço', dataNr01, setDataNr01)}
+      </Grid>
+
+      {sectionTitle('Integração')}
+      <Grid container spacing={2}>
+        {dateField('Data Integração', dataIntegracao, setDataIntegracao)}
+        {dateField('Data Lista Ferramental', dataListaFerramental, setDataListaFerramental)}
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField fullWidth select label="Crachá" value={cracha} onChange={(e) => setCracha(e.target.value)}>
+            <MenuItem value="">Selecione</MenuItem>
+            <MenuItem value="sim">Sim</MenuItem>
+            <MenuItem value="nao">Não</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
+
+      {sectionTitle('Nokia')}
+      <Grid container spacing={2}>
+        {dateField('Data H&S', dataHs, setDataHs)}
+        {dateField('Data LTW', dataLtw, setDataLtw)}
+        {dateField('Data Cadastro Nokia', dataCadastroNokia, setDataCadastroNokia)}
+      </Grid>
+
+      {sectionTitle('Outros Registros')}
+      <Grid container spacing={2}>
+        {dateField('Data Cadastro Ericsson', dataCadastroEricsson, setDataCadastroEricsson)}
+        {dateField('Data Cadastro Telebit', dataCadastroTelebit, setDataCadastroTelebit)}
+      </Grid>
+
+      {sectionTitle('Vencimentos')}
+      <Grid container spacing={2}>
+        {dateField('ASO', vencimentoAso, setVencimentoAso)}
+        {dateField('NR35', vencimentoNr35, setVencimentoNr35)}
+        {dateField('NR10', vencimentoNr10, setVencimentoNr10)}
+      </Grid>
     </Box>
   )
 

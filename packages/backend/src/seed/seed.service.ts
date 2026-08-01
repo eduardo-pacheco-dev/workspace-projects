@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { FreelancersService } from '../freelancers/freelancers.service';
 import { JobsService } from '../jobs/jobs.service';
+import { LpuService } from '../lpu/lpu.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -10,6 +11,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly usersService: UsersService,
     private readonly freelancersService: FreelancersService,
     private readonly jobsService: JobsService,
+    private readonly lpuService: LpuService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -19,6 +21,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedAdmin();
     await this.seedFreelancers();
     await this.seedJobs();
+    await this.seedLpus();
   }
 
   private async seedAdmin() {
@@ -316,5 +319,75 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${jobs.length} jobs created`);
+  }
+
+  private async seedLpus() {
+    const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });
+    if (freelancers.length === 0) return;
+
+    for (const freelancer of freelancers) {
+      const existing = await this.lpuService.findAllByFreelancer(freelancer.id);
+      if (existing.length > 0) return;
+    }
+
+    const lpus = [
+      {
+        freelancerIndex: 0,
+        nome: 'ERBS Centro - Cobertura 4G',
+        descricao: 'Prestação de utilidade na estação rádio base do centro, incluindo otimização de cobertura 4G.',
+        valor: 150,
+        data: '2026-08-05',
+      },
+      {
+        freelancerIndex: 0,
+        nome: 'Radio Link Torre Norte',
+        descricao: 'Acompanhamento de alinhamento e configuração de enlace de rádio na torre norte.',
+        valor: 160,
+        data: '2026-08-12',
+      },
+      {
+        freelancerIndex: 1,
+        nome: 'Drive Test Zona Sul',
+        descricao: 'Execução de drive test e coleta de métricas de rede móvel na zona sul.',
+        valor: 130,
+        data: '2026-08-08',
+      },
+      {
+        freelancerIndex: 2,
+        nome: 'Instalação Antena Bairro Industrial',
+        descricao: 'Instalação de antena setorial e cabo em estação no bairro industrial.',
+        valor: 80,
+        data: '2026-08-10',
+      },
+      {
+        freelancerIndex: 3,
+        nome: 'Integração API Operadora',
+        descricao: 'Desenvolvimento de integração entre o sistema interno e a API da operadora.',
+        valor: 110,
+        data: '2026-08-15',
+      },
+      {
+        freelancerIndex: 4,
+        nome: 'Documentação de Implantação',
+        descricao: 'Elaboração de documentação técnica do processo de implantação de ERBS.',
+        valor: 55,
+        data: '2026-08-03',
+      },
+    ];
+
+    for (const lpu of lpus) {
+      const freelancer = freelancers[lpu.freelancerIndex];
+      if (!freelancer) continue;
+      await this.lpuService.create({
+        freelancerId: freelancer.id,
+        nome: lpu.nome,
+        descricao: lpu.descricao,
+        valor: lpu.valor,
+        data: lpu.data,
+        status: 'ativo',
+      });
+    }
+
+    console.log(`Seed: ${lpus.length} lpus created`);
   }
 }

@@ -11,6 +11,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { CommentsModule } from './comments/comments.module';
 import { ServiceOrdersModule } from './service-orders/service-orders.module';
 import { ServiceOrderObservationsModule } from './service-orders/observations/observations.module';
+import { FinanceModule } from './finance/finance.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -50,6 +51,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     CommentsModule,
     ServiceOrdersModule,
     ServiceOrderObservationsModule,
+    FinanceModule,
     ...(dbType === 'sqljs' ? [SeedModule] : []),
   ],
 })

@@ -12,7 +12,8 @@ export class AttachmentsService {
     private readonly attachmentRepository: Repository<Attachment>,
   ) {}
 
-  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId'>): string {
+  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId'>): string {
+    if (attachment.stationId) return path.resolve('uploads', `station-${attachment.stationId}`);
     const subdir = attachment.serviceOrderId
       ? `service-order-${attachment.serviceOrderId}`
       : `job-${attachment.jobId}`;
@@ -72,6 +73,24 @@ export class AttachmentsService {
     return this.attachmentRepository.save(attachment);
   }
 
+  async uploadForStation(
+    stationId: number,
+    file: Express.Multer.File,
+  ): Promise<Attachment> {
+    const dir = path.resolve('uploads', `station-${stationId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      stationId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
   async findById(id: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({ where: { id } });
     if (!attachment) throw new NotFoundException('Anexo não encontrado');
@@ -88,6 +107,13 @@ export class AttachmentsService {
   async findByServiceOrder(serviceOrderId: number): Promise<Attachment[]> {
     return this.attachmentRepository.find({
       where: { serviceOrderId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByStation(stationId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { stationId },
       order: { createdAt: 'DESC' },
     });
   }

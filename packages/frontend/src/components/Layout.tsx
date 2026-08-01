@@ -21,6 +21,7 @@ import CellTowerIcon from '@mui/icons-material/CellTower'
 import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
 import FolderIcon from '@mui/icons-material/Folder'
 import BusinessIcon from '@mui/icons-material/Business'
+import DashboardIcon from '@mui/icons-material/Dashboard'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   const items = [
+    { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
     { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
     { label: 'Freelancers', path: '/freelancers', icon: <PersonIcon /> },

@@ -55,6 +55,19 @@ export class CommentsService {
     return this.commentRepository.save(comment);
   }
 
+  async createForProject(
+    projectId: number,
+    dto: CreateCommentDto,
+    author: string,
+  ): Promise<Comment> {
+    const comment = this.commentRepository.create({
+      projectId,
+      content: dto.content,
+      author,
+    });
+    return this.commentRepository.save(comment);
+  }
+
   async findByJob(jobId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { jobId },
@@ -79,6 +92,13 @@ export class CommentsService {
   async findByRadioLink(radioLinkId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { radioLinkId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByProject(projectId: number): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { projectId },
       order: { createdAt: 'DESC' },
     });
   }

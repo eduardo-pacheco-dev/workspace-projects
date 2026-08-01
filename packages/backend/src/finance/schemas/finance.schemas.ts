@@ -65,7 +65,25 @@ export const updateSpendingLimitSchema = z
     message: 'Informe ao menos um campo para atualizar.',
   });
 
+export const createBankAccountSchema = z.object({
+  name: z.string().min(1, 'Informe um nome.'),
+  bank: z.string().optional(),
+  balance: z.number('Informe um saldo válido.'),
+});
+
+export const updateBankAccountSchema = z
+  .object({
+    name: z.string().min(1, 'Informe um nome.').optional(),
+    bank: z.string().optional(),
+    balance: z.number('Informe um saldo válido.').optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Informe ao menos um campo para atualizar.',
+  });
+
 export type CreateFinanceEntryInput = z.infer<typeof createFinanceEntrySchema>;
 export type UpdateFinanceEntryInput = z.infer<typeof updateFinanceEntrySchema>;
 export type CreateSpendingLimitInput = z.infer<typeof createSpendingLimitSchema>;
 export type UpdateSpendingLimitInput = z.infer<typeof updateSpendingLimitSchema>;
+export type CreateBankAccountInput = z.infer<typeof createBankAccountSchema>;
+export type UpdateBankAccountInput = z.infer<typeof updateBankAccountSchema>;

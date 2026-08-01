@@ -88,6 +88,7 @@ export default function StationDetailsPage() {
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [comments, setComments] = useState<Comment[]>([])
+  const [commentsError, setCommentsError] = useState('')
   const [newComment, setNewComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -117,9 +118,14 @@ export default function StationDetailsPage() {
   }, [fetchAttachments])
 
   const fetchComments = useCallback(() => {
+    setCommentsError('')
     api.get(`/comments/station/${stationId}`)
-      .then((res) => setComments(res.data))
-      .catch(() => {})
+      .then((res) => {
+        setComments(res.data)
+      })
+      .catch((err) => {
+        setCommentsError(err.response?.data?.message || 'Não foi possível carregar os comentários.')
+      })
   }, [stationId])
 
   useEffect(() => {
@@ -411,7 +417,8 @@ export default function StationDetailsPage() {
           <Paper sx={{ p: 3, mt: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
             <Divider sx={{ mb: 2 }} />
-            {comments.length === 0 ? (
+            {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
+            {!commentsError && comments.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Nenhum comentário ainda.</Typography>
             ) : (
               <List dense disablePadding sx={{ mb: 2 }}>

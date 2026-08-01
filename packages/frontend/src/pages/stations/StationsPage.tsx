@@ -26,18 +26,17 @@ import StationModal from './StationModal'
 
 interface Station {
   id: number
-  nome: string
-  codigo: string | null
+  siteId: string
+  endId: string
   endereco: string | null
   latitude: number | null
   longitude: number | null
-  tecnologia: string | null
   operadora: string | null
   observacoes: string | null
   status: string
 }
 
-type SortBy = 'id' | 'nome' | 'codigo' | 'endereco' | 'operadora' | 'tecnologia' | 'status'
+type SortBy = 'id' | 'siteId' | 'endId' | 'endereco' | 'operadora' | 'status'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function StationsPage() {
@@ -109,11 +108,10 @@ export default function StationsPage() {
   }
 
   const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'codigo', label: 'Código' },
+    { id: 'siteId', label: 'Site ID' },
+    { id: 'endId', label: 'End ID' },
     { id: 'operadora', label: 'Operadora' },
     { id: 'endereco', label: 'Endereço' },
-    { id: 'tecnologia', label: 'Tecnologia' },
     { id: 'status', label: 'Status' },
   ]
 
@@ -177,11 +175,10 @@ export default function StationsPage() {
           <TableBody>
             {stations.map((s) => (
               <TableRow key={s.id} hover>
-                <TableCell>{s.nome}</TableCell>
-                <TableCell>{s.codigo || '-'}</TableCell>
+                <TableCell>{s.siteId}</TableCell>
+                <TableCell>{s.endId}</TableCell>
                 <TableCell>{s.operadora || '-'}</TableCell>
                 <TableCell>{s.endereco || '-'}</TableCell>
-                <TableCell>{s.tecnologia || '-'}</TableCell>
                 <TableCell>
                   <Chip
                     size="small"

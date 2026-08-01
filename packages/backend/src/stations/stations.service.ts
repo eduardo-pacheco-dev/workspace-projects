@@ -12,7 +12,7 @@ export interface StationQuery {
   sortOrder?: 'ASC' | 'DESC';
   search?: string;
   status?: string;
-  tecnologia?: string;
+  operadora?: string;
 }
 
 @Injectable()
@@ -35,14 +35,14 @@ export class StationsService {
       sortOrder = 'ASC' as 'ASC' | 'DESC',
       search,
       status,
-      tecnologia,
+      operadora,
     } = query;
 
     const qb = this.stationsRepository.createQueryBuilder('s');
 
     if (search) {
       qb.where(
-        's.nome LIKE :search OR s.codigo LIKE :search OR s.endereco LIKE :search OR s.operadora LIKE :search',
+        's.siteId LIKE :search OR s.endId LIKE :search OR s.endereco LIKE :search OR s.operadora LIKE :search',
         { search: `%${search}%` },
       );
     }
@@ -51,11 +51,11 @@ export class StationsService {
       qb.andWhere('s.status = :status', { status });
     }
 
-    if (tecnologia) {
-      qb.andWhere('s.tecnologia = :tecnologia', { tecnologia });
+    if (operadora) {
+      qb.andWhere('s.operadora = :operadora', { operadora });
     }
 
-    const allowedSort = ['id', 'nome', 'codigo', 'endereco', 'operadora', 'status', 'tecnologia', 'createdAt'];
+    const allowedSort = ['id', 'siteId', 'endId', 'endereco', 'operadora', 'status', 'createdAt'];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 

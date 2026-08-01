@@ -12,10 +12,10 @@ export class Station {
   id: number;
 
   @Column({ type: 'text' })
-  nome: string;
+  siteId: string;
 
-  @Column({ type: 'text', nullable: true })
-  codigo?: string;
+  @Column({ type: 'text' })
+  endId: string;
 
   @Column({ type: 'text', nullable: true })
   endereco?: string;
@@ -25,9 +25,6 @@ export class Station {
 
   @Column({ type: 'real', nullable: true })
   longitude?: number;
-
-  @Column({ type: 'text', nullable: true })
-  tecnologia?: string;
 
   @Column({ type: 'text', nullable: true })
   operadora?: string;

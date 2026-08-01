@@ -30,9 +30,9 @@ export class StationsController {
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('search') search?: string,
     @Query('status') status?: string,
-    @Query('tecnologia') tecnologia?: string,
+    @Query('operadora') operadora?: string,
   ) {
-    return this.stationsService.findAll({ page, limit, sortBy, sortOrder, search, status, tecnologia });
+    return this.stationsService.findAll({ page, limit, sortBy, sortOrder, search, status, operadora });
   }
 
   @Get(':id')

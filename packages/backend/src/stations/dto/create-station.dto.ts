@@ -1,12 +1,13 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
 
+export const stationOperadoras = ['TIM', 'CLARO', 'VIVO', 'Outras'] as const;
+
 export class CreateStationDto {
   @IsString()
-  nome: string;
+  siteId: string;
 
-  @IsOptional()
   @IsString()
-  codigo?: string;
+  endId: string;
 
   @IsOptional()
   @IsString()
@@ -21,11 +22,7 @@ export class CreateStationDto {
   longitude?: number;
 
   @IsOptional()
-  @IsString()
-  tecnologia?: string;
-
-  @IsOptional()
-  @IsString()
+  @IsIn(stationOperadoras)
   operadora?: string;
 
   @IsOptional()

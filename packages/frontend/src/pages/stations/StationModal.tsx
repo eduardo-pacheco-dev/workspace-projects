@@ -21,15 +21,16 @@ interface StationModalProps {
   onSaved: () => void
 }
 
+const operadoras = ['TIM', 'CLARO', 'VIVO', 'Outras']
+
 export default function StationModal({ open, editId, onClose, onSaved }: StationModalProps) {
   const isEdit = Boolean(editId)
 
-  const [nome, setNome] = useState('')
-  const [codigo, setCodigo] = useState('')
+  const [siteId, setSiteId] = useState('')
+  const [endId, setEndId] = useState('')
   const [endereco, setEndereco] = useState('')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
-  const [tecnologia, setTecnologia] = useState('')
   const [operadora, setOperadora] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [status, setStatus] = useState('ativo')
@@ -41,12 +42,11 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
       api.get(`/stations/${editId}`)
         .then((res) => {
           const d = res.data
-          setNome(d.nome || '')
-          setCodigo(d.codigo || '')
+          setSiteId(d.siteId || '')
+          setEndId(d.endId || '')
           setEndereco(d.endereco || '')
           setLatitude(d.latitude != null ? String(d.latitude) : '')
           setLongitude(d.longitude != null ? String(d.longitude) : '')
-          setTecnologia(d.tecnologia || '')
           setOperadora(d.operadora || '')
           setObservacoes(d.observacoes || '')
           setStatus(d.status || 'ativo')
@@ -60,7 +60,7 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
     setError('')
     setLoading(true)
 
-    const payload: any = { nome, codigo, endereco, tecnologia, operadora, observacoes, status }
+    const payload: any = { siteId, endId, endereco, operadora, observacoes, status }
     if (latitude) payload.latitude = Number(latitude)
     if (longitude) payload.longitude = Number(longitude)
 
@@ -82,12 +82,11 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
   const handleClose = () => {
     if (loading) return
     setError('')
-    setNome('')
-    setCodigo('')
+    setSiteId('')
+    setEndId('')
     setEndereco('')
     setLatitude('')
     setLongitude('')
-    setTecnologia('')
     setOperadora('')
     setObservacoes('')
     setStatus('ativo')
@@ -101,14 +100,25 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Site ID" value={siteId} onChange={(e) => setSiteId(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} margin="normal" />
+              <TextField fullWidth label="End ID" value={endId} onChange={(e) => setEndId(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Operadora" value={operadora} onChange={(e) => setOperadora(e.target.value)} margin="normal" />
+              <TextField fullWidth select label="Operadora" value={operadora} onChange={(e) => setOperadora(e.target.value)} margin="normal">
+                <MenuItem value="">Selecione</MenuItem>
+                {operadoras.map((op) => (
+                  <MenuItem key={op} value={op}>{op}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal" required>
+                <MenuItem value="ativo">Ativo</MenuItem>
+                <MenuItem value="inativo">Inativo</MenuItem>
+              </TextField>
             </Grid>
             <Grid item xs={12}>
               <TextField fullWidth label="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} margin="normal" />
@@ -118,15 +128,6 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Longitude" type="number" value={longitude} onChange={(e) => setLongitude(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tecnologia" value={tecnologia} onChange={(e) => setTecnologia(e.target.value)} margin="normal" placeholder="Ex.: 4G, 5G" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal" required>
-                <MenuItem value="ativo">Ativo</MenuItem>
-                <MenuItem value="inativo">Inativo</MenuItem>
-              </TextField>
             </Grid>
             <Grid item xs={12}>
               <TextField fullWidth label="Observações" multiline rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} margin="normal" />

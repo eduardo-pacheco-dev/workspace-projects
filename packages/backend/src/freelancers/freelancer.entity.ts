@@ -25,6 +25,69 @@ export class Freelancer {
   @Column({ type: 'text', nullable: true })
   email?: string;
 
+  @Column({ type: 'text', nullable: true })
+  birthDate?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cpf?: string;
+
+  @Column({ type: 'text', nullable: true })
+  rg?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cnh?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cnhValidade?: string;
+
+  @Column({ type: 'text', nullable: true })
+  pis?: string;
+
+  @Column({ type: 'text', nullable: true })
+  phone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  whatsapp?: string;
+
+  @Column({ type: 'text', nullable: true })
+  endereco?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cidade?: string;
+
+  @Column({ type: 'text', nullable: true })
+  uf?: string;
+
+  @Column({ type: 'text', nullable: true })
+  cep?: string;
+
+  @Column({ type: 'text', nullable: true })
+  banco?: string;
+
+  @Column({ type: 'text', nullable: true })
+  agencia?: string;
+
+  @Column({ type: 'text', nullable: true })
+  conta?: string;
+
+  @Column({ type: 'text', nullable: true })
+  tipoConta?: string;
+
+  @Column({ type: 'text', nullable: true })
+  pix?: string;
+
+  @Column({ type: 'text', nullable: true })
+  titular?: string;
+
+  @Column({ type: 'text', nullable: true })
+  trainings?: string;
+
+  @Column({ type: 'text', nullable: true })
+  uniforms?: string;
+
+  @Column({ type: 'text', nullable: true })
+  epis?: string;
+
   @Column({ type: 'text' })
   bio: string;
 

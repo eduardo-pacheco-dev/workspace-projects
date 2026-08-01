@@ -1,5 +1,6 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ProjectProvider } from './contexts/ProjectContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -45,7 +46,8 @@ function ProtectedLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <ProjectProvider>
+        <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -80,7 +82,8 @@ export default function App() {
           <Route path="/clients/:id" element={<ClientDetailsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-      </Routes>
+        </Routes>
+      </ProjectProvider>
     </AuthProvider>
   )
 }

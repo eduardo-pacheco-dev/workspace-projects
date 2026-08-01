@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AppBar,
@@ -13,6 +13,8 @@ import {
   Avatar,
   Tooltip,
   Divider,
+  Select,
+  SelectChangeEvent,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import PersonIcon from '@mui/icons-material/Person'
@@ -26,13 +28,37 @@ import BusinessIcon from '@mui/icons-material/Business'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
+import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useProject } from '../contexts/ProjectContext'
+
+interface ProjectOption {
+  id: number
+  nome: string
+  codigo: string | null
+}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth()
+  const { projectId, setProjectId } = useProject()
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null)
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+
+  useEffect(() => {
+    api.get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setProjects(data)
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleProjectChange = (e: SelectChangeEvent<number | ''>) => {
+    const id = Number(e.target.value)
+    setProjectId(id || null)
+  }
 
   const handleMenu = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget)
   const handleClose = () => setAnchorEl(null)
@@ -90,9 +116,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </MenuItem>
             ))}
           </Menu>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            App
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            <Select
+              value={projectId ?? ''}
+              onChange={handleProjectChange}
+              displayEmpty
+              variant="standard"
+              sx={{
+                color: 'white',
+                minWidth: 200,
+                '& .MuiSelect-icon': { color: 'white' },
+                '&:before': { borderBottom: '1px solid rgba(255,255,255,0.5)' },
+                '&:after': { borderBottom: '1px solid white' },
+              }}
+            >
+              <MenuItem value="">
+                <em>Selecionar Projeto</em>
+              </MenuItem>
+              {projects.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  {p.nome}
+                  {p.codigo ? ` (${p.codigo})` : ''}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
           <Tooltip title="Conta">
             <Box
               onClick={handleUserMenuOpen}

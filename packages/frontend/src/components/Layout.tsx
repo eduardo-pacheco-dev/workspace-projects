@@ -21,6 +21,7 @@ import GroupIcon from '@mui/icons-material/Group'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import CellTowerIcon from '@mui/icons-material/CellTower'
+import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Contratos', path: '/freelancers?tab=3', icon: <DescriptionIcon /> },
     { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon /> },
     { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
+    { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
   ]
 
   return (

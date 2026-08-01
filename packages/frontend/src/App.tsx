@@ -21,6 +21,8 @@ import AccountDetailsPage from './pages/finance/AccountDetailsPage'
 import CardDetailsPage from './pages/finance/CardDetailsPage'
 import StationsPage from './pages/stations/StationsPage'
 import StationDetailsPage from './pages/stations/StationDetailsPage'
+import RadioLinksPage from './pages/radio-links/RadioLinksPage'
+import RadioLinkDetailsPage from './pages/radio-links/RadioLinkDetailsPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -65,6 +67,8 @@ export default function App() {
           <Route path="/finance/cards/:id" element={<CardDetailsPage />} />
           <Route path="/stations" element={<StationsPage />} />
           <Route path="/stations/:id" element={<StationDetailsPage />} />
+          <Route path="/radio-links" element={<RadioLinksPage />} />
+          <Route path="/radio-links/:id" element={<RadioLinkDetailsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

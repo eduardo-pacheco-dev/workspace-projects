@@ -79,6 +79,21 @@ export class CommentsController {
     return this.commentsService.findByRadioLink(radioLinkId);
   }
 
+  @Post('project/:projectId')
+  createForProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForProject(projectId, dto, author);
+  }
+
+  @Get('project/:projectId')
+  findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.commentsService.findByProject(projectId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

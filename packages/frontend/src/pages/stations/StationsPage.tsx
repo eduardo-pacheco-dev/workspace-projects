@@ -21,6 +21,7 @@ import {
   MenuItem,
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import StationModal from './StationModal'
 
@@ -40,6 +41,7 @@ type SortBy = 'id' | 'siteId' | 'endId' | 'endereco' | 'operadora' | 'status'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function StationsPage() {
+  const navigate = useNavigate()
   const [stations, setStations] = useState<Station[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -174,7 +176,12 @@ export default function StationsPage() {
           </TableHead>
           <TableBody>
             {stations.map((s) => (
-              <TableRow key={s.id} hover>
+              <TableRow
+                key={s.id}
+                hover
+                onClick={() => navigate(`/stations/${s.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{s.siteId}</TableCell>
                 <TableCell>{s.endId}</TableCell>
                 <TableCell>{s.operadora || '-'}</TableCell>
@@ -187,10 +194,20 @@ export default function StationsPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: s.id })}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setModal({ open: true, editId: s.id })
+                    }}
+                  >
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(s.id)}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(s.id)
+                    }}
+                  >
                     <Delete />
                   </IconButton>
                 </TableCell>

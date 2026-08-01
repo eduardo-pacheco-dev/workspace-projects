@@ -220,7 +220,7 @@ export default function OverviewPage() {
         <Grid item xs={12} md={7}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="h6">Lançamentos Recentes</Typography>
-            <Button size="small" onClick={() => navigate('/finance?tab=2')}>
+            <Button size="small" onClick={() => navigate('/finance?tab=3')}>
               Ver todos
             </Button>
           </Box>
@@ -259,7 +259,7 @@ export default function OverviewPage() {
         <Grid item xs={12} md={5}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="h6">Limites de Gastos</Typography>
-            <Button size="small" onClick={() => navigate('/finance?tab=4')}>
+            <Button size="small" onClick={() => navigate('/finance?tab=5')}>
               Ver todos
             </Button>
           </Box>

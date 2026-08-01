@@ -55,6 +55,24 @@ export class FinanceReportsService {
     };
   }
 
+  async cardSummary(cardId: number, month: number, year: number) {
+    const qb = this.entriesRepository
+      .createQueryBuilder('fe')
+      .select('COALESCE(SUM(fe.amount), 0)', 'total')
+      .addSelect('COUNT(fe.id)', 'count')
+      .where('YEAR(fe.date) = :year', { year })
+      .andWhere('MONTH(fe.date) = :month', { month })
+      .andWhere("fe.status != 'canceled'")
+      .andWhere('fe.cardId = :cardId', { cardId });
+
+    const row = await qb.getRawOne();
+
+    return {
+      spent: Number(row?.total) || 0,
+      count: Number(row?.count) || 0,
+    };
+  }
+
   async byCategory(month: number, year: number) {
     const rows = await this.entriesRepository
       .createQueryBuilder('fe')

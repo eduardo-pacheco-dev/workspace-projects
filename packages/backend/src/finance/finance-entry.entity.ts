@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { BankAccount } from './bank-account.entity';
+import { CreditCard } from './credit-card.entity';
 
 @Entity()
 export class FinanceEntry {
@@ -44,6 +45,13 @@ export class FinanceEntry {
   @ManyToOne(() => BankAccount, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'accountId' })
   account: BankAccount | null;
+
+  @Column({ type: 'integer', nullable: true })
+  cardId: number | null;
+
+  @ManyToOne(() => CreditCard, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'cardId' })
+  card: CreditCard | null;
 
   @Column({ type: 'text', nullable: true })
   recurrence: string | null;

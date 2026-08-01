@@ -18,6 +18,7 @@ import ContractForm from './pages/contracts/ContractForm'
 import ContractDetail from './pages/contracts/ContractDetail'
 import FinancePage from './pages/finance/FinancePage'
 import AccountDetailsPage from './pages/finance/AccountDetailsPage'
+import CardDetailsPage from './pages/finance/CardDetailsPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/contracts/:id/edit" element={<ContractForm />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/finance/accounts/:id" element={<AccountDetailsPage />} />
+          <Route path="/finance/cards/:id" element={<CardDetailsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

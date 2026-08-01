@@ -22,6 +22,15 @@ export class FinanceReportsController {
     return this.financeReportsService.byCategory(month, year);
   }
 
+  @Get('card-summary')
+  async cardSummary(
+    @Query('cardId', ParseIntPipe) cardId: number,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ) {
+    return this.financeReportsService.cardSummary(cardId, month, year);
+  }
+
   @Get('limits')
   async limits(
     @Query('month', ParseIntPipe) month: number,

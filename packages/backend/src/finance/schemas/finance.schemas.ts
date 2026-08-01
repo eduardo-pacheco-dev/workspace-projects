@@ -14,6 +14,7 @@ export const createFinanceEntrySchema = z.object({
   status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
   notes: z.string().optional(),
   accountId: z.number().int('Conta inválida.').nullable().optional(),
+  cardId: z.number().int('Cartão inválido.').nullable().optional(),
   recurrence: z.enum(financeEntryRecurrence, 'Repetição inválida.').optional(),
   recurrenceEnd: z.string().optional(),
   tags: z.string().optional(),
@@ -30,6 +31,7 @@ export const updateFinanceEntrySchema = z
     status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
     notes: z.string().optional(),
     accountId: z.number().int('Conta inválida.').nullable().optional(),
+    cardId: z.number().int('Cartão inválido.').nullable().optional(),
     recurrence: z.enum(financeEntryRecurrence, 'Repetição inválida.').optional(),
     recurrenceEnd: z.string().optional(),
     tags: z.string().optional(),
@@ -103,6 +105,57 @@ export const updateCategorySchema = z
     message: 'Informe ao menos um campo para atualizar.',
   });
 
+export const creditCardBrands = [
+  'visa',
+  'mastercard',
+  'elo',
+  'amex',
+  'hipercard',
+] as const;
+
+export const createCreditCardSchema = z.object({
+  name: z.string().min(1, 'Informe um nome.'),
+  bank: z.string().optional(),
+  brand: z.enum(creditCardBrands, 'Bandeira inválida.').optional(),
+  limit: z.number('Informe um limite válido.').nonnegative('O limite deve ser maior ou igual a zero.'),
+  closingDay: z
+    .number('Informe o dia de fechamento.')
+    .int('Dia inválido.')
+    .min(1, 'O dia deve estar entre 1 e 28.')
+    .max(28, 'O dia deve estar entre 1 e 28.'),
+  dueDay: z
+    .number('Informe o dia de vencimento.')
+    .int('Dia inválido.')
+    .min(1, 'O dia deve estar entre 1 e 28.')
+    .max(28, 'O dia deve estar entre 1 e 28.'),
+});
+
+export const updateCreditCardSchema = z
+  .object({
+    name: z.string().min(1, 'Informe um nome.').optional(),
+    bank: z.string().optional(),
+    brand: z.enum(creditCardBrands, 'Bandeira inválida.').optional(),
+    limit: z
+      .number('Informe um limite válido.')
+      .nonnegative('O limite deve ser maior ou igual a zero.')
+      .optional(),
+    closingDay: z
+      .number('Informe o dia de fechamento.')
+      .int('Dia inválido.')
+      .min(1, 'O dia deve estar entre 1 e 28.')
+      .max(28, 'O dia deve estar entre 1 e 28.')
+      .optional(),
+    dueDay: z
+      .number('Informe o dia de vencimento.')
+      .int('Dia inválido.')
+      .min(1, 'O dia deve estar entre 1 e 28.')
+      .max(28, 'O dia deve estar entre 1 e 28.')
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Informe ao menos um campo para atualizar.',
+  });
+
 export type CreateFinanceEntryInput = z.infer<typeof createFinanceEntrySchema>;
 export type UpdateFinanceEntryInput = z.infer<typeof updateFinanceEntrySchema>;
 export type CreateSpendingLimitInput = z.infer<typeof createSpendingLimitSchema>;
@@ -111,3 +164,5 @@ export type CreateBankAccountInput = z.infer<typeof createBankAccountSchema>;
 export type UpdateBankAccountInput = z.infer<typeof updateBankAccountSchema>;
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+export type CreateCreditCardInput = z.infer<typeof createCreditCardSchema>;
+export type UpdateCreditCardInput = z.infer<typeof updateCreditCardSchema>;

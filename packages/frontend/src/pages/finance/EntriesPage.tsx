@@ -20,7 +20,7 @@ import {
   Stack,
   Chip,
 } from '@mui/material'
-import { Edit, Delete, Add, Repeat, AttachFile } from '@mui/icons-material'
+import { Edit, Delete, Add, Repeat, AttachFile, CreditCard } from '@mui/icons-material'
 import api from '../../services/api'
 import { formatCurrency, formatDate, monthNames } from '../../utils/format'
 import EntryModal from './EntryModal'
@@ -37,6 +37,8 @@ interface FinanceEntry {
   notes: string | null
   accountId: number | null
   account?: { id: number; name: string } | null
+  cardId: number | null
+  card?: { id: number; name: string } | null
   recurrence: string | null
   tags: string | null
   attachment: string | null
@@ -286,7 +288,7 @@ export default function EntriesPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
-              <TableCell>Conta</TableCell>
+              <TableCell>Conta / Cartão</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -319,7 +321,20 @@ export default function EntriesPage() {
                 <TableCell>
                   <Chip size="small" label={statusLabels[entry.status] || entry.status} color={statusColors[entry.status] || 'default'} />
                 </TableCell>
-                <TableCell>{entry.account?.name || '-'}</TableCell>
+                <TableCell>
+                  <Box>
+                    {entry.account?.name && <Box>{entry.account.name}</Box>}
+                    {entry.card?.name && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <CreditCard fontSize="small" color="action" />
+                        <Typography variant="caption" color="text.secondary">
+                          {entry.card.name}
+                        </Typography>
+                      </Box>
+                    )}
+                    {!entry.account?.name && !entry.card?.name && '-'}
+                  </Box>
+                </TableCell>
                 <TableCell>
                   {entry.attachment && (
                     <IconButton

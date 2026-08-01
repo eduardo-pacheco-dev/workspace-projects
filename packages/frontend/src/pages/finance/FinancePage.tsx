@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Tabs, Tab, Box } from '@mui/material'
 import OverviewPage from './OverviewPage'
 import AccountsPage from './AccountsPage'
+import CardsPage from './CardsPage'
 import EntriesPage from './EntriesPage'
 import ReportsPage from './ReportsPage'
 import LimitsPage from './LimitsPage'
@@ -25,6 +26,7 @@ export default function FinancePage() {
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Visão Geral" />
         <Tab label="Contas" />
+        <Tab label="Cartões" />
         <Tab label="Lançamentos" />
         <Tab label="Relatórios" />
         <Tab label="Limites de Gastos" />
@@ -32,10 +34,11 @@ export default function FinancePage() {
       </Tabs>
       {tab === 0 && <OverviewPage />}
       {tab === 1 && <AccountsPage />}
-      {tab === 2 && <EntriesPage />}
-      {tab === 3 && <ReportsPage />}
-      {tab === 4 && <LimitsPage />}
-      {tab === 5 && <CategoriesPage />}
+      {tab === 2 && <CardsPage />}
+      {tab === 3 && <EntriesPage />}
+      {tab === 4 && <ReportsPage />}
+      {tab === 5 && <LimitsPage />}
+      {tab === 6 && <CategoriesPage />}
     </Box>
   )
 }

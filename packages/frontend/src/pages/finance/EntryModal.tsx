@@ -34,6 +34,7 @@ const baseSchema = z.object({
   status: z.string().optional(),
   notes: z.string().optional(),
   accountId: z.number().int('Conta inválida.').nullable().optional(),
+  cardId: z.number().int('Cartão inválido.').nullable().optional(),
   recurrence: z.enum(['once', 'daily', 'weekly', 'monthly', 'yearly'], 'Repetição inválida.').optional(),
   recurrenceEnd: z.string().optional(),
   tags: z.string().optional(),
@@ -67,6 +68,11 @@ interface AccountOption {
   name: string
 }
 
+interface CardOption {
+  id: number
+  name: string
+}
+
 interface EntryModalProps {
   open: boolean
   editId?: number | null
@@ -87,7 +93,9 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
   const [status, setStatus] = useState('paid')
   const [notes, setNotes] = useState('')
   const [accountId, setAccountId] = useState<number | ''>('')
+  const [cardId, setCardId] = useState<number | ''>('')
   const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [cards, setCards] = useState<CardOption[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [recurrence, setRecurrence] = useState('once')
   const [recurrenceEnd, setRecurrenceEnd] = useState('')
@@ -110,6 +118,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       setStatus('paid')
       setNotes('')
       setAccountId('')
+      setCardId('')
       setRecurrence('once')
       setRecurrenceEnd('')
       setTags('')
@@ -134,6 +143,14 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
         })
         .catch(() => {})
 
+      api
+        .get('/finance/cards', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+        .then((res) => {
+          const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+          setCards(data)
+        })
+        .catch(() => {})
+
       if (editId) {
         setLoading(true)
         api
@@ -149,6 +166,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             setStatus(d.status || 'paid')
             setNotes(d.notes || '')
             setAccountId(d.accountId ?? '')
+            setCardId(d.cardId ?? '')
             setRecurrence(d.recurrence || 'once')
             setRecurrenceEnd(d.recurrenceEnd || '')
             setTags(d.tags || '')
@@ -181,6 +199,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       status,
       notes: notes || undefined,
       accountId: accountId === '' ? null : accountId,
+      cardId: cardId === '' ? null : cardId,
       recurrence,
       recurrenceEnd: recurrence !== 'once' ? recurrenceEnd || undefined : undefined,
       tags: tags.trim() || undefined,
@@ -358,7 +377,7 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             </Grid>
           </Grid>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 select
@@ -373,7 +392,29 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Cartão"
+                value={cardId}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? '' : Number(e.target.value)
+                  setCardId(value)
+                  clearFieldError('cardId')
+                  if (value !== '') {
+                    setPaymentMethod('Cartão de Crédito')
+                  }
+                }}
+                margin="normal"
+              >
+                <MenuItem value="">Sem cartão</MenuItem>
+                {cards.map((card) => (
+                  <MenuItem key={card.id} value={card.id}>{card.name}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 select

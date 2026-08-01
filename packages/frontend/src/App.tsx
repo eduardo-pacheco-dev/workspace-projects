@@ -23,6 +23,7 @@ import StationsPage from './pages/stations/StationsPage'
 import StationDetailsPage from './pages/stations/StationDetailsPage'
 import RadioLinksPage from './pages/radio-links/RadioLinksPage'
 import RadioLinkDetailsPage from './pages/radio-links/RadioLinkDetailsPage'
+import ProjectsPage from './pages/projects/ProjectsPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/stations/:id" element={<StationDetailsPage />} />
           <Route path="/radio-links" element={<RadioLinksPage />} />
           <Route path="/radio-links/:id" element={<RadioLinkDetailsPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

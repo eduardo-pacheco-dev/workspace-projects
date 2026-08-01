@@ -77,7 +77,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Button>
         </Toolbar>
       </AppBar>
-      <Box sx={{ p: 3 }}>{children}</Box>
+      <Box
+        sx={{
+          p: 3,
+          minHeight: 'calc(100vh - 64px - 56px)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Box sx={{ flexGrow: 1 }}>{children}</Box>
+      </Box>
+      <Box
+        component="footer"
+        sx={{
+          py: 1.5,
+          px: 3,
+          borderTop: '1px solid rgba(0,0,0,0.08)',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} App — Sistema de Telecomunicações
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          v1.0.0
+        </Typography>
+      </Box>
     </>
   )
 }

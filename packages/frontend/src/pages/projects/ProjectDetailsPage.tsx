@@ -32,6 +32,9 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import FolderIcon from '@mui/icons-material/Folder'
 import CellTowerIcon from '@mui/icons-material/CellTower'
+import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
+import AddIcon from '@mui/icons-material/Add'
+import DescriptionIcon from '@mui/icons-material/Description'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import VisibilityIcon from '@mui/icons-material/Visibility'
@@ -41,6 +44,7 @@ import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDateTime } from '../../utils/format'
 import ProjectModal from './ProjectModal'
+import ProjectDocumentModal from './ProjectDocumentModal'
 
 interface Project {
   id: number
@@ -80,6 +84,25 @@ interface Station {
   status: string
 }
 
+interface RadioLink {
+  id: number
+  nome: string
+  frequencia: string | null
+  capacidade: string | null
+  siteIdA: string | null
+  siteIdB: string | null
+  operadoraA: string | null
+  operadoraB: string | null
+}
+
+interface ProjectDocument {
+  id: number
+  nome: string
+  tipo: string | null
+  quantidade: number
+  observacoes: string | null
+}
+
 export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -102,6 +125,11 @@ export default function ProjectDetailsPage() {
   const [projectStations, setProjectStations] = useState<Station[]>([])
   const [allStations, setAllStations] = useState<Station[]>([])
   const [selectedStation, setSelectedStation] = useState<Station | null>(null)
+  const [projectRadioLinks, setProjectRadioLinks] = useState<RadioLink[]>([])
+  const [allRadioLinks, setAllRadioLinks] = useState<RadioLink[]>([])
+  const [selectedRadioLink, setSelectedRadioLink] = useState<RadioLink | null>(null)
+  const [documents, setDocuments] = useState<ProjectDocument[]>([])
+  const [docModal, setDocModal] = useState({ open: false, editId: null as number | null })
 
   const fetchData = useCallback(async () => {
     try {
@@ -264,6 +292,66 @@ export default function ProjectDetailsPage() {
     }
   }
 
+  const fetchProjectRadioLinks = useCallback(() => {
+    api.get(`/projects/${projectId}/radio-links`)
+      .then((res) => setProjectRadioLinks(res.data))
+      .catch(() => {})
+  }, [projectId])
+
+  useEffect(() => {
+    fetchProjectRadioLinks()
+  }, [fetchProjectRadioLinks])
+
+  useEffect(() => {
+    api.get('/radio-links', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setAllRadioLinks(data)
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleAddRadioLink = async () => {
+    if (!selectedRadioLink) return
+    try {
+      await api.post(`/projects/${projectId}/radio-links`, { radioLinkId: selectedRadioLink.id })
+      setSelectedRadioLink(null)
+      fetchProjectRadioLinks()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível adicionar o enlace.')
+    }
+  }
+
+  const handleRemoveRadioLink = async (radioLinkId: number) => {
+    if (!confirm('Remover este enlace de rádio do projeto?')) return
+    try {
+      await api.delete(`/projects/${projectId}/radio-links/${radioLinkId}`)
+      fetchProjectRadioLinks()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível remover o enlace.')
+    }
+  }
+
+  const fetchDocuments = useCallback(() => {
+    api.get(`/projects/${projectId}/documents`)
+      .then((res) => setDocuments(res.data ?? []))
+      .catch(() => {})
+  }, [projectId])
+
+  useEffect(() => {
+    fetchDocuments()
+  }, [fetchDocuments])
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!confirm('Excluir este documento da configuração?')) return
+    try {
+      await api.delete(`/projects/${projectId}/documents/${docId}`)
+      fetchDocuments()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível excluir o documento.')
+    }
+  }
+
   const handleDelete = async () => {
     if (!confirm(`Tem certeza que deseja excluir o projeto "${project?.nome}"?`)) return
     try {
@@ -338,6 +426,8 @@ export default function ProjectDetailsPage() {
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
               <Tab label="Overview" />
               <Tab label="Estações" />
+              <Tab label="Enlaces de Rádio" />
+              <Tab label="Documentos" />
               <Tab label="Anexos" />
               <Tab label="Comentários" />
             </Tabs>
@@ -421,6 +511,112 @@ export default function ProjectDetailsPage() {
 
           {tab === 2 && (
             <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Enlaces de Rádio do Projeto</Typography>
+              <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'flex-start' }}>
+                <Autocomplete
+                  fullWidth
+                  options={allRadioLinks.filter((rl) => !projectRadioLinks.some((pr) => pr.id === rl.id))}
+                  getOptionLabel={(rl) => `${rl.nome}${rl.frequencia ? ` · ${rl.frequencia}` : ''}`}
+                  value={selectedRadioLink}
+                  onChange={(_, v) => setSelectedRadioLink(v)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Adicionar enlace" placeholder="Busque pelo nome" />
+                  )}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddRadioLink}
+                  disabled={!selectedRadioLink}
+                  sx={{ height: 56, whiteSpace: 'nowrap' }}
+                >
+                  Adicionar
+                </Button>
+              </Box>
+              {projectRadioLinks.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Nenhum enlace de rádio cadastrado neste projeto.</Typography>
+              ) : (
+                <List dense disablePadding>
+                  {projectRadioLinks.map((rl) => (
+                    <ListItem
+                      key={rl.id}
+                      sx={{ px: 0, cursor: 'pointer' }}
+                      onClick={() => navigate(`/radio-links/${rl.id}`)}
+                    >
+                      <ListItemIcon sx={{ minWidth: 44 }}>
+                        <SettingsInputAntennaIcon color="secondary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={rl.nome}
+                        secondary={`${rl.siteIdA || '-'} ↔ ${rl.siteIdB || '-'}${rl.frequencia ? ` · ${rl.frequencia}` : ''}`}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemoveRadioLink(rl.id)
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Paper>
+          )}
+
+          {tab === 3 && (
+            <Paper sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box>
+                  <Typography variant="h6">Documentos</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Configure quais documentos serão necessários, tipos e quantidades.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => setDocModal({ open: true, editId: null })}
+                >
+                  Novo Documento
+                </Button>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              {documents.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">Nenhum documento configurado.</Typography>
+              ) : (
+                <List dense disablePadding>
+                  {documents.map((doc) => (
+                    <ListItem key={doc.id} sx={{ px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 44 }}>
+                        <DescriptionIcon color="action" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={doc.nome}
+                        secondary={`${doc.tipo || 'Sem tipo'} · Quantidade: ${doc.quantidade}${doc.observacoes ? ` · ${doc.observacoes}` : ''}`}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton size="small" onClick={() => setDocModal({ open: true, editId: doc.id })}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleDeleteDocument(doc.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Paper>
+          )}
+
+          {tab === 4 && (
+            <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Anexos</Typography>
                 <Button
@@ -479,7 +675,7 @@ export default function ProjectDetailsPage() {
             </Paper>
           )}
 
-          {tab === 3 && (
+          {tab === 5 && (
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
               <Divider sx={{ mb: 2 }} />
@@ -558,6 +754,17 @@ export default function ProjectDetailsPage() {
             onSaved={() => {
               setEditOpen(false)
               fetchData()
+            }}
+          />
+
+          <ProjectDocumentModal
+            open={docModal.open}
+            projectId={projectId}
+            editId={docModal.editId}
+            onClose={() => setDocModal({ open: false, editId: null })}
+            onSaved={() => {
+              setDocModal({ open: false, editId: null })
+              fetchDocuments()
             }}
           />
         </>

@@ -8,6 +8,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Station } from '../stations/station.entity';
+import { RadioLink } from '../radio-links/radio-link.entity';
 
 @Entity()
 export class Project {
@@ -41,6 +42,10 @@ export class Project {
   @ManyToMany(() => Station)
   @JoinTable({ name: 'project_station' })
   stations: Station[];
+
+  @ManyToMany(() => RadioLink)
+  @JoinTable({ name: 'project_radio_link' })
+  radioLinks: RadioLink[];
 
   @CreateDateColumn()
   createdAt: Date;

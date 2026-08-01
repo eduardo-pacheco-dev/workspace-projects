@@ -12,6 +12,8 @@ import {
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateProjectDocumentDto } from './dto/create-project-document.dto';
+import { UpdateProjectDocumentDto } from './dto/update-project-document.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -69,5 +71,56 @@ export class ProjectsController {
     @Param('stationId', ParseIntPipe) stationId: number,
   ) {
     return this.projectsService.removeStation(id, stationId);
+  }
+
+  @Get(':id/radio-links')
+  findRadioLinks(@Param('id', ParseIntPipe) id: number) {
+    return this.projectsService.findRadioLinks(id);
+  }
+
+  @Post(':id/radio-links')
+  addRadioLink(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { radioLinkId: number },
+  ) {
+    return this.projectsService.addRadioLink(id, Number(body.radioLinkId));
+  }
+
+  @Delete(':id/radio-links/:radioLinkId')
+  removeRadioLink(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
+  ) {
+    return this.projectsService.removeRadioLink(id, radioLinkId);
+  }
+
+  @Get(':id/documents')
+  findDocuments(@Param('id', ParseIntPipe) id: number) {
+    return this.projectsService.findDocuments(id);
+  }
+
+  @Post(':id/documents')
+  createDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateProjectDocumentDto,
+  ) {
+    return this.projectsService.createDocument(id, dto);
+  }
+
+  @Patch(':id/documents/:docId')
+  updateDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+    @Body() dto: UpdateProjectDocumentDto,
+  ) {
+    return this.projectsService.updateDocument(id, docId, dto);
+  }
+
+  @Delete(':id/documents/:docId')
+  deleteDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+  ) {
+    return this.projectsService.deleteDocument(id, docId);
   }
 }

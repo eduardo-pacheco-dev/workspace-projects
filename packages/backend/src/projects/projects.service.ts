@@ -2,9 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './project.entity';
+import { ProjectDocument } from './project-document.entity';
 import { Station } from '../stations/station.entity';
+import { RadioLink } from '../radio-links/radio-link.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateProjectDocumentDto } from './dto/create-project-document.dto';
+import { UpdateProjectDocumentDto } from './dto/update-project-document.dto';
 
 export interface ProjectQuery {
   page?: number;
@@ -23,6 +27,10 @@ export class ProjectsService {
     private readonly projectsRepository: Repository<Project>,
     @InjectRepository(Station)
     private readonly stationsRepository: Repository<Station>,
+    @InjectRepository(RadioLink)
+    private readonly radioLinksRepository: Repository<RadioLink>,
+    @InjectRepository(ProjectDocument)
+    private readonly projectDocumentsRepository: Repository<ProjectDocument>,
   ) {}
 
   async create(dto: CreateProjectDto): Promise<Project> {
@@ -120,5 +128,71 @@ export class ProjectsService {
     });
     if (!project) throw new NotFoundException('Projeto não encontrado');
     return project.stations;
+  }
+
+  async addRadioLink(projectId: number, radioLinkId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const radioLink = await this.radioLinksRepository.findOne({ where: { id: radioLinkId } });
+    if (!radioLink) throw new NotFoundException('Enlace de rádio não encontrado');
+
+    const radioLinks = await this.findRadioLinks(projectId);
+    if (!radioLinks.some((rl) => rl.id === radioLinkId)) {
+      radioLinks.push(radioLink);
+    }
+    project.radioLinks = radioLinks;
+    return this.projectsRepository.save(project);
+  }
+
+  async removeRadioLink(projectId: number, radioLinkId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const radioLinks = await this.findRadioLinks(projectId);
+    project.radioLinks = radioLinks.filter((rl) => rl.id !== radioLinkId);
+    return this.projectsRepository.save(project);
+  }
+
+  async findRadioLinks(projectId: number): Promise<RadioLink[]> {
+    const project = await this.projectsRepository.findOne({
+      where: { id: projectId },
+      relations: ['radioLinks'],
+    });
+    if (!project) throw new NotFoundException('Projeto não encontrado');
+    return project.radioLinks;
+  }
+
+  async findDocuments(projectId: number): Promise<ProjectDocument[]> {
+    await this.findById(projectId);
+    return this.projectDocumentsRepository.find({
+      where: { projectId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async createDocument(projectId: number, dto: CreateProjectDocumentDto): Promise<ProjectDocument> {
+    await this.findById(projectId);
+    const doc = this.projectDocumentsRepository.create({
+      projectId,
+      nome: dto.nome,
+      tipo: dto.tipo,
+      quantidade: dto.quantidade ?? 1,
+      observacoes: dto.observacoes,
+    });
+    return this.projectDocumentsRepository.save(doc);
+  }
+
+  async updateDocument(
+    projectId: number,
+    docId: number,
+    dto: UpdateProjectDocumentDto,
+  ): Promise<ProjectDocument> {
+    const doc = await this.projectDocumentsRepository.findOne({ where: { id: docId, projectId } });
+    if (!doc) throw new NotFoundException('Documento não encontrado');
+    Object.assign(doc, dto, dto.quantidade == null ? {} : { quantidade: dto.quantidade });
+    return this.projectDocumentsRepository.save(doc);
+  }
+
+  async deleteDocument(projectId: number, docId: number): Promise<void> {
+    const doc = await this.projectDocumentsRepository.findOne({ where: { id: docId, projectId } });
+    if (!doc) throw new NotFoundException('Documento não encontrado');
+    await this.projectDocumentsRepository.delete(docId);
   }
 }

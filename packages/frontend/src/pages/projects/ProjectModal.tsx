@@ -27,7 +27,6 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
   const isEdit = Boolean(editId)
 
   const [nome, setNome] = useState('')
-  const [codigo, setCodigo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [cliente, setCliente] = useState('')
   const [dataInicio, setDataInicio] = useState('')
@@ -44,7 +43,6 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
         .then((res) => {
           const d = res.data
           setNome(d.nome || '')
-          setCodigo(d.codigo || '')
           setDescricao(d.descricao || '')
           setCliente(d.cliente || '')
           setDataInicio(d.dataInicio || '')
@@ -62,7 +60,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setError('')
     setLoading(true)
 
-    const payload: any = { nome, codigo, descricao, cliente, dataInicio, observacoes, status }
+    const payload: any = { nome, descricao, cliente, dataInicio, observacoes, status }
     payload.dataFim = indeterminado ? '' : dataFim
 
     try {
@@ -84,7 +82,6 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     if (loading) return
     setError('')
     setNome('')
-    setCodigo('')
     setDescricao('')
     setCliente('')
     setDataInicio('')
@@ -106,9 +103,6 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
               <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12}>
               <TextField fullWidth label="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>

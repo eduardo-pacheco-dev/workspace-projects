@@ -56,6 +56,15 @@ export class AttachmentsController {
     return this.attachmentsService.uploadForRadioLink(radioLinkId, file);
   }
 
+  @Post('upload/project/:projectId')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadForProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.attachmentsService.uploadForProject(projectId, file);
+  }
+
   @Get('job/:jobId')
   findByJob(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.attachmentsService.findByJob(jobId);
@@ -76,6 +85,11 @@ export class AttachmentsController {
     return this.attachmentsService.findByRadioLink(radioLinkId);
   }
 
+  @Get('project/:projectId')
+  findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.attachmentsService.findByProject(projectId);
+  }
+
   @Get('file/:id')
   async getFile(
     @Param('id', ParseIntPipe) id: number,
@@ -84,13 +98,15 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.radioLinkId
-        ? `radio-link-${attachment.radioLinkId}`
-        : attachment.stationId
-          ? `station-${attachment.stationId}`
-          : attachment.serviceOrderId
-            ? `service-order-${attachment.serviceOrderId}`
-            : `job-${attachment.jobId}`,
+      attachment.projectId
+        ? `project-${attachment.projectId}`
+        : attachment.radioLinkId
+          ? `radio-link-${attachment.radioLinkId}`
+          : attachment.stationId
+            ? `station-${attachment.stationId}`
+            : attachment.serviceOrderId
+              ? `service-order-${attachment.serviceOrderId}`
+              : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {
@@ -109,13 +125,15 @@ export class AttachmentsController {
     const attachment = await this.attachmentsService.findById(id);
     const filePath = path.join(
       path.resolve('uploads'),
-      attachment.radioLinkId
-        ? `radio-link-${attachment.radioLinkId}`
-        : attachment.stationId
-          ? `station-${attachment.stationId}`
-          : attachment.serviceOrderId
-            ? `service-order-${attachment.serviceOrderId}`
-            : `job-${attachment.jobId}`,
+      attachment.projectId
+        ? `project-${attachment.projectId}`
+        : attachment.radioLinkId
+          ? `radio-link-${attachment.radioLinkId}`
+          : attachment.stationId
+            ? `station-${attachment.stationId}`
+            : attachment.serviceOrderId
+              ? `service-order-${attachment.serviceOrderId}`
+              : `job-${attachment.jobId}`,
       attachment.filename,
     );
     if (!fs.existsSync(filePath)) {

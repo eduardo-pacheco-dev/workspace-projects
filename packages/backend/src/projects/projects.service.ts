@@ -24,7 +24,12 @@ export class ProjectsService {
 
   async create(dto: CreateProjectDto): Promise<Project> {
     const project = this.projectsRepository.create(dto);
-    return this.projectsRepository.save(project);
+    const saved = await this.projectsRepository.save(project);
+    if (!saved.codigo) {
+      saved.codigo = `PRJ-${String(saved.id).padStart(4, '0')}`;
+      return this.projectsRepository.save(saved);
+    }
+    return saved;
   }
 
   async findAll(query: ProjectQuery): Promise<{ data: Project[]; total: number }> {

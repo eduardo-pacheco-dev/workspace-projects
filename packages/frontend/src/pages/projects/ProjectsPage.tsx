@@ -21,6 +21,7 @@ import {
   MenuItem,
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import ProjectModal from './ProjectModal'
 
@@ -40,6 +41,7 @@ type SortBy = 'id' | 'nome' | 'codigo' | 'cliente' | 'dataInicio' | 'status'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function ProjectsPage() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState<Project[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -183,7 +185,12 @@ export default function ProjectsPage() {
           </TableHead>
           <TableBody>
             {projects.map((p) => (
-              <TableRow key={p.id} hover>
+              <TableRow
+                key={p.id}
+                hover
+                onClick={() => navigate(`/projects/${p.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{p.nome}</TableCell>
                 <TableCell>{p.codigo || '-'}</TableCell>
                 <TableCell>{p.cliente || '-'}</TableCell>
@@ -197,10 +204,20 @@ export default function ProjectsPage() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: p.id })}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setModal({ open: true, editId: p.id })
+                    }}
+                  >
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(p.id)}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(p.id)
+                    }}
+                  >
                     <Delete />
                   </IconButton>
                 </TableCell>

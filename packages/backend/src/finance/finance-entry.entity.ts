@@ -45,6 +45,21 @@ export class FinanceEntry {
   @JoinColumn({ name: 'accountId' })
   account: BankAccount | null;
 
+  @Column({ type: 'text', nullable: true })
+  recurrence: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  recurrenceEnd: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seriesId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  tags: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  attachment: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

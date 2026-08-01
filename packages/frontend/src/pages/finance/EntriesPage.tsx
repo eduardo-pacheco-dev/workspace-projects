@@ -20,7 +20,7 @@ import {
   Stack,
   Chip,
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, Repeat, AttachFile } from '@mui/icons-material'
 import api from '../../services/api'
 import { formatCurrency, formatDate, monthNames } from '../../utils/format'
 import EntryModal from './EntryModal'
@@ -37,6 +37,9 @@ interface FinanceEntry {
   notes: string | null
   accountId: number | null
   account?: { id: number; name: string } | null
+  recurrence: string | null
+  tags: string | null
+  attachment: string | null
 }
 
 interface AccountOption {
@@ -290,11 +293,27 @@ export default function EntriesPage() {
           <TableBody>
             {entries.map((entry) => (
               <TableRow key={entry.id} hover>
-                <TableCell>{formatDate(entry.date)}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {formatDate(entry.date)}
+                    {entry.recurrence && (
+                      <Repeat fontSize="small" color="primary" titleAccess={`Repete ${typeLabels[entry.recurrence] || entry.recurrence}`} />
+                    )}
+                  </Box>
+                </TableCell>
                 <TableCell>
                   <Chip size="small" label={typeLabels[entry.type] || entry.type} color={typeColors[entry.type] || 'default'} />
                 </TableCell>
-                <TableCell>{entry.description}</TableCell>
+                <TableCell>
+                  <Box>
+                    <Box>{entry.description}</Box>
+                    {entry.tags && (
+                      <Typography variant="caption" color="text.secondary">
+                        {entry.tags.split(',').map((t) => t.trim()).filter(Boolean).map((tag) => `#${tag}`).join(' ')}
+                      </Typography>
+                    )}
+                  </Box>
+                </TableCell>
                 <TableCell>{entry.category}</TableCell>
                 <TableCell>{formatCurrency(entry.amount)}</TableCell>
                 <TableCell>
@@ -302,6 +321,17 @@ export default function EntriesPage() {
                 </TableCell>
                 <TableCell>{entry.account?.name || '-'}</TableCell>
                 <TableCell>
+                  {entry.attachment && (
+                    <IconButton
+                      component="a"
+                      href={entry.attachment}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Abrir anexo"
+                    >
+                      <AttachFile />
+                    </IconButton>
+                  )}
                   <IconButton onClick={() => setModal({ open: true, editId: entry.id })}>
                     <Edit />
                   </IconButton>

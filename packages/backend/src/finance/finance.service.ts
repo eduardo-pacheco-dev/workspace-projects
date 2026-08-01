@@ -1,11 +1,50 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { FinanceEntry } from './finance-entry.entity';
 import {
   CreateFinanceEntryInput,
   UpdateFinanceEntryInput,
 } from './schemas/finance.schemas';
+
+function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function generateRecurrenceDates(startDate: string, recurrence: string, endDate: string): string[] {
+  const dates: string[] = [];
+  const current = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  if (isNaN(current.getTime()) || isNaN(end.getTime()) || current > end) {
+    return [startDate];
+  }
+  let guard = 0;
+  while (current <= end && guard < 500) {
+    dates.push(toISODate(current));
+    switch (recurrence) {
+      case 'daily':
+        current.setDate(current.getDate() + 1);
+        break;
+      case 'weekly':
+        current.setDate(current.getDate() + 7);
+        break;
+      case 'monthly':
+        current.setMonth(current.getMonth() + 1);
+        break;
+      case 'yearly':
+        current.setFullYear(current.getFullYear() + 1);
+        break;
+      default:
+        return dates;
+    }
+    guard += 1;
+  }
+  return dates;
+}
 
 export interface FinanceEntryQuery {
   page?: number;
@@ -28,10 +67,32 @@ export class FinanceService {
     private readonly entriesRepository: Repository<FinanceEntry>,
   ) {}
 
-  async create(dto: CreateFinanceEntryInput): Promise<FinanceEntry> {
+  async create(dto: CreateFinanceEntryInput): Promise<FinanceEntry | FinanceEntry[]> {
+    const { recurrence, recurrenceEnd, ...rest } = dto;
+    const effectiveRecurrence = recurrence && recurrence !== 'once' ? recurrence : null;
+
+    if (effectiveRecurrence && recurrenceEnd && rest.date) {
+      const dates = generateRecurrenceDates(rest.date, effectiveRecurrence, recurrenceEnd);
+      const seriesId = randomUUID();
+      const entries = dates.map((date) =>
+        this.entriesRepository.create({
+          ...rest,
+          date,
+          status: dto.status ?? 'paid',
+          recurrence: effectiveRecurrence,
+          recurrenceEnd,
+          seriesId,
+        }),
+      );
+      return this.entriesRepository.save(entries);
+    }
+
     const entry = this.entriesRepository.create({
-      ...dto,
+      ...rest,
       status: dto.status ?? 'paid',
+      recurrence: effectiveRecurrence,
+      recurrenceEnd: effectiveRecurrence ? recurrenceEnd ?? null : null,
+      seriesId: null,
     });
     return this.entriesRepository.save(entry);
   }
@@ -105,6 +166,12 @@ export class FinanceService {
   async update(id: number, dto: UpdateFinanceEntryInput): Promise<FinanceEntry> {
     const entry = await this.findById(id);
     Object.assign(entry, dto);
+    return this.entriesRepository.save(entry);
+  }
+
+  async updateAttachment(id: number, attachment: string | null): Promise<FinanceEntry> {
+    const entry = await this.findById(id);
+    entry.attachment = attachment;
     return this.entriesRepository.save(entry);
   }
 

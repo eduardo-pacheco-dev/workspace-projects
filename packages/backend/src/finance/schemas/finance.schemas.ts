@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const financeEntryTypes = ['income', 'expense', 'transfer'] as const;
 export const financeEntryStatus = ['pending', 'paid', 'canceled'] as const;
+export const financeEntryRecurrence = ['once', 'daily', 'weekly', 'monthly', 'yearly'] as const;
 
 export const createFinanceEntrySchema = z.object({
   type: z.enum(financeEntryTypes, 'Tipo inválido.'),
@@ -13,6 +14,9 @@ export const createFinanceEntrySchema = z.object({
   status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
   notes: z.string().optional(),
   accountId: z.number().int('Conta inválida.').nullable().optional(),
+  recurrence: z.enum(financeEntryRecurrence, 'Repetição inválida.').optional(),
+  recurrenceEnd: z.string().optional(),
+  tags: z.string().optional(),
 });
 
 export const updateFinanceEntrySchema = z
@@ -26,6 +30,10 @@ export const updateFinanceEntrySchema = z
     status: z.enum(financeEntryStatus, 'Status inválido.').optional(),
     notes: z.string().optional(),
     accountId: z.number().int('Conta inválida.').nullable().optional(),
+    recurrence: z.enum(financeEntryRecurrence, 'Repetição inválida.').optional(),
+    recurrenceEnd: z.string().optional(),
+    tags: z.string().optional(),
+    attachment: z.string().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Informe ao menos um campo para atualizar.',

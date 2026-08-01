@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, useRef } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -11,12 +11,18 @@ import {
   CircularProgress,
   MenuItem,
   Grid,
+  Typography,
+  Link,
+  IconButton,
 } from '@mui/material'
+import AttachFileIcon from '@mui/icons-material/AttachFile'
+import CloseIcon from '@mui/icons-material/Close'
 import { z } from 'zod'
 import api from '../../services/api'
 
 const typeOptions = ['income', 'expense', 'transfer']
 const statusOptions = ['pending', 'paid', 'canceled']
+const recurrenceOptions = ['once', 'daily', 'weekly', 'monthly', 'yearly']
 
 const baseSchema = z.object({
   type: z.enum(['income', 'expense', 'transfer'], 'Tipo inválido.'),
@@ -28,6 +34,9 @@ const baseSchema = z.object({
   status: z.string().optional(),
   notes: z.string().optional(),
   accountId: z.number().int('Conta inválida.').nullable().optional(),
+  recurrence: z.enum(['once', 'daily', 'weekly', 'monthly', 'yearly'], 'Repetição inválida.').optional(),
+  recurrenceEnd: z.string().optional(),
+  tags: z.string().optional(),
 })
 
 const createSchema = baseSchema
@@ -43,6 +52,14 @@ const statusLabels: Record<string, string> = {
   pending: 'Pendente',
   paid: 'Pago',
   canceled: 'Cancelado',
+}
+
+const recurrenceLabels: Record<string, string> = {
+  once: 'Não repete',
+  daily: 'Diariamente',
+  weekly: 'Semanalmente',
+  monthly: 'Mensalmente',
+  yearly: 'Anualmente',
 }
 
 interface AccountOption {
@@ -72,9 +89,15 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
   const [accountId, setAccountId] = useState<number | ''>('')
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [categories, setCategories] = useState<string[]>([])
+  const [recurrence, setRecurrence] = useState('once')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
+  const [tags, setTags] = useState('')
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
+  const [attachmentPath, setAttachmentPath] = useState('')
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) {
@@ -87,6 +110,11 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       setStatus('paid')
       setNotes('')
       setAccountId('')
+      setRecurrence('once')
+      setRecurrenceEnd('')
+      setTags('')
+      setAttachmentFile(null)
+      setAttachmentPath('')
       setError('')
       setFieldErrors({})
 
@@ -121,6 +149,10 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
             setStatus(d.status || 'paid')
             setNotes(d.notes || '')
             setAccountId(d.accountId ?? '')
+            setRecurrence(d.recurrence || 'once')
+            setRecurrenceEnd(d.recurrenceEnd || '')
+            setTags(d.tags || '')
+            setAttachmentPath(d.attachment || '')
           })
           .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
           .finally(() => setLoading(false))
@@ -149,6 +181,9 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
       status,
       notes: notes || undefined,
       accountId: accountId === '' ? null : accountId,
+      recurrence,
+      recurrenceEnd: recurrence !== 'once' ? recurrenceEnd || undefined : undefined,
+      tags: tags.trim() || undefined,
     }
 
     const schema = isEdit ? editSchema : createSchema
@@ -160,10 +195,25 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
 
     setLoading(true)
     try {
+      let entryId: number
       if (isEdit) {
-        await api.patch(`/finance/entries/${editId}`, result.data)
+        const res = await api.patch(`/finance/entries/${editId}`, result.data)
+        entryId = Number(editId)
+        if (attachmentFile) {
+          const form = new FormData()
+          form.append('file', attachmentFile)
+          await api.post(`/finance/entries/${entryId}/attachment`, form)
+        }
+        void res
       } else {
-        await api.post('/finance/entries', result.data)
+        const res = await api.post('/finance/entries', result.data)
+        const created = Array.isArray(res.data) ? res.data[0] : res.data
+        entryId = created.id
+        if (attachmentFile) {
+          const form = new FormData()
+          form.append('file', attachmentFile)
+          await api.post(`/finance/entries/${entryId}/attachment`, form)
+        }
       }
       onSaved()
       handleClose()
@@ -174,12 +224,28 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
     }
   }
 
+  const handleRemoveAttachment = async () => {
+    if (attachmentPath && isEdit) {
+      try {
+        await api.delete(`/finance/entries/${editId}/attachment`)
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Não foi possível remover o anexo.')
+        return
+      }
+    }
+    setAttachmentPath('')
+    setAttachmentFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleClose = () => {
     if (loading) return
     setError('')
     setFieldErrors({})
     onClose()
   }
+
+  const attachmentName = attachmentFile ? attachmentFile.name : attachmentPath ? attachmentPath.split('/').pop() : ''
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -290,6 +356,8 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
                 placeholder="ex.: Pix, Cartão de Crédito, Dinheiro"
               />
             </Grid>
+          </Grid>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -305,7 +373,97 @@ export default function EntryModal({ open, editId, defaultType, defaultDate, onC
                 ))}
               </TextField>
             </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Repetir"
+                value={recurrence}
+                onChange={(e) => { setRecurrence(e.target.value); clearFieldError('recurrence') }}
+                margin="normal"
+              >
+                {recurrenceOptions.map((r) => (
+                  <MenuItem key={r} value={r}>{recurrenceLabels[r]}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
+          {recurrence !== 'once' && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Data final"
+                  type="date"
+                  value={recurrenceEnd}
+                  onChange={(e) => setRecurrenceEnd(e.target.value)}
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Tags"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  margin="normal"
+                  placeholder="ex.: viagem, trabalho"
+                />
+              </Grid>
+            </Grid>
+          )}
+          {recurrence === 'once' && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Tags"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  margin="normal"
+                  placeholder="ex.: viagem, trabalho"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ mt: 2 }}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    hidden
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      if (file) {
+                        setAttachmentFile(file)
+                        setAttachmentPath('')
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outlined"
+                    startIcon={<AttachFileIcon />}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Anexar arquivo
+                  </Button>
+                  {attachmentName && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      {attachmentPath ? (
+                        <Link href={attachmentPath} target="_blank" rel="noreferrer" variant="body2">
+                          {attachmentName}
+                        </Link>
+                      ) : (
+                        <Typography variant="body2">{attachmentName}</Typography>
+                      )}
+                      <IconButton size="small" onClick={handleRemoveAttachment} sx={{ ml: 0.5 }}>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
+          )}
           <TextField
             fullWidth
             label="Observações"

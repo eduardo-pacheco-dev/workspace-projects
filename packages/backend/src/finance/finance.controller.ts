@@ -8,7 +8,15 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { mkdirSync } from 'fs';
+import { randomUUID } from 'crypto';
+import { join, extname } from 'path';
 import { FinanceService } from './finance.service';
 import {
   createFinanceEntrySchema,
@@ -17,6 +25,15 @@ import {
   UpdateFinanceEntryInput,
 } from './schemas/finance.schemas';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+
+const UPLOADS_DIR = join(process.cwd(), 'uploads', 'entries');
+mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const ALLOWED_EXTENSIONS = [
+  '.jpg', '.jpeg', '.png', '.gif', '.webp',
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx',
+  '.txt', '.csv',
+];
 
 @Controller('finance/entries')
 export class FinanceController {
@@ -55,6 +72,43 @@ export class FinanceController {
     @Body(new ZodValidationPipe(updateFinanceEntrySchema)) dto: UpdateFinanceEntryInput,
   ) {
     return this.financeService.update(id, dto);
+  }
+
+  @Post(':id/attachment')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: UPLOADS_DIR,
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase();
+          cb(null, `${randomUUID()}${ext}`);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const ext = extname(file.originalname).toLowerCase();
+        if (ALLOWED_EXTENSIONS.includes(ext)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Tipo de arquivo não permitido.'), false);
+        }
+      },
+    }),
+  )
+  async uploadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Arquivo não enviado.');
+    }
+    const attachment = `/uploads/entries/${file.filename}`;
+    return this.financeService.updateAttachment(id, attachment);
+  }
+
+  @Delete(':id/attachment')
+  async deleteAttachment(@Param('id', ParseIntPipe) id: number) {
+    return this.financeService.updateAttachment(id, null);
   }
 
   @Delete(':id')

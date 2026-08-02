@@ -29,6 +29,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import EventIcon from '@mui/icons-material/Event'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import TimelineIcon from '@mui/icons-material/Timeline'
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
@@ -101,6 +102,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
+    { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
   ]
 
   return (

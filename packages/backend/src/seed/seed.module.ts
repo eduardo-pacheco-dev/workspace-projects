@@ -6,10 +6,11 @@ import { LpuModule } from '../lpu/lpu.module';
 import { ScheduleModule } from '../schedule/schedule.module';
 import { TasksModule } from '../tasks/task.module';
 import { MsProjectModule } from '../ms-project/ms-project.module';
+import { SettingsModule } from '../settings/settings.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule],
   providers: [SeedService],
 })
 export class SeedModule {}

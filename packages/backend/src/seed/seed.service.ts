@@ -9,6 +9,7 @@ import { CreateScheduleEventInput } from '../schedule/schedule-event.schemas';
 import { TaskService } from '../tasks/task.service';
 import { CreateTaskInput } from '../tasks/task.schemas';
 import { MsProjectService } from '../ms-project/ms-project.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -20,6 +21,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly scheduleService: ScheduleService,
     private readonly taskService: TaskService,
     private readonly msProjectService: MsProjectService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -33,6 +35,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedScheduleEvents();
     await this.seedTasks();
     await this.seedMsProject();
+    await this.seedSettings();
   }
 
   private async seedAdmin() {
@@ -785,5 +788,23 @@ export class SeedService implements OnApplicationBootstrap {
 
     await this.msProjectService.recomputeSchedule(project.id);
     console.log(`Seed: ms-project "${project.name}" created (${taskDefs.length} tasks, ${dependencies.length} dependencies, ${resources.length} resources, ${assignments.length} assignments)`);
+  }
+
+  private async seedSettings() {
+    const settings = await this.settingsService.findAll();
+    if (Object.keys(settings).length > 0) return;
+
+    await this.settingsService.upsert({
+      companyName: 'EA Projetos Telecom',
+      companyCnpj: '12.345.678/0001-90',
+      companyEmail: 'contato@eaprojetos.com.br',
+      companyPhone: '(11) 4000-0000',
+      companyAddress: 'Av. Paulista, 1000 – São Paulo/SP',
+      timezone: 'America/Sao_Paulo',
+      language: 'pt-BR',
+      currency: 'BRL',
+    });
+
+    console.log('Seed: system settings created');
   }
 }

@@ -4,10 +4,11 @@ import { FreelancersModule } from '../freelancers/freelancers.module';
 import { JobsModule } from '../jobs/jobs.module';
 import { LpuModule } from '../lpu/lpu.module';
 import { ScheduleModule } from '../schedule/schedule.module';
+import { TasksModule } from '../tasks/task.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule],
   providers: [SeedService],
 })
 export class SeedModule {}

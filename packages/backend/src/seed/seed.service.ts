@@ -6,6 +6,8 @@ import { JobsService } from '../jobs/jobs.service';
 import { LpuService } from '../lpu/lpu.service';
 import { ScheduleService } from '../schedule/schedule.service';
 import { CreateScheduleEventInput } from '../schedule/schedule-event.schemas';
+import { TaskService } from '../tasks/task.service';
+import { CreateTaskInput } from '../tasks/task.schemas';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -15,6 +17,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly jobsService: JobsService,
     private readonly lpuService: LpuService,
     private readonly scheduleService: ScheduleService,
+    private readonly taskService: TaskService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -26,6 +29,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedJobs();
     await this.seedLpus();
     await this.seedScheduleEvents();
+    await this.seedTasks();
   }
 
   private async seedAdmin() {
@@ -567,5 +571,119 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${events.length} schedule events created`);
+  }
+
+  private async seedTasks() {
+    const { total } = await this.taskService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const tasks: CreateTaskInput[] = [
+      {
+        title: 'Revisar projeto de infraestrutura do site Norte',
+        description: 'Revisar o projeto executivo e validar a lista de materiais antes da aprovação.',
+        status: 'in_progress',
+        priority: 'high',
+        dueAt: '2026-08-04T17:00',
+        project: 'Infraestrutura Site Norte',
+        client: 'Operadora Alpha',
+        assignedTo: 'Ana Pereira',
+      },
+      {
+        title: 'Solicitar permissão de acesso ao site Morro do Cruzeiro',
+        description: 'Enviar documentação e solicitar agendamento de acesso para a equipe de campo.',
+        status: 'pending',
+        priority: 'urgent',
+        dueAt: '2026-08-03T12:00',
+        project: 'Comissionamento 11 GHz',
+        client: 'Operadora Beta',
+        assignedTo: 'Rafael Santos',
+      },
+      {
+        title: 'Preparar relatório de drive test da Zona Sul',
+        description: 'Compilar métricas de cobertura e gerar o relatório técnico do drive test.',
+        status: 'in_progress',
+        priority: 'medium',
+        dueAt: '2026-08-06T18:00',
+        project: 'Otimização de Rede LTE',
+        client: 'Operadora Beta',
+        assignedTo: 'Mariana Oliveira',
+      },
+      {
+        title: 'Atualizar inventário de equipamentos do CD',
+        description: 'Lançar os equipamentos recebidos no inventário e conferir os códigos de série.',
+        status: 'pending',
+        priority: 'low',
+        dueAt: '2026-08-08T15:00',
+        project: 'Infraestrutura Site Norte',
+        client: 'Operadora Alpha',
+        assignedTo: 'João Lima',
+      },
+      {
+        title: 'Agendar janela de migração 4G para 5G',
+        description: 'Confirmar com a operadora a janela de migração e comunicar a equipe de campo.',
+        status: 'pending',
+        priority: 'high',
+        dueAt: '2026-08-10T10:00',
+        project: 'Migração 5G NSA',
+        client: 'Operadora Alpha',
+        assignedTo: 'Carlos Silva',
+      },
+      {
+        title: 'Validar medições de potência da ERBS Centro',
+        description: 'Conferir as medições de potência coletadas na manutenção preventiva.',
+        status: 'completed',
+        priority: 'medium',
+        dueAt: '2026-08-01T17:00',
+        project: 'Manutenção ERBS',
+        client: 'Operadora Alpha',
+        assignedTo: 'Carlos Silva',
+      },
+      {
+        title: 'Elaborar plano de instalação de antenas',
+        description: 'Detalhar o plano de instalação das antenas setoriais na torre do bairro industrial.',
+        status: 'pending',
+        priority: 'high',
+        dueAt: '2026-08-12T16:00',
+        project: 'Instalação Bairro Industrial',
+        client: 'Operadora Gamma',
+        assignedTo: 'Rafael Santos',
+      },
+      {
+        title: 'Enviar proposta de manutenção corretiva',
+        description: 'Preparar e enviar a proposta de manutenção corretiva do radio link para o cliente.',
+        status: 'pending',
+        priority: 'medium',
+        dueAt: '2026-08-07T17:00',
+        project: 'Manutenção Radio Link',
+        client: 'Operadora Alpha',
+        assignedTo: 'Ana Pereira',
+      },
+      {
+        title: 'Treinar equipe em testes SAT/UAT',
+        description: 'Realizar treinamento rápido sobre os procedimentos de teste de aceitação.',
+        status: 'cancelled',
+        priority: 'low',
+        dueAt: '2026-08-03T09:00',
+        project: 'Teste de Aceitação',
+        client: 'Operadora Gamma',
+        assignedTo: 'João Lima',
+      },
+      {
+        title: 'Emitir relatório de aceitação da estação',
+        description: 'Gerar e revisar o relatório de testes de aceitação da estação Jardim América.',
+        status: 'in_progress',
+        priority: 'high',
+        dueAt: '2026-08-13T12:00',
+        project: 'Teste de Aceitação',
+        client: 'Operadora Gamma',
+        assignedTo: 'Carlos Silva',
+      },
+    ];
+
+    for (const task of tasks) {
+      await this.taskService.create(task);
+    }
+
+    console.log(`Seed: ${tasks.length} tasks created`);
   }
 }

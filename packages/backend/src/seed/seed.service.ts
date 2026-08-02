@@ -8,6 +8,7 @@ import { ScheduleService } from '../schedule/schedule.service';
 import { CreateScheduleEventInput } from '../schedule/schedule-event.schemas';
 import { TaskService } from '../tasks/task.service';
 import { CreateTaskInput } from '../tasks/task.schemas';
+import { MsProjectService } from '../ms-project/ms-project.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -18,6 +19,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly lpuService: LpuService,
     private readonly scheduleService: ScheduleService,
     private readonly taskService: TaskService,
+    private readonly msProjectService: MsProjectService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -30,6 +32,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedLpus();
     await this.seedScheduleEvents();
     await this.seedTasks();
+    await this.seedMsProject();
   }
 
   private async seedAdmin() {
@@ -685,5 +688,102 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${tasks.length} tasks created`);
+  }
+
+  private async seedMsProject() {
+    const { total } = await this.msProjectService.findAllPlans({ limit: 1 });
+    if (total > 0) return;
+
+    const project = await this.msProjectService.createPlan({
+      name: 'Implantação de ERBS – Site Norte',
+      description: 'Cronograma completo de implantação de estação rádio base no site Norte, do levantamento à entrega.',
+      startDate: '2026-08-03',
+      workingDays: [1, 2, 3, 4, 5],
+    });
+
+    const taskDefs: { name: string; durationDays?: number; milestone?: boolean; percentComplete?: number; priority?: 'low' | 'medium' | 'high' }[] = [
+      { name: 'Levantamento topográfico', durationDays: 2, percentComplete: 100 },
+      { name: 'Projeto executivo', durationDays: 3, percentComplete: 100 },
+      { name: 'Aprovação do cliente', milestone: true },
+      { name: 'Mobilização de equipe', durationDays: 1, percentComplete: 100 },
+      { name: 'Fundação e infraestrutura civil', durationDays: 5, percentComplete: 60 },
+      { name: 'Instalação da torre', durationDays: 3, percentComplete: 0 },
+      { name: 'Instalação de antenas e rádios', durationDays: 2, percentComplete: 0 },
+      { name: 'Cabeamento e energia', durationDays: 2, percentComplete: 0 },
+      { name: 'Testes de comissionamento', durationDays: 2, percentComplete: 0 },
+      { name: 'Entrega do site', milestone: true },
+    ];
+
+    const taskIds: number[] = [];
+    for (const def of taskDefs) {
+      const updated = await this.msProjectService.addTask(project.id, {
+        name: def.name,
+        durationDays: def.milestone ? 0 : (def.durationDays ?? 1),
+        milestone: def.milestone ?? false,
+        percentComplete: def.percentComplete ?? 0,
+        priority: def.priority ?? 'medium',
+      });
+      const added = updated.tasks[updated.tasks.length - 1];
+      taskIds.push(added.id);
+    }
+
+    const dependencies: { predecessor: number; successor: number; type: 'FS' | 'SS' | 'FF' | 'SF'; lagDays?: number }[] = [
+      { predecessor: 1, successor: 2, type: 'FS' },
+      { predecessor: 2, successor: 3, type: 'FS' },
+      { predecessor: 3, successor: 4, type: 'FS' },
+      { predecessor: 4, successor: 5, type: 'FS' },
+      { predecessor: 5, successor: 6, type: 'FS' },
+      { predecessor: 6, successor: 7, type: 'FS' },
+      { predecessor: 6, successor: 8, type: 'SS', lagDays: 1 },
+      { predecessor: 7, successor: 9, type: 'FS' },
+      { predecessor: 8, successor: 9, type: 'FS' },
+      { predecessor: 9, successor: 10, type: 'FS' },
+    ];
+
+    for (const dep of dependencies) {
+      await this.msProjectService.addDependency(project.id, {
+        taskId: taskIds[dep.successor - 1],
+        predecessorTaskId: taskIds[dep.predecessor - 1],
+        type: dep.type,
+        lagDays: dep.lagDays ?? 0,
+      });
+    }
+
+    const resources: { name: string; type: 'work' | 'material' | 'cost'; email: string; maxUnits: number }[] = [
+      { name: 'Carlos Silva', type: 'work', email: 'carlos.silva@example.com', maxUnits: 100 },
+      { name: 'Rafael Santos', type: 'work', email: 'rafael.santos@example.com', maxUnits: 100 },
+      { name: 'Ana Pereira', type: 'work', email: 'ana.pereira@example.com', maxUnits: 100 },
+      { name: 'João Lima', type: 'work', email: 'joao.lima@example.com', maxUnits: 80 },
+    ];
+
+    const resourceIds: number[] = [];
+    for (const resource of resources) {
+      const updated = await this.msProjectService.addResource(project.id, resource);
+      const added = updated.resources[updated.resources.length - 1];
+      resourceIds.push(added.id);
+    }
+
+    const assignments: { task: number; resource: number; units?: number; work?: number }[] = [
+      { task: 1, resource: 4, units: 100, work: 16 },
+      { task: 2, resource: 3, units: 100, work: 24 },
+      { task: 4, resource: 1, units: 50, work: 4 },
+      { task: 5, resource: 1, units: 100, work: 40 },
+      { task: 6, resource: 2, units: 100, work: 24 },
+      { task: 7, resource: 2, units: 100, work: 16 },
+      { task: 8, resource: 4, units: 100, work: 16 },
+      { task: 9, resource: 1, units: 100, work: 16 },
+    ];
+
+    for (const assignment of assignments) {
+      await this.msProjectService.addAssignment(project.id, {
+        taskId: taskIds[assignment.task - 1],
+        resourceId: resourceIds[assignment.resource - 1],
+        units: assignment.units ?? 100,
+        work: assignment.work,
+      });
+    }
+
+    await this.msProjectService.recomputeSchedule(project.id);
+    console.log(`Seed: ms-project "${project.name}" created (${taskDefs.length} tasks, ${dependencies.length} dependencies, ${resources.length} resources, ${assignments.length} assignments)`);
   }
 }

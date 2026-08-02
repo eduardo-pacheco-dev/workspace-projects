@@ -30,6 +30,8 @@ import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailsPage from './pages/clients/ClientDetailsPage'
 import SchedulePage from './pages/schedule/SchedulePage'
 import TasksPage from './pages/tasks/TasksPage'
+import MsProjectPage from './pages/ms-project/MsProjectPage'
+import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
 import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
@@ -84,6 +86,8 @@ export default function App() {
           <Route path="/clients/:id" element={<ClientDetailsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/ms-project" element={<MsProjectPage />} />
+          <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>

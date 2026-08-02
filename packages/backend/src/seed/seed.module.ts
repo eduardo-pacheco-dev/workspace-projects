@@ -5,10 +5,11 @@ import { JobsModule } from '../jobs/jobs.module';
 import { LpuModule } from '../lpu/lpu.module';
 import { ScheduleModule } from '../schedule/schedule.module';
 import { TasksModule } from '../tasks/task.module';
+import { MsProjectModule } from '../ms-project/ms-project.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule],
   providers: [SeedService],
 })
 export class SeedModule {}

@@ -28,6 +28,7 @@ import BusinessIcon from '@mui/icons-material/Business'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import EventIcon from '@mui/icons-material/Event'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import TimelineIcon from '@mui/icons-material/Timeline'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
@@ -91,6 +92,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { label: 'Agenda', path: '/schedule', icon: <EventIcon /> },
     { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
+    { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon /> },
     { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
     { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
     { label: 'Freelancers', path: '/freelancers', icon: <PersonIcon /> },

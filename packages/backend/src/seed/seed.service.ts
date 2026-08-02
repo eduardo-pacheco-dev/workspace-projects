@@ -4,6 +4,8 @@ import { UsersService } from '../users/users.service';
 import { FreelancersService } from '../freelancers/freelancers.service';
 import { JobsService } from '../jobs/jobs.service';
 import { LpuService } from '../lpu/lpu.service';
+import { ScheduleService } from '../schedule/schedule.service';
+import { CreateScheduleEventInput } from '../schedule/schedule-event.schemas';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -12,6 +14,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly freelancersService: FreelancersService,
     private readonly jobsService: JobsService,
     private readonly lpuService: LpuService,
+    private readonly scheduleService: ScheduleService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -22,6 +25,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedFreelancers();
     await this.seedJobs();
     await this.seedLpus();
+    await this.seedScheduleEvents();
   }
 
   private async seedAdmin() {
@@ -389,5 +393,179 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${lpus.length} lpus created`);
+  }
+
+  private async seedScheduleEvents() {
+    const { total } = await this.scheduleService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const events: CreateScheduleEventInput[] = [
+      {
+        title: 'Manutenção preventiva ERBS Centro',
+        description: 'Limpeza, aperto de conectores e medições de potência na estação rádio base do centro.',
+        startAt: '2026-08-03T09:00',
+        endAt: '2026-08-03T11:00',
+        location: 'ERBS Centro - Rua das Flores, 120',
+        client: 'Operadora Alpha',
+        assignedTo: 'Carlos Silva',
+        status: 'scheduled',
+      },
+      {
+        title: 'Alinhamento Radio Link Torre Norte',
+        description: 'Alinhamento de enlace ponto a ponto e ajuste de potência na torre norte.',
+        startAt: '2026-08-03T14:00',
+        endAt: '2026-08-03T16:00',
+        location: 'Torre Norte - Rodovia BR-101',
+        client: 'Operadora Alpha',
+        assignedTo: 'Rafael Santos',
+        status: 'confirmed',
+      },
+      {
+        title: 'Drive Test Zona Sul',
+        description: 'Coleta de métricas de cobertura e qualidade na região sul da cidade.',
+        startAt: '2026-08-04T08:00',
+        endAt: '2026-08-04T12:00',
+        location: 'Zona Sul',
+        client: 'Operadora Beta',
+        assignedTo: 'Mariana Oliveira',
+        status: 'in_progress',
+      },
+      {
+        title: 'Reunião de planejamento 5G',
+        description: 'Definição de cronograma e escopo para implantação das novas células 5G.',
+        startAt: '2026-08-05T10:00',
+        endAt: '2026-08-05T11:00',
+        location: 'Escritório Central - Sala 2',
+        client: 'Operadora Alpha',
+        assignedTo: 'Mariana Oliveira',
+        status: 'confirmed',
+      },
+      {
+        title: 'Instalação de antena no bairro industrial',
+        description: 'Instalação de antena setorial e cabo de alimentação na estação do bairro industrial.',
+        startAt: '2026-08-06T08:00',
+        endAt: '2026-08-06T17:00',
+        location: 'Bairro Industrial - Av. das Indústrias, 850',
+        client: 'Operadora Gamma',
+        assignedTo: 'Rafael Santos',
+        status: 'scheduled',
+      },
+      {
+        title: 'Comissionamento Radio Link 11 GHz',
+        description: 'Comissionamento e testes de throughput do enlace de 11 GHz recém-instalado.',
+        startAt: '2026-08-07T09:00',
+        endAt: '2026-08-07T12:00',
+        location: 'Site Morro do Cruzeiro',
+        client: 'Operadora Beta',
+        assignedTo: 'Carlos Silva',
+        status: 'confirmed',
+      },
+      {
+        title: 'Atualização de software de BTS',
+        description: 'Atualização de firmware da BTS com acompanhamento remoto e plano de rollback.',
+        startAt: '2026-08-08T22:00',
+        endAt: '2026-08-08T23:30',
+        location: 'ERBS Vila Nova (remoto)',
+        client: 'Operadora Alpha',
+        assignedTo: 'Carlos Silva',
+        status: 'scheduled',
+      },
+      {
+        title: 'Teste de aceitação de estação nova',
+        description: 'Execução de testes SAT/UAT na estação recém-instalada e emissão de relatório.',
+        startAt: '2026-08-10T09:00',
+        endAt: '2026-08-10T12:00',
+        location: 'Site Jardim América',
+        client: 'Operadora Gamma',
+        assignedTo: 'Carlos Silva',
+        status: 'completed',
+      },
+      {
+        title: 'Visita técnica ao cliente',
+        description: 'Visita para levantamento de necessidades e validação de projeto de infraestrutura.',
+        startAt: '2026-08-11T13:00',
+        endAt: '2026-08-11T15:00',
+        location: 'Sede do Cliente - Centro',
+        client: 'Cliente Beta',
+        assignedTo: 'Ana Pereira',
+        status: 'confirmed',
+      },
+      {
+        title: 'Migração 4G para 5G NSA',
+        description: 'Janela de migração das células 4G para 5G NSA com reconfiguração de BTS.',
+        startAt: '2026-08-12T02:00',
+        endAt: '2026-08-12T05:00',
+        location: 'Núcleo de Rede (remoto)',
+        client: 'Operadora Alpha',
+        assignedTo: 'Carlos Silva',
+        status: 'in_progress',
+      },
+      {
+        title: 'Entrega de relatório de aceitação',
+        description: 'Apresentação do relatório de testes de aceitação para a operadora.',
+        startAt: '2026-08-14T09:00',
+        endAt: '2026-08-14T10:00',
+        location: 'Escritório Central - Sala 1',
+        client: 'Operadora Gamma',
+        assignedTo: 'Carlos Silva',
+        status: 'completed',
+      },
+      {
+        title: 'Configuração de enlace 5.8 GHz',
+        description: 'Planejamento e configuração de enlace ponto a ponto na frequência de 5.8 GHz.',
+        startAt: '2026-08-18T10:00',
+        endAt: '2026-08-18T12:00',
+        location: 'Site Fazenda Boa Vista',
+        client: 'Operadora Beta',
+        assignedTo: 'Rafael Santos',
+        status: 'scheduled',
+      },
+      {
+        title: 'Manutenção corretiva de radio link',
+        description: 'Correção de perda de sinal no enlace entre os sites Centro e Leste.',
+        startAt: '2026-08-20T15:00',
+        endAt: '2026-08-20T17:00',
+        location: 'Site Leste',
+        client: 'Operadora Alpha',
+        assignedTo: 'Rafael Santos',
+        status: 'confirmed',
+      },
+      {
+        title: 'Reunião de acompanhamento de projeto',
+        description: 'Acompanhamento quinzenal do projeto de infraestrutura de telecomunicações.',
+        startAt: '2026-08-25T09:00',
+        endAt: '2026-08-25T10:00',
+        location: 'Escritório Central - Sala 2',
+        client: 'Cliente Beta',
+        assignedTo: 'Ana Pereira',
+        status: 'scheduled',
+      },
+      {
+        title: 'Levantamento topográfico para ERBS',
+        description: 'Levantamento topográfico e estudo de visada para a nova estação rádio base.',
+        startAt: '2026-08-27T08:00',
+        endAt: '2026-08-27T14:00',
+        location: 'Região Norte - Zona rural',
+        client: 'Operadora Gamma',
+        assignedTo: 'João Lima',
+        status: 'scheduled',
+      },
+      {
+        title: 'Instalação de CFTV em site',
+        description: 'Instalação de sistema de CFTV e controle de acesso na estação (cancelado).',
+        startAt: '2026-08-31T09:00',
+        endAt: '2026-08-31T12:00',
+        location: 'ERBS Vila Nova',
+        client: 'Operadora Beta',
+        assignedTo: 'Rafael Santos',
+        status: 'cancelled',
+      },
+    ];
+
+    for (const event of events) {
+      await this.scheduleService.create(event);
+    }
+
+    console.log(`Seed: ${events.length} schedule events created`);
   }
 }

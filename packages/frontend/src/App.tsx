@@ -28,6 +28,7 @@ import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailsPage from './pages/projects/ProjectDetailsPage'
 import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailsPage from './pages/clients/ClientDetailsPage'
+import SchedulePage from './pages/schedule/SchedulePage'
 import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetailsPage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailsPage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>

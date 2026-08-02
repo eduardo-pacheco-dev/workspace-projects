@@ -16,6 +16,7 @@ import { StationsModule } from './stations/stations.module';
 import { RadioLinksModule } from './radio-links/radio-links.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ClientsModule } from './clients/clients.module';
+import { ScheduleModule } from './schedule/schedule.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -60,6 +61,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     RadioLinksModule,
     ProjectsModule,
     ClientsModule,
+    ScheduleModule,
     SeedModule,
   ],
 })

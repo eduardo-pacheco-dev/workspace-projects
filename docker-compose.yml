@@ -18,6 +18,7 @@ services:
       DB_USER: db_admin
       DB_PASSWORD: db_password
       DB_NAME: db_workspace
+      CHOKIDAR_USEPOLLING: 'true'
     depends_on:
       db:
         condition: service_healthy
@@ -39,6 +40,8 @@ services:
     environment:
       NODE_ENV: development
       VITE_API_PROXY_TARGET: http://backend:3001
+      VITE_USE_POLLING: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
     depends_on:
       - backend
     command: npm run dev -w packages/frontend

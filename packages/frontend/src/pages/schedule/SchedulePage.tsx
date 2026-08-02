@@ -250,7 +250,7 @@ export default function SchedulePage() {
                       )}
                     </TableCell>
                   ))}
-                  <TableCell>Ações</TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -269,7 +269,7 @@ export default function SchedulePage() {
                         color={statusColors[event.status] || 'default'}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                       <IconButton onClick={() => setModal({ open: true, editId: event.id, initialDate: null })}>
                         <Edit />
                       </IconButton>

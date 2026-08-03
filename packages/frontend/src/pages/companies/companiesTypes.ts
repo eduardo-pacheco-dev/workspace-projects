@@ -67,3 +67,14 @@ export interface CompanyFreelancerLink {
   createdAt: string
   freelancer: FreelancerSummary
 }
+
+export interface ProjectSummary {
+  id: number
+  nome: string
+  codigo: string | null
+  descricao: string | null
+  cliente: string | null
+  dataInicio: string | null
+  dataFim: string | null
+  status: string
+}

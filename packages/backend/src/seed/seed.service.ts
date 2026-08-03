@@ -15,6 +15,7 @@ import { CompanyCollaboratorService } from '../companies/company-collaborator.se
 import { CompanyFreelancerService } from '../companies/company-freelancer.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { CommentsService } from '../comments/comments.service';
+import { ProjectsService } from '../projects/projects.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -32,6 +33,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly companyFreelancerService: CompanyFreelancerService,
     private readonly attachmentsService: AttachmentsService,
     private readonly commentsService: CommentsService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -48,6 +50,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedSettings();
     await this.seedCompanies();
     await this.seedCompanyMembers();
+    await this.seedCompanyProjects();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -887,6 +890,58 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${toAssociate.length} freelancers linked to company "${company.nome}"`);
+  }
+
+  private async seedCompanyProjects() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { total } = await this.projectsService.findAll({ limit: 1 });
+    if (total === 0) {
+      const projects = [
+        {
+          nome: 'Infraestrutura Site Norte',
+          cliente: 'Vivo',
+          descricao: 'Implantação de infraestrutura de telecomunicações para o site Norte.',
+          dataInicio: '2025-01-15',
+          dataFim: '2025-06-30',
+          status: 'ativo',
+        },
+        {
+          nome: 'Comissionamento 11 GHz',
+          cliente: 'Nokia',
+          descricao: 'Comissionamento de enlace de rádio de 11 GHz.',
+          dataInicio: '2025-03-01',
+          dataFim: '2025-09-15',
+          status: 'ativo',
+        },
+        {
+          nome: 'Otimização de Rede LTE',
+          cliente: 'Ericsson',
+          descricao: 'Otimização de parâmetros de rede LTE em área urbana.',
+          dataInicio: '2024-11-10',
+          dataFim: '2025-02-28',
+          status: 'inativo',
+        },
+      ];
+
+      for (const project of projects) {
+        await this.projectsService.create(project);
+      }
+
+      console.log(`Seed: ${projects.length} projects created`);
+    }
+
+    const { data: linked } = await this.projectsService.findByCompany(company.id, { limit: 100 });
+    if (linked.length > 0) return;
+
+    const { data: projects } = await this.projectsService.findAll({ limit: 100 });
+    for (const project of projects.slice(0, 3)) {
+      await this.projectsService.addCompany(project.id, company.id);
+    }
+
+    console.log(`Seed: ${Math.min(projects.length, 3)} projects linked to company "${company.nome}"`);
   }
 
   private async seedAttachments() {

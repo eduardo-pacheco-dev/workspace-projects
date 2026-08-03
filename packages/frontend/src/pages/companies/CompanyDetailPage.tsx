@@ -44,6 +44,7 @@ import { formatDateTime } from '../../utils/format'
 import CompanyModal from './CompanyModal'
 import CompanyMembersTab from './CompanyMembersTab'
 import CompanyMapTab from './CompanyMapTab'
+import CompanyProjectsTab from './CompanyProjectsTab'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { Company } from './companiesTypes'
 
@@ -301,6 +302,7 @@ export default function CompanyDetailPage() {
           >
             <Tab label="Overview" />
             <Tab label="Colaboradores" />
+            <Tab label="Projetos" />
             <Tab label="Anexos" />
             <Tab label="Comentários" />
             <Tab label="Mapa" />
@@ -328,6 +330,10 @@ export default function CompanyDetailPage() {
           )}
 
           {tab === 2 && (
+            <CompanyProjectsTab companyId={companyId} />
+          )}
+
+          {tab === 3 && (
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Box>
@@ -419,7 +425,7 @@ export default function CompanyDetailPage() {
           </Paper>
           )}
 
-          {tab === 3 && (
+          {tab === 4 && (
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
             <Divider sx={{ mb: 2 }} />
@@ -501,7 +507,7 @@ export default function CompanyDetailPage() {
           </Paper>
           )}
 
-          {tab === 4 && (
+          {tab === 5 && (
             <CompanyMapTab company={company} />
           )}
         </>

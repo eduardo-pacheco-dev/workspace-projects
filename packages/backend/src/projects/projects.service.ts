@@ -5,6 +5,7 @@ import { Project } from './project.entity';
 import { ProjectDocument } from './project-document.entity';
 import { Station } from '../stations/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
+import { Company } from '../companies/company.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateProjectDocumentDto } from './dto/create-project-document.dto';
@@ -31,6 +32,8 @@ export class ProjectsService {
     private readonly radioLinksRepository: Repository<RadioLink>,
     @InjectRepository(ProjectDocument)
     private readonly projectDocumentsRepository: Repository<ProjectDocument>,
+    @InjectRepository(Company)
+    private readonly companiesRepository: Repository<Company>,
   ) {}
 
   async create(dto: CreateProjectDto): Promise<Project> {
@@ -99,6 +102,77 @@ export class ProjectsService {
   async delete(id: number): Promise<void> {
     const result = await this.projectsRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Projeto não encontrado');
+  }
+
+  async findByCompany(
+    companyId: number,
+    query: ProjectQuery,
+  ): Promise<{ data: Project[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'id',
+      sortOrder = 'ASC' as 'ASC' | 'DESC',
+      search,
+      status,
+    } = query;
+
+    const qb = this.projectsRepository
+      .createQueryBuilder('p')
+      .innerJoin('p.companies', 'c')
+      .where('c.id = :companyId', { companyId });
+
+    if (search) {
+      qb.andWhere(
+        'p.nome LIKE :search OR p.codigo LIKE :search OR p.cliente LIKE :search',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (status) {
+      qb.andWhere('p.status = :status', { status });
+    }
+
+    const allowedSort = ['id', 'nome', 'codigo', 'cliente', 'status', 'dataInicio', 'createdAt'];
+    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
+    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    const [data, total] = await qb
+      .orderBy(`p.${safeSort}`, safeOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
+  }
+
+  async findCompanies(projectId: number): Promise<Company[]> {
+    const project = await this.projectsRepository.findOne({
+      where: { id: projectId },
+      relations: ['companies'],
+    });
+    if (!project) throw new NotFoundException('Projeto não encontrado');
+    return project.companies;
+  }
+
+  async addCompany(projectId: number, companyId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const company = await this.companiesRepository.findOne({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Empresa não encontrada');
+
+    const companies = await this.findCompanies(projectId);
+    if (!companies.some((c) => c.id === companyId)) {
+      companies.push(company);
+    }
+    project.companies = companies;
+    return this.projectsRepository.save(project);
+  }
+
+  async removeCompany(projectId: number, companyId: number): Promise<Project> {
+    const project = await this.findById(projectId);
+    const companies = await this.findCompanies(projectId);
+    project.companies = companies.filter((c) => c.id !== companyId);
+    return this.projectsRepository.save(project);
   }
 
   async addStation(projectId: number, stationId: number): Promise<Project> {

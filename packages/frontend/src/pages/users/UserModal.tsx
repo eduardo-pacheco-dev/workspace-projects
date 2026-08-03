@@ -22,6 +22,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { z } from 'zod'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 
 const baseUserSchema = z.object({
@@ -60,6 +61,7 @@ interface UserModalProps {
 export default function UserModal({ open, editId, onClose, onSaved }: UserModalProps) {
   const isEdit = Boolean(editId)
   const { user: currentUser } = useAuth()
+  const { showToast } = useToast()
 
   const [name, setName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -160,6 +162,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       }
       onSaved()
       handleClose()
+      showToast(isEdit ? 'Usuário atualizado com sucesso.' : 'Usuário criado com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {

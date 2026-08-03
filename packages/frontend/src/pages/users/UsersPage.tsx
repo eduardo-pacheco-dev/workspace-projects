@@ -18,11 +18,17 @@ import {
   TextField,
   Stack,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import { Edit, Delete, PersonAdd } from '@mui/icons-material'
 import api from '../../services/api'
 import UserModal from './UserModal'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 
 interface User {
   id: number
@@ -41,6 +47,7 @@ type SortOrder = 'ASC' | 'DESC'
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth()
+  const { showToast } = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -50,6 +57,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
 
   useEffect(() => {
@@ -101,13 +110,18 @@ export default function UsersPage() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await api.delete(`/users/${id}`)
+      await api.delete(`/users/${deleteTarget.id}`)
+      showToast('Usuário excluído com sucesso.')
       fetchData()
+      setDeleteTarget(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -202,7 +216,7 @@ export default function UsersPage() {
                       <Edit />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleDelete(u.id)}
+                      onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
                       disabled={currentUser != null && String(currentUser.id) === String(u.id)}
                     >
                       <Delete />
@@ -239,6 +253,24 @@ export default function UsersPage() {
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
       />
+
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => { if (!deleting) setDeleteTarget(null) }}
+      >
+        <DialogTitle>Excluir Usuário</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Tem certeza que deseja excluir o usuário <strong>{deleteTarget?.name}</strong>? Esta ação não pode ser desfeita.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancelar</Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }

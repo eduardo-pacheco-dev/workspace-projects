@@ -49,6 +49,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedMsProject();
     await this.seedSettings();
     await this.seedCompanies();
+    await this.seedUsers();
     await this.seedCompanyMembers();
     await this.seedCompanyProjects();
     await this.seedAttachments();
@@ -860,6 +861,57 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${companies.length} companies created`);
+  }
+
+  private async seedUsers() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const companyId = (nome: string) => companies.find((c) => c.nome === nome)?.id ?? null;
+
+    const users: { name: string; email: string; company: string; role: 'master' | 'user' }[] = [
+      { name: 'Ricardo Almeida', email: 'ricardo.almeida@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Fernanda Souza', email: 'fernanda.souza@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Bruno Carvalho', email: 'bruno.carvalho@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Carla Mendes', email: 'carla.mendes@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Diego Ferreira', email: 'diego.ferreira@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Elisa Rocha', email: 'elisa.rocha@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Fábio Nunes', email: 'fabio.nunes@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Gabriela Lima', email: 'gabriela.lima@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Henrique Castro', email: 'henrique.castro@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Isabela Ramos', email: 'isabela.ramos@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Jorge Prado', email: 'jorge.prado@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Vitor Hugo', email: 'vitor.hugo@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Beatriz Campos', email: 'beatriz.campos@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'master' },
+      { name: 'Karina Teixeira', email: 'karina.teixeira@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Leonardo Barbosa', email: 'leonardo.barbosa@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Marina Duarte', email: 'marina.duarte@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Nelson Azevedo', email: 'nelson.azevedo@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Olívia Martins', email: 'olivia.martins@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Paulo Henrique', email: 'paulo.henrique@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Renata Cardoso', email: 'renata.cardoso@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Samuel Freitas', email: 'samuel.freitas@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Tatiane Gonçalves', email: 'tatiane.goncalves@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+    ];
+
+    let created = 0;
+    for (const u of users) {
+      const existing = await this.usersService.findByEmail(u.email);
+      if (existing) continue;
+      const linkedCompanyId = companyId(u.company);
+      if (linkedCompanyId == null) continue;
+
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      await this.usersService.create({
+        name: u.name,
+        email: u.email,
+        password: hashedPassword,
+        role: u.role,
+        companyId: linkedCompanyId,
+        status: 'active',
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} users created (password padrão: 123456)`);
   }
 
   private async seedCompanyMembers() {

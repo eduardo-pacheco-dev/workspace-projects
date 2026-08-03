@@ -1,6 +1,7 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
+import { ToastProvider } from './contexts/ToastContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -53,7 +54,8 @@ function ProtectedLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <ProjectProvider>
+      <ToastProvider>
+        <ProjectProvider>
         <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -97,7 +99,8 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>
-      </ProjectProvider>
+        </ProjectProvider>
+      </ToastProvider>
     </AuthProvider>
   )
 }

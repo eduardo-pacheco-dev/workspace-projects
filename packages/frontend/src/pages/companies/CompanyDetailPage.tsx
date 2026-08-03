@@ -37,8 +37,10 @@ import SendIcon from '@mui/icons-material/Send'
 import CorporateFareIcon from '@mui/icons-material/CorporateFare'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 import { formatDateTime } from '../../utils/format'
 import CompanyModal from './CompanyModal'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { Company } from './companiesTypes'
 
 interface Attachment {
@@ -60,6 +62,7 @@ export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const companyId = Number(id)
   const [company, setCompany] = useState<Company | null>(null)
   const [error, setError] = useState('')
@@ -77,6 +80,7 @@ export default function CompanyDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null)
 
   const fetchData = useCallback(async () => {
     setError('')
@@ -196,12 +200,14 @@ export default function CompanyDetailPage() {
   }
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este comentário?')) return
     try {
       await api.delete(`/comments/${commentId}`)
+      setCommentToDelete(null)
       fetchComments()
+      showToast('Comentário excluído com sucesso.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir o comentário.')
+      setCommentToDelete(null)
+      showToast(err.response?.data?.message || 'Não foi possível excluir o comentário.', 'error')
     }
   }
 
@@ -395,7 +401,7 @@ export default function CompanyDetailPage() {
                               <IconButton size="small" onClick={() => handleEditComment(c)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteComment(c.id)}>
+                              <IconButton size="small" onClick={() => setCommentToDelete(c)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </>
@@ -477,6 +483,14 @@ export default function CompanyDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!commentToDelete}
+        title="Excluir comentário"
+        message={`Tem certeza que deseja excluir o comentário de ${commentToDelete?.author}?`}
+        onClose={() => setCommentToDelete(null)}
+        onConfirm={() => commentToDelete && handleDeleteComment(commentToDelete.id)}
+      />
     </Container>
   )
 }

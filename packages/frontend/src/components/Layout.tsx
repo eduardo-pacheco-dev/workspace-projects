@@ -50,6 +50,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null)
   const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [companyName, setCompanyName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user?.companyId) {
+      setCompanyName(null)
+      return
+    }
+    api
+      .get(`/companies/${user.companyId}`)
+      .then((res) => setCompanyName(res.data?.nome ?? null))
+      .catch(() => setCompanyName(null))
+  }, [user?.companyId])
 
   useEffect(() => {
     api.get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
@@ -219,7 +231,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          © {new Date().getFullYear()} App — Sistema de Telecomunicações
+          © {new Date().getFullYear()} {companyName || 'Master'} — Sistema de Telecomunicações
         </Typography>
         <Typography variant="caption" color="text.secondary">
           v1.0.0

@@ -34,6 +34,7 @@ describe('UsersService', () => {
 
   const buildQueryBuilder = (data: User[], total: number) => {
     const qb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
@@ -67,7 +68,7 @@ describe('UsersService', () => {
 
       const result = await service.findByEmail('admin@admin.com');
 
-      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { email: 'admin@admin.com' } });
+      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { email: 'admin@admin.com' }, relations: ['company'] });
       expect(result).toEqual(user);
     });
 
@@ -84,7 +85,7 @@ describe('UsersService', () => {
 
       const result = await service.findById(1);
 
-      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: ['company'] });
       expect(result).toEqual(user);
     });
   });
@@ -96,7 +97,7 @@ describe('UsersService', () => {
 
       const result = await service.findByResetToken('abc');
 
-      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { resetToken: 'abc' } });
+      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { resetToken: 'abc' }, relations: ['company'] });
       expect(result).toEqual(user);
     });
   });

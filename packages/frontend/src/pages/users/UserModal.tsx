@@ -83,21 +83,25 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
   const availableCompanies = isMasterUser
     ? companies
-    : companies.filter((c) => c.id === currentUser?.companyId)
+    : currentUser?.companyId != null
+      ? [{ id: currentUser.companyId, nome: currentUser.companyName || '' }]
+      : []
 
   useEffect(() => {
     if (!open) return
-    api
-      .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const d = res.data
-        setCompanies(Array.isArray(d) ? d : d.data ?? [])
-        if (!isMasterUser && currentUser?.companyId != null) {
-          setCompanyId(currentUser.companyId)
-        }
-      })
-      .catch(() => {})
-  }, [open, isMasterUser, currentUser?.companyId])
+    if (isMasterUser) {
+      api
+        .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
+        .then((res) => {
+          const d = res.data
+          setCompanies(Array.isArray(d) ? d : d.data ?? [])
+        })
+        .catch(() => {})
+    } else if (currentUser?.companyId != null) {
+      setCompanies([{ id: currentUser.companyId, nome: currentUser.companyName || '' }])
+      if (!isEdit) setCompanyId(currentUser.companyId)
+    }
+  }, [open, isMasterUser, isEdit, currentUser?.companyId, currentUser?.companyName])
 
   useEffect(() => {
     if (open && editId) {

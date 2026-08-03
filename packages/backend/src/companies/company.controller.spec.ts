@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Company } from './company.entity';
 import { CompanyController } from './company.controller';
@@ -8,6 +9,28 @@ import { CompanyService } from './company.service';
 
 describe('CompanyController (integration)', () => {
   let app: INestApplication;
+
+  let currentUser: {
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+    companyId: number | null;
+  } = {
+    id: 1,
+    email: 'admin@admin.com',
+    name: 'Admin',
+    role: 'master',
+    companyId: null,
+  };
+
+  const mockAuthGuard = {
+    canActivate: (context: any) => {
+      const req = context.switchToHttp().getRequest();
+      req.user = currentUser;
+      return true;
+    },
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -23,7 +46,10 @@ describe('CompanyController (integration)', () => {
       ],
       controllers: [CompanyController],
       providers: [CompanyService],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard('jwt'))
+      .useValue(mockAuthGuard)
+      .compile();
 
     app = moduleRef.createNestApplication();
     await app.init();
@@ -49,7 +75,6 @@ describe('CompanyController (integration)', () => {
       });
       companyId = res.body.id;
     });
-
     it('should return 400 when nome is missing', async () => {
       await request(app.getHttpServer())
         .post('/companies')
@@ -124,6 +149,21 @@ describe('CompanyController (integration)', () => {
 
     it('should return 404 when deleting non-existent company', async () => {
       await request(app.getHttpServer()).delete('/companies/999').expect(404);
+    });
+  });
+
+  describe('access control', () => {
+    it('should return 403 for a non-master user', async () => {
+      currentUser = { id: 2, email: 'user@empresa.com', name: 'User', role: 'user', companyId: 1 };
+
+      await request(app.getHttpServer()).get('/companies').expect(403);
+      await request(app.getHttpServer()).get(`/companies/${companyId}`).expect(403);
+      await request(app.getHttpServer())
+        .post('/companies')
+        .send({ nome: 'Outra Empresa' })
+        .expect(403);
+      await request(app.getHttpServer()).patch(`/companies/${companyId}`).send({ ativa: false }).expect(403);
+      await request(app.getHttpServer()).delete(`/companies/${companyId}`).expect(403);
     });
   });
 });

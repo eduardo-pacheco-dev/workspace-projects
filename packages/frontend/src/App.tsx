@@ -51,6 +51,12 @@ function ProtectedLayout() {
   )
 }
 
+function MasterOnlyRoute({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (user?.role !== 'master') return <Navigate to="/" replace />
+  return children
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -94,8 +100,8 @@ export default function App() {
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/companies" element={<CompaniesPage />} />
-          <Route path="/companies/:id" element={<CompanyDetailPage />} />
+          <Route path="/companies" element={<MasterOnlyRoute><CompaniesPage /></MasterOnlyRoute>} />
+          <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>

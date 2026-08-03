@@ -39,6 +39,7 @@ interface User {
   status: string
   role?: string
   companyId?: number | null
+  companyName?: string | null
   createdAt: string
 }
 
@@ -59,20 +60,6 @@ export default function UsersPage() {
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
-
-  useEffect(() => {
-    api
-      .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const d = res.data
-        setCompanies(Array.isArray(d) ? d : d.data ?? [])
-      })
-      .catch(() => {})
-  }, [])
-
-  const companyName = (id?: number | null) =>
-    id == null ? '-' : companies.find((c) => c.id === id)?.nome || `#${id}`
 
   const fetchData = useCallback(async () => {
     try {
@@ -209,7 +196,7 @@ export default function UsersPage() {
                     color={u.role === 'master' ? 'primary' : 'default'}
                   />
                 </TableCell>
-                <TableCell>{u.role === 'master' ? '-' : companyName(u.companyId)}</TableCell>
+                <TableCell>{u.role === 'master' ? '-' : (u.companyName || '-')}</TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
                     <IconButton onClick={() => setModal({ open: true, editId: u.id })}>

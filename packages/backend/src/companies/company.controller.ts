@@ -8,8 +8,11 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { CompanyService } from './company.service';
+import { Roles, RolesGuard } from '../common/guards/roles.guard';
 import {
   createCompanySchema,
   updateCompanySchema,
@@ -19,6 +22,8 @@ import {
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('companies')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('master')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 

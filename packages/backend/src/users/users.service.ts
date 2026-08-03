@@ -14,7 +14,9 @@ import {
   UpdateUserInput,
 } from './schemas/user.schemas';
 
-export type PublicUser = Omit<User, 'password' | 'resetToken'>;
+export type PublicUser = Omit<User, 'password' | 'resetToken' | 'company'> & {
+  companyName: string | null;
+};
 
 @Injectable()
 export class UsersService {
@@ -26,15 +28,15 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository.findOne({ where: { email }, relations: ['company'] });
   }
 
   async findById(id: number): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id } });
+    return this.usersRepository.findOne({ where: { id }, relations: ['company'] });
   }
 
   async findByResetToken(token: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { resetToken: token } });
+    return this.usersRepository.findOne({ where: { resetToken: token }, relations: ['company'] });
   }
 
   async create(data: Partial<User>): Promise<User> {
@@ -47,8 +49,8 @@ export class UsersService {
   }
 
   toPublicUser(user: User): PublicUser {
-    const { password, resetToken, ...publicUser } = user;
-    return publicUser;
+    const { password, resetToken, company, ...publicUser } = user;
+    return { ...publicUser, companyName: company?.nome ?? null };
   }
 
   async getUserOrFail(id: number): Promise<User> {
@@ -136,7 +138,9 @@ export class UsersService {
     } = query;
 
     const isMaster = currentUser?.role === 'master';
-    const qb = this.usersRepository.createQueryBuilder('u');
+    const qb = this.usersRepository
+      .createQueryBuilder('u')
+      .leftJoinAndSelect('u.company', 'company');
 
     if (!isMaster) {
       qb.where('u.role != :role', { role: 'master' }).andWhere('u.companyId = :companyId', {

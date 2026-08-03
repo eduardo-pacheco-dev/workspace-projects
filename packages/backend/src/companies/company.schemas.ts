@@ -30,3 +30,26 @@ export const updateCompanySchema = z
 
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
 export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
+
+export const createCompanyCollaboratorSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório.'),
+  cargo: z.string().optional(),
+  email: z.string().email('Informe um e-mail válido.').optional(),
+  telefone: z.string().optional(),
+  ativo: z.boolean().optional(),
+});
+
+export const updateCompanyCollaboratorSchema = z
+  .object({
+    nome: z.string().min(1, 'Nome é obrigatório.').optional(),
+    cargo: z.string().optional(),
+    email: z.string().email('Informe um e-mail válido.').optional(),
+    telefone: z.string().optional(),
+    ativo: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Informe ao menos um campo para atualizar.',
+  });
+
+export type CreateCompanyCollaboratorInput = z.infer<typeof createCompanyCollaboratorSchema>;
+export type UpdateCompanyCollaboratorInput = z.infer<typeof updateCompanyCollaboratorSchema>;

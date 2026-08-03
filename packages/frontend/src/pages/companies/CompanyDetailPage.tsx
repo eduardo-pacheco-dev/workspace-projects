@@ -24,6 +24,8 @@ import {
   Pagination,
   Stack,
   TextField,
+  Tabs,
+  Tab,
 } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -40,6 +42,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { formatDateTime } from '../../utils/format'
 import CompanyModal from './CompanyModal'
+import CompanyMembersTab from './CompanyMembersTab'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { Company } from './companiesTypes'
 
@@ -64,6 +67,7 @@ export default function CompanyDetailPage() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const companyId = Number(id)
+  const [tab, setTab] = useState(0)
   const [company, setCompany] = useState<Company | null>(null)
   const [error, setError] = useState('')
   const [editOpen, setEditOpen] = useState(false)
@@ -289,6 +293,17 @@ export default function CompanyDetailPage() {
             </CardContent>
           </Card>
 
+          <Tabs
+            value={tab}
+            onChange={(_, value) => setTab(value)}
+            sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+          >
+            <Tab label="Overview" />
+            <Tab label="Colaboradores" />
+          </Tabs>
+
+          {tab === 0 ? (
+          <>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Informações da Empresa</Typography>
             <Grid container spacing={2}>
@@ -473,6 +488,10 @@ export default function CompanyDetailPage() {
               </Stack>
             )}
           </Paper>
+          </>
+          ) : (
+            <CompanyMembersTab companyId={companyId} />
+          )}
 
           <CompanyModal
             open={editOpen}

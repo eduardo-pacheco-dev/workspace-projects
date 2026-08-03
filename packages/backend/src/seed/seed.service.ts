@@ -11,6 +11,8 @@ import { CreateTaskInput } from '../tasks/task.schemas';
 import { MsProjectService } from '../ms-project/ms-project.service';
 import { SettingsService } from '../settings/settings.service';
 import { CompanyService } from '../companies/company.service';
+import { CompanyCollaboratorService } from '../companies/company-collaborator.service';
+import { CompanyFreelancerService } from '../companies/company-freelancer.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { CommentsService } from '../comments/comments.service';
 
@@ -26,6 +28,8 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly msProjectService: MsProjectService,
     private readonly settingsService: SettingsService,
     private readonly companyService: CompanyService,
+    private readonly companyCollaboratorService: CompanyCollaboratorService,
+    private readonly companyFreelancerService: CompanyFreelancerService,
     private readonly attachmentsService: AttachmentsService,
     private readonly commentsService: CommentsService,
   ) {}
@@ -43,6 +47,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedMsProject();
     await this.seedSettings();
     await this.seedCompanies();
+    await this.seedCompanyMembers();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -850,6 +855,38 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${companies.length} companies created`);
+  }
+
+  private async seedCompanyMembers() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const collaborators = await this.companyCollaboratorService.findAll(company.id);
+    if (collaborators.length === 0) {
+      const data = [
+        { nome: 'Ricardo Almeida', cargo: 'Diretor Técnico', email: 'ricardo@eaprojetos.com.br', telefone: '(11) 4000-0001' },
+        { nome: 'Fernanda Souza', cargo: 'Gerente de Projetos', email: 'fernanda@eaprojetos.com.br', telefone: '(11) 4000-0002' },
+        { nome: 'Bruno Carvalho', cargo: 'Coordenador de Obras', email: 'bruno@eaprojetos.com.br', telefone: '(11) 4000-0003' },
+      ];
+
+      for (const col of data) {
+        await this.companyCollaboratorService.create(company.id, col);
+      }
+
+      console.log(`Seed: ${data.length} collaborators created for company "${company.nome}"`);
+    }
+
+    const linked = await this.companyFreelancerService.findAll(company.id);
+    if (linked.length > 0) return;
+
+    const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });
+    const toAssociate = freelancers.slice(0, 3);
+    for (const freelancer of toAssociate) {
+      await this.companyFreelancerService.associate(company.id, freelancer.id);
+    }
+
+    console.log(`Seed: ${toAssociate.length} freelancers linked to company "${company.nome}"`);
   }
 
   private async seedAttachments() {

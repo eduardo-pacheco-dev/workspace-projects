@@ -29,3 +29,41 @@ export const emptyCompany = {
   ativa: true,
   observacoes: '',
 }
+
+export interface CompanyCollaborator {
+  id: number
+  companyId: number
+  nome: string
+  cargo: string | null
+  email: string | null
+  telefone: string | null
+  ativo: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export const emptyCollaborator = {
+  nome: '',
+  cargo: '',
+  email: '',
+  telefone: '',
+  ativo: true,
+}
+
+export interface FreelancerSummary {
+  id: number
+  firstName: string
+  lastName: string
+  email?: string | null
+  status?: string
+  availability?: string
+  foto?: string | null
+}
+
+export interface CompanyFreelancerLink {
+  id: number
+  companyId: number
+  freelancerId: number
+  createdAt: string
+  freelancer: FreelancerSummary
+}

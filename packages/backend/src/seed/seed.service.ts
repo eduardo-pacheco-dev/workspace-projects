@@ -10,6 +10,7 @@ import { TaskService } from '../tasks/task.service';
 import { CreateTaskInput } from '../tasks/task.schemas';
 import { MsProjectService } from '../ms-project/ms-project.service';
 import { SettingsService } from '../settings/settings.service';
+import { CompanyService } from '../companies/company.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -22,6 +23,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly taskService: TaskService,
     private readonly msProjectService: MsProjectService,
     private readonly settingsService: SettingsService,
+    private readonly companyService: CompanyService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -36,6 +38,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedTasks();
     await this.seedMsProject();
     await this.seedSettings();
+    await this.seedCompanies();
   }
 
   private async seedAdmin() {
@@ -806,5 +809,40 @@ export class SeedService implements OnApplicationBootstrap {
     });
 
     console.log('Seed: system settings created');
+  }
+
+  private async seedCompanies() {
+    const { total } = await this.companyService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const companies: { nome: string; cnpj: string; email: string; telefone: string; endereco: string; cidade: string; uf: string; ativa: boolean; observacoes?: string }[] = [
+      {
+        nome: 'EA Projetos Telecom Ltda',
+        cnpj: '12.345.678/0001-90',
+        email: 'contato@eaprojetos.com.br',
+        telefone: '(11) 4000-0000',
+        endereco: 'Av. Paulista, 1000',
+        cidade: 'São Paulo',
+        uf: 'SP',
+        ativa: true,
+        observacoes: 'Empresa principal',
+      },
+      {
+        nome: 'Norte Redes Ltda',
+        cnpj: '98.765.432/0001-10',
+        email: 'contato@norteredes.com.br',
+        telefone: '(92) 3333-0000',
+        endereco: 'Av. das Torres, 500',
+        cidade: 'Manaus',
+        uf: 'AM',
+        ativa: true,
+      },
+    ];
+
+    for (const company of companies) {
+      await this.companyService.create(company);
+    }
+
+    console.log(`Seed: ${companies.length} companies created`);
   }
 }

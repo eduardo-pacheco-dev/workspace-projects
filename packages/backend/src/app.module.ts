@@ -20,6 +20,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { TasksModule } from './tasks/task.module';
 import { MsProjectModule } from './ms-project/ms-project.module';
 import { SettingsModule } from './settings/settings.module';
+import { CompaniesModule } from './companies/company.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -68,6 +69,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     TasksModule,
     MsProjectModule,
     SettingsModule,
+    CompaniesModule,
     SeedModule,
   ],
 })

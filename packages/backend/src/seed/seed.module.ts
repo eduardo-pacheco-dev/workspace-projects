@@ -7,10 +7,11 @@ import { ScheduleModule } from '../schedule/schedule.module';
 import { TasksModule } from '../tasks/task.module';
 import { MsProjectModule } from '../ms-project/ms-project.module';
 import { SettingsModule } from '../settings/settings.module';
+import { CompaniesModule } from '../companies/company.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule],
   providers: [SeedService],
 })
 export class SeedModule {}

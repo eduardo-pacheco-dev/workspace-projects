@@ -43,6 +43,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { formatDateTime } from '../../utils/format'
 import CompanyModal from './CompanyModal'
 import CompanyMembersTab from './CompanyMembersTab'
+import CompanyMapTab from './CompanyMapTab'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { Company } from './companiesTypes'
 
@@ -302,6 +303,7 @@ export default function CompanyDetailPage() {
             <Tab label="Colaboradores" />
             <Tab label="Anexos" />
             <Tab label="Comentários" />
+            <Tab label="Mapa" />
           </Tabs>
 
           {tab === 0 && (
@@ -497,6 +499,10 @@ export default function CompanyDetailPage() {
               </Stack>
             )}
           </Paper>
+          )}
+
+          {tab === 4 && (
+            <CompanyMapTab company={company} />
           )}
         </>
       )}

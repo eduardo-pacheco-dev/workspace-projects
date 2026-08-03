@@ -26,7 +26,6 @@ import {
 } from '@mui/material'
 import { Edit, Delete, PersonAdd } from '@mui/icons-material'
 import api from '../../services/api'
-import CollaboratorModal from './CollaboratorModal'
 import { useToast } from '../../contexts/ToastContext'
 
 interface Collaborator {
@@ -47,7 +46,13 @@ interface Collaborator {
 type SortBy = 'id' | 'codigo' | 'nome' | 'cpf' | 'cargo' | 'email' | 'telefone' | 'status' | 'createdAt'
 type SortOrder = 'ASC' | 'DESC'
 
-export default function CollaboratorsPage() {
+interface Props {
+  isFreelancer?: boolean
+  onNew: () => void
+  onEdit: (id: number) => void
+}
+
+export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props) {
   const { showToast } = useToast()
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [total, setTotal] = useState(0)
@@ -57,7 +62,6 @@ export default function CollaboratorsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
-  const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; nome: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -70,6 +74,7 @@ export default function CollaboratorsPage() {
         sortOrder,
       }
       if (search) params.search = search
+      if (isFreelancer !== undefined) params.isFreelancer = isFreelancer
 
       const res = await api.get('/collaborators', { params })
       if (Array.isArray(res.data)) {
@@ -82,7 +87,7 @@ export default function CollaboratorsPage() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, search])
+  }, [page, rowsPerPage, sortBy, sortOrder, search, isFreelancer])
 
   useEffect(() => {
     fetchData()
@@ -135,7 +140,7 @@ export default function CollaboratorsPage() {
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Colaboradores</Typography>
-        <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setModal({ open: true, editId: null })}>
+        <Button variant="contained" startIcon={<PersonAdd />} onClick={onNew}>
           Novo Colaborador
         </Button>
       </Box>
@@ -167,7 +172,6 @@ export default function CollaboratorsPage() {
                 </TableCell>
               ))}
               {showCompany && <TableCell>Empresa</TableCell>}
-              <TableCell>Tipo</TableCell>
               <TableCell align="center">Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -188,16 +192,9 @@ export default function CollaboratorsPage() {
                   />
                 </TableCell>
                 {showCompany && <TableCell>{c.company?.nome || '-'}</TableCell>}
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={c.isFreelancer ? 'Freelancer' : 'Colaborador'}
-                    color={c.isFreelancer ? 'primary' : 'default'}
-                  />
-                </TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <IconButton onClick={() => setModal({ open: true, editId: c.id })}>
+                    <IconButton onClick={() => onEdit(c.id)}>
                       <Edit />
                     </IconButton>
                     <IconButton onClick={() => setDeleteTarget({ id: c.id, nome: c.nome })}>
@@ -209,7 +206,7 @@ export default function CollaboratorsPage() {
             ))}
             {collaborators.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} align="center">
+                <TableCell colSpan={10} align="center">
                   Nenhum colaborador encontrado.
                 </TableCell>
               </TableRow>
@@ -227,13 +224,6 @@ export default function CollaboratorsPage() {
         onRowsPerPageChange={handleChangeRowsPerPage}
         labelRowsPerPage="Por página:"
         labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-      />
-
-      <CollaboratorModal
-        open={modal.open}
-        editId={modal.editId}
-        onClose={() => setModal({ open: false, editId: null })}
-        onSaved={() => fetchData()}
       />
 
       <Dialog

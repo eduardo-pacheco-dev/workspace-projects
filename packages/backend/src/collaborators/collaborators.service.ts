@@ -51,13 +51,20 @@ export class CollaboratorsService {
     }
     await this.ensureCompany(companyId);
 
+    const isFreelancer = dto.isFreelancer ?? false;
+    const nome =
+      dto.nome || [dto.firstName, dto.lastName].filter(Boolean).join(' ') || undefined;
+
     const collaborator = this.collaboratorsRepository.create({
       ...dto,
-      nome: dto.nome,
+      nome,
       status: dto.status ?? 'ativo',
       companyId,
-      isFreelancer: dto.isFreelancer ?? false,
-      skills: dto.skills ?? (dto.isFreelancer ? '[]' : undefined),
+      isFreelancer,
+      skills: dto.skills ?? (isFreelancer ? '[]' : undefined),
+      portfolio: dto.portfolio ?? (isFreelancer ? '[]' : undefined),
+      experienceLevel: dto.experienceLevel ?? (isFreelancer ? 'junior' : undefined),
+      availability: dto.availability ?? (isFreelancer ? 'available' : undefined),
     });
     const saved = await this.collaboratorsRepository.save(collaborator);
     if (!saved.codigo) {
@@ -109,14 +116,29 @@ export class CollaboratorsService {
     if (search) {
       const searchClause =
         'c.nome LIKE :search OR c.firstName LIKE :search OR c.lastName LIKE :search OR c.cpf LIKE :search OR c.email LIKE :search OR c.telefone LIKE :search OR c.cargo LIKE :search';
-      if (isMaster) {
-        qb.where(searchClause, { search: `%${search}%` });
-      } else {
+      const hasPriorWhere = !isMaster || isFreelancer !== undefined;
+      if (hasPriorWhere) {
         qb.andWhere(`(${searchClause})`, { search: `%${search}%` });
+      } else {
+        qb.where(searchClause, { search: `%${search}%` });
       }
     }
 
-    const allowedSort = ['id', 'nome', 'cpf', 'cargo', 'email', 'telefone', 'status', 'createdAt'];
+    const allowedSort = [
+      'id',
+      'nome',
+      'cpf',
+      'cargo',
+      'email',
+      'telefone',
+      'status',
+      'createdAt',
+      'firstName',
+      'lastName',
+      'hourlyRate',
+      'experienceLevel',
+      'availability',
+    ];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
@@ -149,6 +171,12 @@ export class CollaboratorsService {
   ): Promise<Collaborator> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
     Object.assign(collaborator, dto);
+    if (dto.firstName !== undefined || dto.lastName !== undefined) {
+      collaborator.nome =
+        [dto.firstName ?? collaborator.firstName, dto.lastName ?? collaborator.lastName]
+          .filter(Boolean)
+          .join(' ') || collaborator.nome;
+    }
     if (dto.companyId !== undefined) {
       await this.ensureCompany(dto.companyId);
       if (currentUser && currentUser.role !== 'master' && dto.companyId !== currentUser.companyId) {
@@ -158,6 +186,17 @@ export class CollaboratorsService {
       }
     }
     return this.collaboratorsRepository.save(collaborator);
+  }
+
+  async getFreelancerOrFail(
+    id: number,
+    currentUser?: { role: string; companyId: number | null },
+  ): Promise<Collaborator> {
+    const collaborator = await this.getByIdOrFail(id, currentUser);
+    if (!collaborator.isFreelancer) {
+      throw new NotFoundException('Freelancer não encontrado');
+    }
+    return collaborator;
   }
 
   async delete(

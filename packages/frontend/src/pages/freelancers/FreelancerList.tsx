@@ -63,12 +63,13 @@ export default function FreelancerList({ onNew, onEdit }: Props) {
         limit: rowsPerPage,
         sortBy,
         sortOrder,
+        isFreelancer: true,
       }
       if (search) params.search = search
       if (expLevel) params.experienceLevel = expLevel
       if (avail) params.availability = avail
 
-      const res = await api.get('/freelancers', { params })
+      const res = await api.get('/collaborators', { params })
       if (Array.isArray(res.data)) {
         setFreelancers(res.data)
         setTotal(res.data.length)
@@ -98,7 +99,7 @@ export default function FreelancerList({ onNew, onEdit }: Props) {
   const handleDelete = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir este freelancer?')) return
     try {
-      await api.delete(`/freelancers/${id}`)
+      await api.delete(`/collaborators/${id}`)
       fetchData()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')

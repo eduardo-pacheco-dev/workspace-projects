@@ -1,7 +1,6 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
-import { FreelancersService } from '../freelancers/freelancers.service';
 import { JobsService } from '../jobs/jobs.service';
 import { LpuService } from '../lpu/lpu.service';
 import { ScheduleService } from '../schedule/schedule.service';
@@ -22,7 +21,6 @@ import { CollaboratorsService } from '../collaborators/collaborators.service';
 export class SeedService implements OnApplicationBootstrap {
   constructor(
     private readonly usersService: UsersService,
-    private readonly freelancersService: FreelancersService,
     private readonly jobsService: JobsService,
     private readonly lpuService: LpuService,
     private readonly scheduleService: ScheduleService,
@@ -76,13 +74,25 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedFreelancers() {
-    const { total } = await this.freelancersService.findAll({ limit: 1 });
+    const { total } = await this.collaboratorsService.findAllPaged({ limit: 1, isFreelancer: true });
     if (total > 0) return;
 
     const { data: companies } = await this.companyService.findAll({ limit: 100 });
     const firstCompanyId = companies[0]?.id;
 
-    const freelancers = [
+    type SeedFreelancer = {
+      firstName: string;
+      lastName: string;
+      email: string;
+      bio: string;
+      hourlyRate: number;
+      skills: string;
+      portfolio: string;
+      experienceLevel: 'junior' | 'mid' | 'senior' | 'lead';
+      availability: 'available' | 'busy' | 'unavailable';
+    };
+
+    const freelancers: SeedFreelancer[] = [
       {
         firstName: 'Carlos',
         lastName: 'Silva',
@@ -113,7 +123,7 @@ export class SeedService implements OnApplicationBootstrap {
         hourlyRate: 80,
         skills: JSON.stringify(['Instalação', 'Antenas', 'Rádios', 'Fibra Óptica']),
         portfolio: JSON.stringify([]),
-        experienceLevel: 'pleno',
+        experienceLevel: 'mid',
         availability: 'available',
       },
       {
@@ -124,7 +134,7 @@ export class SeedService implements OnApplicationBootstrap {
         hourlyRate: 110,
         skills: JSON.stringify(['Software', 'Integração', 'APIs', 'Node.js']),
         portfolio: JSON.stringify([]),
-        experienceLevel: 'pleno',
+        experienceLevel: 'mid',
         availability: 'unavailable',
       },
       {
@@ -141,7 +151,7 @@ export class SeedService implements OnApplicationBootstrap {
     ];
 
     for (const freelancer of freelancers) {
-      await this.freelancersService.create({ ...freelancer, companyId: firstCompanyId });
+      await this.collaboratorsService.create({ ...freelancer, companyId: firstCompanyId, isFreelancer: true });
     }
 
     console.log(`Seed: ${freelancers.length} freelancers created`);
@@ -362,7 +372,7 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedLpus() {
-    const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });
+    const { data: freelancers } = await this.collaboratorsService.findAllPaged({ limit: 100, isFreelancer: true });
     if (freelancers.length === 0) return;
 
     for (const freelancer of freelancers) {
@@ -943,7 +953,7 @@ export class SeedService implements OnApplicationBootstrap {
     const { data: linked } = await this.companyFreelancerService.findAll(company.id, { limit: 100 });
     if (linked.length > 0) return;
 
-    const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });
+    const { data: freelancers } = await this.collaboratorsService.findAllPaged({ limit: 100, isFreelancer: true });
     const toAssociate = freelancers.slice(0, 3);
     for (const freelancer of toAssociate) {
       await this.companyFreelancerService.associate(company.id, freelancer.id);

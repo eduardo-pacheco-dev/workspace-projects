@@ -36,9 +36,9 @@ export default function AddFreelancerDialog({ open, linkedIds, onClose, onLink }
   const fetchFreelancers = useCallback(() => {
     setError('')
     setLoading(true)
-    const params: any = { limit: 100, sortBy: 'firstName', sortOrder: 'ASC' }
+    const params: any = { limit: 100, sortBy: 'firstName', sortOrder: 'ASC', isFreelancer: true }
     if (search) params.search = search
-    api.get('/freelancers', { params })
+    api.get('/collaborators', { params })
       .then((res) => {
         setFreelancers(Array.isArray(res.data) ? res.data : res.data.data ?? [])
       })

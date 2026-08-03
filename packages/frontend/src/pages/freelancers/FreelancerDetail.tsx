@@ -50,7 +50,7 @@ export default function FreelancerDetail() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get(`/freelancers/${id}`)
+    api.get(`/collaborators/${id}`)
       .then((res) => setFreelancer(res.data))
       .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
       .finally(() => setLoading(false))

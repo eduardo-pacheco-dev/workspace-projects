@@ -22,12 +22,14 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface FreelancerModalProps {
   open: boolean
   editId?: number | null
   onClose: () => void
   onSaved: () => void
+  defaultType?: 'freelancer' | 'colaborador'
 }
 
 interface Uniform {
@@ -53,6 +55,8 @@ const steps = [
   'EPI',
 ]
 
+const collaboratorSteps = ['Dados Principais', 'Contatos']
+
 const parseJsonList = (value: string | null | undefined, fallback: any[]): any[] => {
   if (!value) return fallback
   try {
@@ -63,9 +67,16 @@ const parseJsonList = (value: string | null | undefined, fallback: any[]): any[]
   }
 }
 
-export default function FreelancerModal({ open, editId, onClose, onSaved }: FreelancerModalProps) {
+export default function FreelancerModal({ open, editId, onClose, onSaved, defaultType = 'freelancer' }: FreelancerModalProps) {
   const isEdit = Boolean(editId)
+  const { user: currentUser } = useAuth()
   const [step, setStep] = useState(0)
+
+  const [isFreelancer, setIsFreelancer] = useState(defaultType === 'freelancer')
+  const [nome, setNome] = useState('')
+  const [companyId, setCompanyId] = useState<number | null>(null)
+  const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
+  const [dataAdmissao, setDataAdmissao] = useState('')
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -155,75 +166,111 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   const [loading, setLoading] = useState(false)
   const [savedId, setSavedId] = useState<number | null>(null)
 
-  const buildPayload = (): any => ({
-    firstName,
-    lastName,
-    birthDate,
-    bio,
-    email,
-    hourlyRate: hourlyRate ? Number(hourlyRate) : undefined,
-    skills: skills.join(', '),
-    experienceLevel,
-    availability,
-    razaoSocial,
-    tipoContrato,
-    regional,
-    funcao,
-    status,
-    cpf,
-    rg,
-    orgaoEmissor,
-    naturalidade,
-    sexo,
-    cnpj,
-    tituloEleitor,
-    cnh,
-    cnhValidade,
-    pis,
-    rgArquivo,
-    carteiraArquivo,
-    habilitacaoArquivo,
-    phone,
-    whatsapp,
-    contatoEmergenciaNome,
-    contatoEmergenciaTelefone,
-    contatoEmergenciaParentesco,
-    endereco,
-    cidade,
-    uf,
-    cep,
-    banco,
-    agencia,
-    conta,
-    tipoConta,
-    pix,
-    titular,
-    dataAso,
-    dataNr06,
-    dataNr35,
-    dataNr10,
-    dataNr75,
-    dataNr01,
-    dataIntegracao,
-    dataListaFerramental,
-    cracha: cracha || undefined,
-    dataHs,
-    dataLtw,
-    dataCadastroNokia,
-    dataCadastroEricsson,
-    dataCadastroTelebit,
-    vencimentoAso,
-    vencimentoNr35,
-    vencimentoNr10,
-    uniforms: JSON.stringify(uniforms),
-    epis: JSON.stringify(epis),
-  })
+  const activeSteps = isFreelancer ? steps : collaboratorSteps
+
+  const isMasterUser = currentUser?.role === 'master'
+  const availableCompanies = isMasterUser
+    ? companies
+    : currentUser?.companyId != null
+      ? [{ id: currentUser.companyId, nome: currentUser.companyName || '' }]
+      : []
+
+  useEffect(() => {
+    if (!open) return
+    if (isMasterUser) {
+      api
+        .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
+        .then((res) => {
+          const d = res.data
+          setCompanies(Array.isArray(d) ? d : d.data ?? [])
+        })
+        .catch(() => {})
+    } else if (currentUser?.companyId != null) {
+      setCompanies([{ id: currentUser.companyId, nome: currentUser.companyName || '' }])
+      if (!editId) setCompanyId(currentUser.companyId)
+    }
+  }, [open, isMasterUser, editId, currentUser?.companyId, currentUser?.companyName])
+
+  const buildPayload = (): any => {
+    const payload: any = {
+      isFreelancer,
+      companyId,
+      status,
+      funcao,
+      razaoSocial,
+      tipoContrato,
+      regional,
+      cpf,
+      rg,
+      orgaoEmissor,
+      naturalidade,
+      sexo,
+      cnpj,
+      tituloEleitor,
+      cnh,
+      cnhValidade,
+      pis,
+      rgArquivo,
+      carteiraArquivo,
+      habilitacaoArquivo,
+      phone,
+      whatsapp,
+      contatoEmergenciaNome,
+      contatoEmergenciaTelefone,
+      contatoEmergenciaParentesco,
+      endereco,
+      cidade,
+      uf,
+      cep,
+      banco,
+      agencia,
+      conta,
+      tipoConta,
+      pix,
+      titular,
+      dataAso,
+      dataNr06,
+      dataNr35,
+      dataNr10,
+      dataNr75,
+      dataNr01,
+      dataIntegracao,
+      dataListaFerramental,
+      cracha: cracha || undefined,
+      dataHs,
+      dataLtw,
+      dataCadastroNokia,
+      dataCadastroEricsson,
+      dataCadastroTelebit,
+      vencimentoAso,
+      vencimentoNr35,
+      vencimentoNr10,
+      uniforms: JSON.stringify(uniforms),
+      epis: JSON.stringify(epis),
+      birthDate,
+    }
+    if (email) payload.email = email
+    if (isFreelancer) {
+      payload.firstName = firstName
+      payload.lastName = lastName
+      payload.bio = bio
+      payload.hourlyRate = hourlyRate ? Number(hourlyRate) : undefined
+      payload.skills = skills.join(', ')
+      payload.experienceLevel = experienceLevel
+      payload.availability = availability
+    } else {
+      payload.nome = nome
+      payload.cargo = funcao
+      payload.dataAdmissao = dataAdmissao
+    }
+    return payload
+  }
 
   const uploadPhoto = async (id: number) => {
     if (!photoFile) return
     const form = new FormData()
     form.append('file', photoFile)
-    const res = await api.post(`/freelancers/${id}/photo`, form)
+    const res = await api.post(`/collaborators/${id}/photo`, form)
     setFoto(res.data.foto || '')
   }
 
@@ -231,7 +278,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     if (!file) return
     const form = new FormData()
     form.append('file', file)
-    const res = await api.post(`/freelancers/${id}/document/${tipo}`, form)
+    const res = await api.post(`/collaborators/${id}/document/${tipo}`, form)
     if (tipo === 'rg') setRgArquivo(res.data.rgArquivo || '')
     if (tipo === 'carteira') setCarteiraArquivo(res.data.carteiraArquivo || '')
     if (tipo === 'habilitacao') setHabilitacaoArquivo(res.data.habilitacaoArquivo || '')
@@ -249,14 +296,14 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     try {
       const payload = buildPayload()
       if (savedId != null) {
-        const res = await api.patch(`/freelancers/${savedId}`, payload)
+        const res = await api.patch(`/collaborators/${savedId}`, payload)
         await uploadPhoto(savedId)
         await uploadDocuments(savedId)
         setCreatedAt(res.data.createdAt || createdAt)
         setUpdatedAt(res.data.updatedAt || updatedAt)
         return savedId
       }
-      const res = await api.post('/freelancers', payload)
+      const res = await api.post('/collaborators', payload)
       const id = res.data.id
       setSavedId(id)
       setCodigo(res.data.codigo || '')
@@ -296,11 +343,19 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   useEffect(() => {
     if (open) {
       setSavedId(editId ?? null)
+      setIsFreelancer(defaultType === 'freelancer')
+      setCompanyId(null)
+      setNome('')
+      setDataAdmissao('')
     }
     if (open && editId) {
-      api.get(`/freelancers/${editId}`)
+      api.get(`/collaborators/${editId}`)
         .then((res) => {
           const data = res.data
+          setIsFreelancer(Boolean(data.isFreelancer))
+          setCompanyId(data.companyId ?? null)
+          setDataAdmissao(data.dataAdmissao || '')
+          setNome(data.nome && !data.firstName ? data.nome : '')
           setFirstName(data.firstName || '')
           setLastName(data.lastName || '')
           setBirthDate(data.birthDate || '')
@@ -311,7 +366,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
           setRazaoSocial(data.razaoSocial || '')
           setTipoContrato(data.tipoContrato || '')
           setRegional(data.regional || '')
-          setFuncao(data.funcao || '')
+          setFuncao(data.funcao || data.cargo || '')
           setStatus(data.status || 'ativo')
           setFoto(data.foto || '')
           setCreatedAt(data.createdAt || '')
@@ -418,6 +473,10 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
     if (loading) return
     setError('')
     setStep(0)
+    setIsFreelancer(defaultType === 'freelancer')
+    setNome('')
+    setCompanyId(null)
+    setDataAdmissao('')
     setFirstName('')
     setLastName('')
     setBirthDate('')
@@ -545,14 +604,42 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
             <MenuItem value="inativo">Inativo</MenuItem>
           </TextField>
         </Grid>
+        {isFreelancer ? (
+          <>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField fullWidth label="Nome" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField fullWidth label="Sobrenome" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+            </Grid>
+          </>
+        ) : (
+          <Grid item xs={12} sm={6} md={6}>
+            <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
+          </Grid>
+        )}
         <Grid item xs={12} sm={6} md={3}>
-          <TextField fullWidth label="Nome" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          <TextField fullWidth label={isFreelancer ? 'Função' : 'Cargo'} value={funcao} onChange={(e) => setFuncao(e.target.value)} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField fullWidth label="Sobrenome" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField fullWidth label="Função" value={funcao} onChange={(e) => setFuncao(e.target.value)} />
+        {!isFreelancer && (
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField fullWidth label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+          </Grid>
+        )}
+        <Grid item xs={12} sm={6} md={isFreelancer ? 3 : 6}>
+          <TextField
+            fullWidth
+            select
+            label="Empresa"
+            value={companyId ?? ''}
+            onChange={(e) => setCompanyId(e.target.value ? Number(e.target.value) : null)}
+            required
+            disabled={!isMasterUser}
+          >
+            {availableCompanies.map((c) => (
+              <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid item xs={12} sm={6} md={6}>
           <TextField fullWidth label="Razão Social" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} />
@@ -577,47 +664,67 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
             <MenuItem value="outro">Outro</MenuItem>
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Valor Hora" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField fullWidth select label="Nível de Experiência" value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} required>
-            <MenuItem value="junior">Junior</MenuItem>
-            <MenuItem value="mid">Pleno</MenuItem>
-            <MenuItem value="senior">Senior</MenuItem>
-            <MenuItem value="lead">Lead</MenuItem>
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <TextField fullWidth select label="Disponibilidade" value={availability} onChange={(e) => setAvailability(e.target.value)} required>
-            <MenuItem value="available">Disponível</MenuItem>
-            <MenuItem value="busy">Ocupado</MenuItem>
-            <MenuItem value="unavailable">Indisponível</MenuItem>
-          </TextField>
-        </Grid>
+        {!isFreelancer && (
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Data de Admissão"
+              type="date"
+              value={dataAdmissao}
+              onChange={(e) => setDataAdmissao(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        )}
+        {isFreelancer && (
+          <>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Valor Hora" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth select label="Nível de Experiência" value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} required>
+                <MenuItem value="junior">Junior</MenuItem>
+                <MenuItem value="mid">Pleno</MenuItem>
+                <MenuItem value="senior">Senior</MenuItem>
+                <MenuItem value="lead">Lead</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth select label="Disponibilidade" value={availability} onChange={(e) => setAvailability(e.target.value)} required>
+                <MenuItem value="available">Disponível</MenuItem>
+                <MenuItem value="busy">Ocupado</MenuItem>
+                <MenuItem value="unavailable">Indisponível</MenuItem>
+              </TextField>
+            </Grid>
+          </>
+        )}
       </Grid>
 
-      {sectionTitle('Bio e Habilidades')}
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="Habilidades"
-            value={skillInput}
-            onChange={(e) => setSkillInput(e.target.value)}
-            onKeyDown={handleSkillKeyDown}
-            placeholder="Digite e pressione Enter"
-          />
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1 }}>
-            {skills.map((s) => (
-              <Chip key={s} label={s} size="small" onDelete={() => handleRemoveSkill(s)} />
-            ))}
-          </Box>
-        </Grid>
-      </Grid>
+      {isFreelancer && (
+        <>
+          {sectionTitle('Bio e Habilidades')}
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Habilidades"
+                value={skillInput}
+                onChange={(e) => setSkillInput(e.target.value)}
+                onKeyDown={handleSkillKeyDown}
+                placeholder="Digite e pressione Enter"
+              />
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1 }}>
+                {skills.map((s) => (
+                  <Chip key={s} label={s} size="small" onDelete={() => handleRemoveSkill(s)} />
+                ))}
+              </Box>
+            </Grid>
+          </Grid>
+        </>
+      )}
     </Box>
   )
 
@@ -891,14 +998,14 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   )
 
   const renderStep = () => {
-    switch (step) {
-      case 0: return renderMain()
-      case 1: return renderDocs()
-      case 2: return renderContacts()
-      case 3: return renderBank()
-      case 4: return renderTrainings()
-      case 5: return renderUniforms()
-      case 6: return renderEpi()
+    switch (activeSteps[step]) {
+      case 'Dados Principais': return renderMain()
+      case 'Documentação': return renderDocs()
+      case 'Contatos': return renderContacts()
+      case 'Bancários': return renderBank()
+      case 'Treinamentos': return renderTrainings()
+      case 'Uniformes': return renderUniforms()
+      case 'EPI': return renderEpi()
       default: return null
     }
   }
@@ -906,10 +1013,14 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Editar Freelancer' : 'Novo Freelancer'}</DialogTitle>
+        <DialogTitle>
+          {isEdit
+            ? (isFreelancer ? 'Editar Freelancer' : 'Editar Colaborador')
+            : (isFreelancer ? 'Novo Freelancer' : 'Novo Colaborador')}
+        </DialogTitle>
         <DialogContent>
           <Stepper activeStep={step} alternativeLabel nonLinear sx={{ mb: 3 }}>
-            {steps.map((label, index) => (
+            {activeSteps.map((label, index) => (
               <Step key={label}>
                 <StepButton onClick={() => goTo(index)} disabled={loading}>{label}</StepButton>
               </Step>
@@ -927,7 +1038,7 @@ export default function FreelancerModal({ open, editId, onClose, onSaved }: Free
             </Button>
           )}
           <Box sx={{ flexGrow: 1 }} />
-          {step < steps.length - 1 ? (
+          {step < activeSteps.length - 1 ? (
             <Button variant="contained" onClick={() => goTo(step + 1)} disabled={loading}>
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar e Avançar'}
             </Button>

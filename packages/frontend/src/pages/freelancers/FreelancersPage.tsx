@@ -34,11 +34,18 @@ export default function FreelancersPage() {
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />
       )}
-      {tab === 1 && <CollaboratorsPage />}
+      {tab === 1 && (
+        <CollaboratorsPage
+          isFreelancer={false}
+          onNew={() => setFreelancerModal({ open: true, editId: null })}
+          onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
+        />
+      )}
       {tab === 2 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}
+        defaultType={tab === 1 ? 'colaborador' : 'freelancer'}
         onClose={() => setFreelancerModal({ open: false, editId: null })}
         onSaved={refresh}
       />

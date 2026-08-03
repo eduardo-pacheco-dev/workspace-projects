@@ -31,7 +31,7 @@ export default function FreelancerForm() {
 
   useEffect(() => {
     if (isEdit) {
-      api.get(`/freelancers/${id}`)
+      api.get(`/collaborators/${id}`)
         .then((res) => {
           const data = res.data
           setUserId(String(data.userId))
@@ -59,13 +59,14 @@ export default function FreelancerForm() {
       skills: skills.split(',').map((s) => s.trim()).filter(Boolean),
       experienceLevel,
       availability,
+      isFreelancer: true,
     }
 
     try {
       if (isEdit) {
-        await api.patch(`/freelancers/${id}`, payload)
+        await api.patch(`/collaborators/${id}`, payload)
       } else {
-        await api.post('/freelancers', payload)
+        await api.post('/collaborators', payload)
       }
       navigate('/freelancers')
     } catch (err: any) {

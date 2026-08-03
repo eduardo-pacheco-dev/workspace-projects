@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyFreelancer } from './company-freelancer.entity';
 import { CompanyService } from './company.service';
-import { FreelancersService } from '../freelancers/freelancers.service';
+import { CollaboratorsService } from '../collaborators/collaborators.service';
 import { Collaborator } from '../collaborators/collaborator.entity';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class CompanyFreelancerService {
     @InjectRepository(CompanyFreelancer)
     private readonly companyFreelancerRepository: Repository<CompanyFreelancer>,
     private readonly companyService: CompanyService,
-    private readonly freelancersService: FreelancersService,
+    private readonly collaboratorsService: CollaboratorsService,
   ) {}
 
   async findAll(
@@ -63,7 +63,7 @@ export class CompanyFreelancerService {
 
   async associate(companyId: number, freelancerId: number): Promise<CompanyFreelancer> {
     await this.companyService.findById(companyId);
-    await this.freelancersService.findById(freelancerId);
+    await this.collaboratorsService.getFreelancerOrFail(freelancerId);
 
     const existing = await this.companyFreelancerRepository.findOne({
       where: { companyId, freelancerId },

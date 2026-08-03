@@ -25,8 +25,6 @@ export class UsersService {
     private readonly companiesRepository: Repository<Company>,
   ) {}
 
-  private readonly generalAdminEmail = process.env.ADMIN_EMAIL || 'admin@admin.com';
-
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }
@@ -80,9 +78,6 @@ export class UsersService {
       }
     }
 
-    if (role === 'master' && dto.email !== this.generalAdminEmail) {
-      throw new BadRequestException('O perfil master é exclusivo do administrador geral.');
-    }
     if (role === 'user' && companyId == null) {
       throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
     }
@@ -146,10 +141,14 @@ export class UsersService {
     return { data: data.map((u) => this.toPublicUser(u)), total };
   }
 
-  async updateUser(id: number, dto: UpdateUserInput, currentUserId?: number): Promise<User> {
+  async updateUser(
+    id: number,
+    dto: UpdateUserInput,
+    currentUser?: { id: number; role: string; companyId: number | null },
+  ): Promise<User> {
     const user = await this.getUserOrFail(id);
 
-    if (currentUserId !== undefined && id === currentUserId && dto.status === 'inactive') {
+    if (currentUser && id === currentUser.id && dto.status === 'inactive') {
       throw new BadRequestException('Não é possível desativar o próprio usuário.');
     }
 
@@ -172,8 +171,8 @@ export class UsersService {
       user.status = dto.status;
     }
     if (dto.role !== undefined) {
-      if (user.role !== 'master' && dto.role === 'master' && user.email !== this.generalAdminEmail) {
-        throw new BadRequestException('O perfil master é exclusivo do administrador geral.');
+      if (user.role !== 'master' && dto.role === 'master' && currentUser?.role !== 'master') {
+        throw new BadRequestException('Somente o administrador master pode promover usuários a master.');
       }
       if (user.role === 'master' && dto.role !== 'master') {
         throw new BadRequestException('O perfil master não pode ser alterado para usuário.');

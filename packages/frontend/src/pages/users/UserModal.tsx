@@ -76,11 +76,9 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
-  const canSelectMaster =
-    isEdit && currentUser?.role === 'master' && String(editId) === String(currentUser.id)
-  const showMasterOption = canSelectMaster || role === 'master'
-  const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
   const isMasterUser = currentUser?.role === 'master'
+  const showMasterOption = isMasterUser || role === 'master'
+  const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
   const availableCompanies = isMasterUser
     ? companies
     : companies.filter((c) => c.id === currentUser?.companyId)

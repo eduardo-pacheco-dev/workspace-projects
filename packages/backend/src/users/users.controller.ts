@@ -60,7 +60,7 @@ export class UsersController {
     @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserInput,
     @Request() req: any,
   ) {
-    const user = await this.usersService.updateUser(id, dto, req.user?.id);
+    const user = await this.usersService.updateUser(id, dto, req.user);
     return this.usersService.toPublicUser(user);
   }
 

@@ -300,10 +300,11 @@ export default function CompanyDetailPage() {
           >
             <Tab label="Overview" />
             <Tab label="Colaboradores" />
+            <Tab label="Anexos" />
+            <Tab label="Comentários" />
           </Tabs>
 
-          {tab === 0 ? (
-          <>
+          {tab === 0 && (
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Informações da Empresa</Typography>
             <Grid container spacing={2}>
@@ -318,8 +319,14 @@ export default function CompanyDetailPage() {
               ))}
             </Grid>
           </Paper>
+          )}
 
-          <Paper sx={{ p: 3, mt: 3 }}>
+          {tab === 1 && (
+            <CompanyMembersTab companyId={companyId} />
+          )}
+
+          {tab === 2 && (
+          <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Box>
                 <Typography variant="h6">Anexos</Typography>
@@ -408,8 +415,10 @@ export default function CompanyDetailPage() {
               </Stack>
             )}
           </Paper>
+          )}
 
-          <Paper sx={{ p: 3, mt: 3 }}>
+          {tab === 3 && (
+          <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
             <Divider sx={{ mb: 2 }} />
             {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
@@ -488,10 +497,9 @@ export default function CompanyDetailPage() {
               </Stack>
             )}
           </Paper>
-          </>
-          ) : (
-            <CompanyMembersTab companyId={companyId} />
           )}
+        </>
+      )}
 
           <CompanyModal
             open={editOpen}
@@ -502,8 +510,6 @@ export default function CompanyDetailPage() {
               fetchData()
             }}
           />
-        </>
-      )}
 
       <Dialog open={!!preview} onClose={() => setPreview(null)} maxWidth="lg" fullWidth>
         <DialogTitle>{preview?.name || 'Preview'}</DialogTitle>

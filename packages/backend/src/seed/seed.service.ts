@@ -12,6 +12,7 @@ import { MsProjectService } from '../ms-project/ms-project.service';
 import { SettingsService } from '../settings/settings.service';
 import { CompanyService } from '../companies/company.service';
 import { AttachmentsService } from '../attachments/attachments.service';
+import { CommentsService } from '../comments/comments.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -26,6 +27,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly settingsService: SettingsService,
     private readonly companyService: CompanyService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly commentsService: CommentsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -42,6 +44,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedSettings();
     await this.seedCompanies();
     await this.seedAttachments();
+    await this.seedComments();
   }
 
   private async seedAdmin() {
@@ -919,5 +922,27 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${attachments.length} attachments created for company "${company.nome}"`);
+  }
+
+  private async seedComments() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const existing = await this.commentsService.findByCompany(company.id);
+    if (existing.length > 0) return;
+
+    const comments = [
+      'Empresa principal do grupo, responsável pela gestão dos projetos de telecomunicações.',
+      'CNPJ validado e documentos societários em dia no cadastro.',
+      'Contrato anual de manutenção de enlaces renovado em julho/2026.',
+      'Faturamento consolidado ao final de cada mês — conferir com o setor financeiro.',
+    ];
+
+    for (const content of comments) {
+      await this.commentsService.createForCompany(company.id, { content }, 'admin@admin.com');
+    }
+
+    console.log(`Seed: ${comments.length} comments created for company "${company.nome}"`);
   }
 }

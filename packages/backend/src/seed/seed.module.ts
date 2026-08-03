@@ -9,10 +9,11 @@ import { MsProjectModule } from '../ms-project/ms-project.module';
 import { SettingsModule } from '../settings/settings.module';
 import { CompaniesModule } from '../companies/company.module';
 import { AttachmentsModule } from '../attachments/attachments.module';
+import { CommentsModule } from '../comments/comments.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule, AttachmentsModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule, AttachmentsModule, CommentsModule],
   providers: [SeedService],
 })
 export class SeedModule {}

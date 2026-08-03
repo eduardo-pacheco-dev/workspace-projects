@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as request from 'supertest';
+import request from 'supertest';
 import { Company } from './company.entity';
 import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';

@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as request from 'supertest';
+import request from 'supertest';
 import { MsProject } from './ms-project.entity';
 import { MsTask } from './ms-task.entity';
 import { MsDependency } from './ms-dependency.entity';

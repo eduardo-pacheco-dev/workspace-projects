@@ -79,6 +79,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const canSelectMaster =
     isEdit && currentUser?.role === 'master' && String(editId) === String(currentUser.id)
   const showMasterOption = canSelectMaster || role === 'master'
+  const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
 
   useEffect(() => {
     if (!open) return
@@ -339,7 +340,15 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               clearFieldError('role')
             }}
             margin="normal"
-            helperText={fieldErrors.role || (isEdit && !showMasterOption ? 'Perfil master é exclusivo do administrador geral.' : undefined)}
+            disabled={isEdit && role === 'master'}
+            helperText={
+              fieldErrors.role ||
+              (isEdit && role === 'master'
+                ? 'O perfil master não pode ser alterado para usuário.'
+                : isEdit && !showMasterOption
+                  ? 'Perfil master é exclusivo do administrador geral.'
+                  : undefined)
+            }
             error={!!fieldErrors.role}
           >
             <MenuItem value="user">Usuário</MenuItem>
@@ -373,6 +382,14 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               margin="normal"
+              disabled={isEdit && (role === 'master' || isSelf)}
+              helperText={
+                isEdit && role === 'master'
+                  ? 'O administrador master não pode ser desativado.'
+                  : isEdit && isSelf
+                    ? 'Não é possível desativar o próprio usuário.'
+                    : undefined
+              }
             >
               <MenuItem value="active">Ativo</MenuItem>
               <MenuItem value="inactive">Inativo</MenuItem>

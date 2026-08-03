@@ -132,8 +132,12 @@ export class UsersService {
     return { data: data.map((u) => this.toPublicUser(u)), total };
   }
 
-  async updateUser(id: number, dto: UpdateUserInput): Promise<User> {
+  async updateUser(id: number, dto: UpdateUserInput, currentUserId?: number): Promise<User> {
     const user = await this.getUserOrFail(id);
+
+    if (currentUserId !== undefined && id === currentUserId && dto.status === 'inactive') {
+      throw new BadRequestException('Não é possível desativar o próprio usuário.');
+    }
 
     if (dto.email && dto.email !== user.email) {
       const existing = await this.findByEmail(dto.email);
@@ -147,13 +151,18 @@ export class UsersService {
     if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phone !== undefined) user.phone = dto.phone;
-    if (dto.status !== undefined) user.status = dto.status;
+    if (dto.status !== undefined) {
+      if (user.role === 'master' && dto.status === 'inactive') {
+        throw new BadRequestException('O administrador master não pode ser desativado.');
+      }
+      user.status = dto.status;
+    }
     if (dto.role !== undefined) {
-      if (dto.role === 'master' && user.email !== this.generalAdminEmail) {
+      if (user.role !== 'master' && dto.role === 'master' && user.email !== this.generalAdminEmail) {
         throw new BadRequestException('O perfil master é exclusivo do administrador geral.');
       }
       if (user.role === 'master' && dto.role !== 'master') {
-        throw new BadRequestException('O perfil master do administrador geral não pode ser alterado.');
+        throw new BadRequestException('O perfil master não pode ser alterado para usuário.');
       }
       user.role = dto.role;
     }

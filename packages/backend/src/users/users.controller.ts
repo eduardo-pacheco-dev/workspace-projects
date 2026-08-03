@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -8,7 +9,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import {
   createUserSchema,
@@ -46,16 +50,25 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserInput,
+    @Request() req: any,
   ) {
-    const user = await this.usersService.updateUser(id, dto);
+    const user = await this.usersService.updateUser(id, dto, req.user?.id);
     return this.usersService.toPublicUser(user);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  @UseGuards(AuthGuard('jwt'))
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    if (req.user?.id === id) {
+      throw new BadRequestException('Não é possível excluir o próprio usuário.');
+    }
     await this.usersService.deleteUser(id);
     return { message: 'Usuário excluído com sucesso' };
   }

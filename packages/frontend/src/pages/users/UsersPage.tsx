@@ -22,6 +22,7 @@ import {
 import { Edit, Delete, PersonAdd } from '@mui/icons-material'
 import api from '../../services/api'
 import UserModal from './UserModal'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface User {
   id: number
@@ -39,6 +40,7 @@ type SortBy = 'id' | 'name' | 'lastName' | 'email' | 'phone' | 'status' | 'creat
 type SortOrder = 'ASC' | 'DESC'
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -198,7 +200,10 @@ export default function UsersPage() {
                   <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(u.id)}>
+                  <IconButton
+                    onClick={() => handleDelete(u.id)}
+                    disabled={currentUser != null && String(currentUser.id) === String(u.id)}
+                  >
                     <Delete />
                   </IconButton>
                 </TableCell>

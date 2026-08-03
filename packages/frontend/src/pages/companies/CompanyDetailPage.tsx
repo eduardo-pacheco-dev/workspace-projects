@@ -74,6 +74,7 @@ export default function CompanyDetailPage() {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsPage, setCommentsPage] = useState(1)
@@ -122,8 +123,9 @@ export default function CompanyDetailPage() {
       form.append('file', file)
       await api.post(`/attachments/upload/company/${companyId}`, form)
       fetchAttachments()
+      showToast('Anexo enviado com sucesso.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível enviar o arquivo.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o arquivo.', 'error')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -131,12 +133,14 @@ export default function CompanyDetailPage() {
   }
 
   const handleDeleteAttachment = async (attId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
     try {
       await api.delete(`/attachments/${attId}`)
+      setAttachmentToDelete(null)
       fetchAttachments()
+      showToast('Anexo excluído com sucesso.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir o anexo.')
+      setAttachmentToDelete(null)
+      showToast(err.response?.data?.message || 'Não foi possível excluir o anexo.', 'error')
     }
   }
 
@@ -360,10 +364,16 @@ export default function CompanyDetailPage() {
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                         )}
-                        <IconButton size="small" component="a" href={`/api/attachments/download/${att.id}`} target="_blank">
+                        <IconButton
+                          size="small"
+                          component="a"
+                          href={`/api/attachments/download/${att.id}`}
+                          target="_blank"
+                          onClick={() => showToast('Download do anexo iniciado.')}
+                        >
                           <DownloadIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                        <IconButton size="small" onClick={() => setAttachmentToDelete(att)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </ListItemSecondaryAction>
@@ -499,6 +509,14 @@ export default function CompanyDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!attachmentToDelete}
+        title="Excluir anexo"
+        message={`Tem certeza que deseja excluir o anexo "${attachmentToDelete?.originalName}"?`}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={() => attachmentToDelete && handleDeleteAttachment(attachmentToDelete.id)}
+      />
 
       <ConfirmDialog
         open={!!commentToDelete}

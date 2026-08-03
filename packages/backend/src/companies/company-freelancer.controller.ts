@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CompanyFreelancerService } from './company-freelancer.service';
 
@@ -13,8 +14,21 @@ export class CompanyFreelancerController {
   constructor(private readonly companyFreelancerService: CompanyFreelancerService) {}
 
   @Get()
-  findAll(@Param('companyId', ParseIntPipe) companyId: number) {
-    return this.companyFreelancerService.findAll(companyId);
+  findAll(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.companyFreelancerService.findAll(companyId, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortOrder: sortOrder as 'ASC' | 'DESC' | undefined,
+      search,
+    });
   }
 
   @Post(':freelancerId')

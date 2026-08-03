@@ -17,14 +17,48 @@ export class CompanyFreelancerService {
 
   async findAll(
     companyId: number,
-  ): Promise<(CompanyFreelancer & { freelancer: Freelancer })[]> {
+    query: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+      search?: string;
+    },
+  ): Promise<{ data: (CompanyFreelancer & { freelancer: Freelancer })[]; total: number }> {
     await this.companyService.findById(companyId);
-    const rows = await this.companyFreelancerRepository.find({
-      where: { companyId },
-      relations: ['freelancer'],
-      order: { createdAt: 'DESC' },
-    });
-    return rows as (CompanyFreelancer & { freelancer: Freelancer })[];
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC' as 'ASC' | 'DESC',
+      search,
+    } = query;
+
+    const qb = this.companyFreelancerRepository
+      .createQueryBuilder('cf')
+      .innerJoinAndSelect('cf.freelancer', 'f')
+      .where('cf.companyId = :companyId', { companyId });
+
+    if (search) {
+      qb.andWhere(
+        '(f.firstName LIKE :search OR f.lastName LIKE :search OR f.email LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    let orderByCol = 'cf.createdAt';
+    if (['firstName', 'lastName', 'email'].includes(sortBy)) {
+      orderByCol = `f.${sortBy}`;
+    }
+    const safeOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    const [data, total] = await qb
+      .orderBy(orderByCol, safeOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data: data as (CompanyFreelancer & { freelancer: Freelancer })[], total };
   }
 
   async associate(companyId: number, freelancerId: number): Promise<CompanyFreelancer> {

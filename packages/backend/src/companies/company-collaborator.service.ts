@@ -33,12 +33,47 @@ export class CompanyCollaboratorService {
     return this.collaboratorRepository.save(collaborator);
   }
 
-  async findAll(companyId: number): Promise<CompanyCollaborator[]> {
+  async findAll(
+    companyId: number,
+    query: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+      search?: string;
+    },
+  ): Promise<{ data: CompanyCollaborator[]; total: number }> {
     await this.ensureCompany(companyId);
-    return this.collaboratorRepository.find({
-      where: { companyId },
-      order: { nome: 'ASC' },
-    });
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'nome',
+      sortOrder = 'ASC' as 'ASC' | 'DESC',
+      search,
+    } = query;
+
+    const qb = this.collaboratorRepository
+      .createQueryBuilder('cc')
+      .where('cc.companyId = :companyId', { companyId });
+
+    if (search) {
+      qb.andWhere(
+        'cc.nome LIKE :search OR cc.cargo LIKE :search OR cc.email LIKE :search',
+        { search: `%${search}%` },
+      );
+    }
+
+    const allowedSort = ['id', 'nome', 'cargo', 'email', 'telefone', 'ativo', 'createdAt'];
+    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'nome';
+    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    const [data, total] = await qb
+      .orderBy(`cc.${safeSort}`, safeOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(companyId: number, id: number): Promise<CompanyCollaborator> {

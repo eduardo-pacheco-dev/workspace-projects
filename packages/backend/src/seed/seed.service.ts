@@ -862,7 +862,7 @@ export class SeedService implements OnApplicationBootstrap {
     const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
     if (!company) return;
 
-    const collaborators = await this.companyCollaboratorService.findAll(company.id);
+    const { data: collaborators } = await this.companyCollaboratorService.findAll(company.id, { limit: 100 });
     if (collaborators.length === 0) {
       const data = [
         { nome: 'Ricardo Almeida', cargo: 'Diretor Técnico', email: 'ricardo@eaprojetos.com.br', telefone: '(11) 4000-0001' },
@@ -877,7 +877,7 @@ export class SeedService implements OnApplicationBootstrap {
       console.log(`Seed: ${data.length} collaborators created for company "${company.nome}"`);
     }
 
-    const linked = await this.companyFreelancerService.findAll(company.id);
+    const { data: linked } = await this.companyFreelancerService.findAll(company.id, { limit: 100 });
     if (linked.length > 0) return;
 
     const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });

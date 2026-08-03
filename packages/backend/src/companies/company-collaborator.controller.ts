@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CompanyCollaboratorService } from './company-collaborator.service';
 import {
@@ -30,8 +31,21 @@ export class CompanyCollaboratorController {
   }
 
   @Get()
-  findAll(@Param('companyId', ParseIntPipe) companyId: number) {
-    return this.companyCollaboratorService.findAll(companyId);
+  findAll(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.companyCollaboratorService.findAll(companyId, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      sortBy,
+      sortOrder: sortOrder as 'ASC' | 'DESC' | undefined,
+      search,
+    });
   }
 
   @Patch(':id')

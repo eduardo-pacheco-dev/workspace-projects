@@ -18,6 +18,8 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  Tabs,
+  Tab,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
@@ -44,6 +46,7 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
   const [addFreelancerOpen, setAddFreelancerOpen] = useState(false)
   const [collaboratorToDelete, setCollaboratorToDelete] = useState<CompanyCollaborator | null>(null)
   const [linkToRemove, setLinkToRemove] = useState<CompanyFreelancerLink | null>(null)
+  const [subTab, setSubTab] = useState(0)
 
   const fetchData = useCallback(() => {
     setError('')
@@ -102,6 +105,16 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
     <Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+      <Tabs
+        value={subTab}
+        onChange={(_, value) => setSubTab(value)}
+        sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+      >
+        <Tab label={`Colaboradores (${collaborators.length})`} />
+        <Tab label={`Freelancers (${linked.length})`} />
+      </Tabs>
+
+      {subTab === 0 && (
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
           <Box>
@@ -164,8 +177,10 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
           </TableContainer>
         )}
       </Paper>
+      )}
 
-      <Paper sx={{ p: 3, mt: 3 }}>
+      {subTab === 1 && (
+      <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
           <Box>
             <Typography variant="h6">Freelancers</Typography>
@@ -203,6 +218,7 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
           </List>
         )}
       </Paper>
+      )}
 
       <CollaboratorModal
         open={modal.open}

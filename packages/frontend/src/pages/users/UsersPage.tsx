@@ -169,7 +169,7 @@ export default function UsersPage() {
               ))}
               <TableCell>Perfil</TableCell>
               <TableCell>Empresa</TableCell>
-              <TableCell>Ações</TableCell>
+              <TableCell align="center">Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -196,16 +196,18 @@ export default function UsersPage() {
                   />
                 </TableCell>
                 <TableCell>{u.role === 'master' ? '-' : companyName(u.companyId)}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(u.id)}
-                    disabled={currentUser != null && String(currentUser.id) === String(u.id)}
-                  >
-                    <Delete />
-                  </IconButton>
+                <TableCell align="center">
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
+                    <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(u.id)}
+                      disabled={currentUser != null && String(currentUser.id) === String(u.id)}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}

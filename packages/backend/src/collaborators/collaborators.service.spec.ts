@@ -129,6 +129,70 @@ describe('CollaboratorsService', () => {
       expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ isFreelancer: true, hourlyRate: 150 }));
       expect(result.codigo).toBe('FR-0001');
     });
+
+    it('should derive nome from firstName and lastName when creating a freelancer', async () => {
+      const saved = { id: 1, nome: 'Carlos Silva', codigo: null, isFreelancer: true, companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save
+        .mockResolvedValueOnce(saved)
+        .mockResolvedValueOnce({ ...saved, codigo: 'FR-0001' });
+
+      const result = await service.create({
+        firstName: 'Carlos',
+        lastName: 'Silva',
+        companyId: 1,
+        isFreelancer: true,
+      });
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ nome: 'Carlos Silva' }));
+      expect(result.codigo).toBe('FR-0001');
+    });
+
+    it('should apply freelancer defaults for skills, portfolio, experienceLevel and availability', async () => {
+      const saved = { id: 1, nome: 'Carlos Silva', codigo: null, isFreelancer: true, companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save
+        .mockResolvedValueOnce(saved)
+        .mockResolvedValueOnce({ ...saved, codigo: 'FR-0001' });
+
+      await service.create({
+        firstName: 'Carlos',
+        lastName: 'Silva',
+        companyId: 1,
+        isFreelancer: true,
+      });
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: '[]',
+          portfolio: '[]',
+          experienceLevel: 'junior',
+          availability: 'available',
+        }),
+      );
+    });
+
+    it('should not apply freelancer defaults for a collaborator', async () => {
+      const saved = { id: 1, nome: 'João', codigo: null, isFreelancer: false, companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save
+        .mockResolvedValueOnce(saved)
+        .mockResolvedValueOnce({ ...saved, codigo: 'COL-0001' });
+
+      await service.create({ nome: 'João', companyId: 1 });
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: undefined,
+          portfolio: undefined,
+          experienceLevel: undefined,
+          availability: undefined,
+        }),
+      );
+    });
   });
 
   describe('findAllPaged', () => {
@@ -192,6 +256,38 @@ describe('CollaboratorsService', () => {
 
       expect(qb.where).toHaveBeenCalledWith('c.isFreelancer = :isFreelancer', { isFreelancer: true });
     });
+
+    it('should combine isFreelancer and search without losing the filter (master)', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ isFreelancer: true, search: 'carlos' }, { role: 'master', companyId: null });
+
+      expect(qb.where).toHaveBeenCalledWith('c.isFreelancer = :isFreelancer', { isFreelancer: true });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('c.nome LIKE :search'),
+        { search: '%carlos%' },
+      );
+    });
+
+    it('should keep company and isFreelancer filters when searching (non-master)', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ isFreelancer: true, search: 'carlos' }, { role: 'user', companyId: 1 });
+
+      expect(qb.where).toHaveBeenCalledWith('c.companyId = :companyId', { companyId: 1 });
+      expect(qb.andWhere).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow sorting by freelancer columns', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ sortBy: 'hourlyRate', sortOrder: 'DESC' });
+
+      expect(qb.orderBy).toHaveBeenCalledWith('c.hourlyRate', 'DESC');
+    });
   });
 
   describe('getByIdOrFail', () => {
@@ -210,6 +306,27 @@ describe('CollaboratorsService', () => {
     it('should throw NotFoundException for collaborator from another company (non-master)', async () => {
       repo.findOne.mockResolvedValue({ id: 1, nome: 'João', companyId: 2 });
       await expect(service.getByIdOrFail(1, { role: 'user', companyId: 1 })).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getFreelancerOrFail', () => {
+    it('should return the freelancer when found', async () => {
+      const freelancer = { id: 1, nome: 'Carlos', isFreelancer: true, companyId: 1 };
+      repo.findOne.mockResolvedValue(freelancer);
+
+      await expect(service.getFreelancerOrFail(1)).resolves.toEqual(freelancer);
+    });
+
+    it('should throw NotFoundException for a non-freelancer collaborator', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, nome: 'João', isFreelancer: false, companyId: 1 });
+
+      await expect(service.getFreelancerOrFail(1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when freelancer does not exist', async () => {
+      repo.findOne.mockResolvedValue(null);
+
+      await expect(service.getFreelancerOrFail(99)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -238,6 +355,28 @@ describe('CollaboratorsService', () => {
       await service.update(1, { companyId: 2 });
 
       expect(companyRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
+    });
+
+    it('should derive nome when updating firstName/lastName', async () => {
+      const collaborator = { id: 1, nome: 'Antigo Nome', firstName: 'Antigo', lastName: 'Nome', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockResolvedValue({ ...collaborator, firstName: 'Novo', nome: 'Novo Nome' });
+
+      const result = await service.update(1, { firstName: 'Novo' });
+
+      expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ nome: 'Novo Nome' }));
+      expect(result.nome).toBe('Novo Nome');
+    });
+
+    it('should keep existing nome when firstName/lastName unchanged', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockResolvedValue({ ...collaborator, cargo: 'Diretor' });
+
+      const result = await service.update(1, { cargo: 'Diretor' });
+
+      expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ nome: 'João' }));
+      expect(result.nome).toBe('João');
     });
   });
 

@@ -21,6 +21,7 @@ import { MsProjectModule } from './ms-project/ms-project.module';
 import { SettingsModule } from './settings/settings.module';
 import { CompaniesModule } from './companies/company.module';
 import { CollaboratorsModule } from './collaborators/collaborators.module';
+import { TeamsModule } from './teams/teams.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -70,6 +71,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     SettingsModule,
     CompaniesModule,
     CollaboratorsModule,
+    TeamsModule,
     SeedModule,
   ],
 })

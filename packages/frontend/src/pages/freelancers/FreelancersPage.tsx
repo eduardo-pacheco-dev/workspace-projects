@@ -5,6 +5,7 @@ import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
 import LpuList from '../lpu/LpuList'
 import CollaboratorsPage from '../collaborators/CollaboratorsPage'
+import TeamsTab from '../teams/TeamsTab'
 
 export default function FreelancersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,6 +27,7 @@ export default function FreelancersPage() {
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Freelancers" />
         <Tab label="Colaboradores" />
+        <Tab label="Equipe" />
         <Tab label="LPU" />
       </Tabs>
       {tab === 0 && (
@@ -41,7 +43,8 @@ export default function FreelancersPage() {
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />
       )}
-      {tab === 2 && <LpuList />}
+      {tab === 2 && <TeamsTab />}
+      {tab === 3 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}

@@ -263,4 +263,80 @@ describe('CollaboratorsController (integration)', () => {
         .expect(400);
     });
   });
+
+  describe('consolidated freelancer support', () => {
+    beforeAll(async () => {
+      currentUser = { id: 1, email: 'admin@admin.com', name: 'Admin', role: 'master', companyId: null };
+    });
+
+    it('should create a freelancer from firstName/lastName deriving nome and defaults', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/collaborators')
+        .send({
+          firstName: 'Maria',
+          lastName: 'Souza',
+          companyId,
+          isFreelancer: true,
+          hourlyRate: 120,
+          experienceLevel: 'mid',
+          availability: 'available',
+        })
+        .expect(201);
+
+      expect(res.body).toMatchObject({
+        nome: 'Maria Souza',
+        isFreelancer: true,
+        skills: '[]',
+        portfolio: '[]',
+        experienceLevel: 'mid',
+        availability: 'available',
+      });
+    });
+
+    it('should return 400 for a collaborator without nome', async () => {
+      await request(app.getHttpServer())
+        .post('/collaborators')
+        .send({ companyId })
+        .expect(400);
+    });
+
+    it('should return 400 for a freelancer without nome or firstName', async () => {
+      await request(app.getHttpServer())
+        .post('/collaborators')
+        .send({ companyId, isFreelancer: true })
+        .expect(400);
+    });
+
+    it('should return 400 when companyId is missing', async () => {
+      await request(app.getHttpServer())
+        .post('/collaborators')
+        .send({ nome: 'Sem Empresa' })
+        .expect(400);
+    });
+
+    it('should combine isFreelancer and search filters', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/collaborators')
+        .query({ isFreelancer: 'true', search: 'maria' })
+        .expect(200);
+
+      expect(res.body.total).toBe(1);
+      expect(res.body.data[0].firstName).toBe('Maria');
+    });
+
+    it('should update nome when firstName is changed', async () => {
+      const list = await request(app.getHttpServer())
+        .get('/collaborators')
+        .query({ isFreelancer: 'true', search: 'maria' })
+        .expect(200);
+      const id = list.body.data[0].id;
+
+      const res = await request(app.getHttpServer())
+        .patch(`/collaborators/${id}`)
+        .send({ firstName: 'Maria Clara' })
+        .expect(200);
+
+      expect(res.body.nome).toBe('Maria Clara Souza');
+    });
+  });
 });

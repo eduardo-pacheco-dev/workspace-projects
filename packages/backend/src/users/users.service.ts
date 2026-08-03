@@ -2,11 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
+import { Company } from '../companies/company.entity';
 import {
   CreateUserInput,
   UpdateUserInput,
@@ -19,6 +21,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Company)
+    private readonly companiesRepository: Repository<Company>,
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -57,6 +61,16 @@ export class UsersService {
     const existing = await this.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email já cadastrado');
 
+    const role = dto.role ?? 'user';
+    const companyId = dto.companyId ?? null;
+
+    if (role === 'user' && companyId == null) {
+      throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
+    }
+    if (companyId != null) {
+      await this.ensureCompany(companyId);
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const user = this.usersRepository.create({
       name: dto.name,
@@ -65,8 +79,15 @@ export class UsersService {
       email: dto.email,
       password: hashedPassword,
       status: 'inactive',
+      role,
+      companyId,
     });
     return this.usersRepository.save(user);
+  }
+
+  private async ensureCompany(companyId: number) {
+    const company = await this.companiesRepository.findOne({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Empresa não encontrada');
   }
 
   async findAllPaged(query: {
@@ -122,6 +143,15 @@ export class UsersService {
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phone !== undefined) user.phone = dto.phone;
     if (dto.status !== undefined) user.status = dto.status;
+    if (dto.role !== undefined) user.role = dto.role;
+    if (dto.companyId !== undefined) user.companyId = dto.companyId;
+
+    if (user.role === 'user' && user.companyId == null) {
+      throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
+    }
+    if (user.companyId != null) {
+      await this.ensureCompany(user.companyId);
+    }
 
     return this.usersRepository.save(user);
   }

@@ -30,6 +30,8 @@ interface User {
   email: string
   phone: string | null
   status: string
+  role?: string
+  companyId?: number | null
   createdAt: string
 }
 
@@ -46,6 +48,20 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
+
+  useEffect(() => {
+    api
+      .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = res.data
+        setCompanies(Array.isArray(d) ? d : d.data ?? [])
+      })
+      .catch(() => {})
+  }, [])
+
+  const companyName = (id?: number | null) =>
+    id == null ? '-' : companies.find((c) => c.id === id)?.nome || `#${id}`
 
   const fetchData = useCallback(async () => {
     try {
@@ -149,6 +165,8 @@ export default function UsersPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
+              <TableCell>Perfil</TableCell>
+              <TableCell>Empresa</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -168,6 +186,15 @@ export default function UsersPage() {
                 </TableCell>
                 <TableCell>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</TableCell>
                 <TableCell>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={u.role === 'master' ? 'Master' : 'Usuário'}
+                    color={u.role === 'master' ? 'primary' : 'default'}
+                  />
+                </TableCell>
+                <TableCell>{u.role === 'master' ? '-' : companyName(u.companyId)}</TableCell>
+                <TableCell>
                   <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
                     <Edit />
                   </IconButton>
@@ -179,7 +206,7 @@ export default function UsersPage() {
             ))}
             {users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={9} align="center">
                   Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>

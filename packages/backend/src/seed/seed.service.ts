@@ -64,6 +64,8 @@ export class SeedService implements OnApplicationBootstrap {
       name: 'Admin',
       email: 'admin@admin.com',
       password: hashedPassword,
+      role: 'master',
+      companyId: null,
     });
 
     console.log('Seed: admin user created (admin@admin.com / 123456)');

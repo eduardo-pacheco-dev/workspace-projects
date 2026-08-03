@@ -170,8 +170,9 @@ export default function CompanyDetailPage() {
       await api.post(`/comments/company/${companyId}`, { content: newComment })
       setNewComment('')
       fetchComments()
+      showToast('Comentário adicionado com sucesso.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível enviar o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o comentário.', 'error')
     } finally {
       setSubmitting(false)
     }

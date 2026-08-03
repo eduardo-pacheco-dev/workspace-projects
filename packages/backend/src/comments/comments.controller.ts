@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -120,8 +121,12 @@ export class CommentsController {
   }
 
   @Get('company/:companyId')
-  findByCompany(@Param('companyId', ParseIntPipe) companyId: number) {
-    return this.commentsService.findByCompany(companyId);
+  findByCompany(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.commentsService.findByCompany(companyId, { page, limit });
   }
 
   @Patch(':id')

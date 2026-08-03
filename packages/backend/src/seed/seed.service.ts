@@ -929,8 +929,8 @@ export class SeedService implements OnApplicationBootstrap {
     const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
     if (!company) return;
 
-    const existing = await this.commentsService.findByCompany(company.id);
-    if (existing.length > 0) return;
+    const { total } = await this.commentsService.findByCompany(company.id, { limit: 1 });
+    if (total > 0) return;
 
     const comments = [
       'Empresa principal do grupo, responsável pela gestão dos projetos de telecomunicações.',

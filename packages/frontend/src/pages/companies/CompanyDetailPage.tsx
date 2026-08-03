@@ -75,6 +75,8 @@ export default function CompanyDetailPage() {
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [comments, setComments] = useState<Comment[]>([])
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [commentsPage, setCommentsPage] = useState(1)
   const [commentsError, setCommentsError] = useState('')
   const [newComment, setNewComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -150,14 +152,16 @@ export default function CompanyDetailPage() {
 
   const fetchComments = useCallback(() => {
     setCommentsError('')
-    api.get(`/comments/company/${companyId}`)
+    api.get(`/comments/company/${companyId}`, { params: { page: commentsPage, limit: 5 } })
       .then((res) => {
-        setComments(res.data)
+        const data = Array.isArray(res.data) ? res.data : res.data.data ?? []
+        setComments(data)
+        setCommentsTotal(Array.isArray(res.data) ? res.data.length : res.data.total ?? 0)
       })
       .catch((err) => {
         setCommentsError(err.response?.data?.message || 'Não foi possível carregar os comentários.')
       })
-  }, [companyId])
+  }, [companyId, commentsPage])
 
   useEffect(() => {
     fetchComments()
@@ -448,6 +452,16 @@ export default function CompanyDetailPage() {
                 {submitting ? <CircularProgress size={20} /> : <SendIcon />}
               </IconButton>
             </Box>
+            {commentsTotal > 5 && (
+              <Stack alignItems="center" sx={{ mt: 2 }}>
+                <Pagination
+                  count={Math.ceil(commentsTotal / 5)}
+                  page={commentsPage}
+                  onChange={(_, value) => setCommentsPage(value)}
+                  size="small"
+                />
+              </Stack>
+            )}
           </Paper>
 
           <CompanyModal

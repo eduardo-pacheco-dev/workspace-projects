@@ -1,6 +1,7 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
+import { ToastProvider } from './contexts/ToastContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -32,6 +33,9 @@ import SchedulePage from './pages/schedule/SchedulePage'
 import TasksPage from './pages/tasks/TasksPage'
 import MsProjectPage from './pages/ms-project/MsProjectPage'
 import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
+import SettingsPage from './pages/settings/SettingsPage'
+import CompaniesPage from './pages/companies/CompaniesPage'
+import CompanyDetailPage from './pages/companies/CompanyDetailPage'
 import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
@@ -47,10 +51,17 @@ function ProtectedLayout() {
   )
 }
 
+function MasterOnlyRoute({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (user?.role !== 'master') return <Navigate to="/" replace />
+  return children
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <ProjectProvider>
+      <ToastProvider>
+        <ProjectProvider>
         <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -88,10 +99,14 @@ export default function App() {
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/companies" element={<MasterOnlyRoute><CompaniesPage /></MasterOnlyRoute>} />
+          <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>
-      </ProjectProvider>
+        </ProjectProvider>
+      </ToastProvider>
     </AuthProvider>
   )
 }

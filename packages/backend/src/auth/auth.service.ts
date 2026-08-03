@@ -30,10 +30,22 @@ export class AuthService {
       phone: dto.phone || null,
       email: dto.email,
       password: hashedPassword,
+      role: 'user',
+      companyId: null,
     });
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return { access_token: token, user: { id: user.id, name: user.name, email: user.email } };
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
+        companyName: user.company?.nome ?? null,
+      },
+    };
   }
 
   async login(dto: LoginInput) {
@@ -48,7 +60,17 @@ export class AuthService {
     }
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return { access_token: token, user: { id: user.id, name: user.name, email: user.email } };
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
+        companyName: user.company?.nome ?? null,
+      },
+    };
   }
 
   async forgotPassword(dto: ForgotPasswordInput) {

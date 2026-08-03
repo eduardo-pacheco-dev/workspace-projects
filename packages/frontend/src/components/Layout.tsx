@@ -29,6 +29,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import EventIcon from '@mui/icons-material/Event'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import TimelineIcon from '@mui/icons-material/Timeline'
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications'
+import CorporateFareIcon from '@mui/icons-material/CorporateFare'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
@@ -101,6 +103,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
+    ...(user?.role === 'master'
+      ? [{ label: 'Empresas', path: '/companies', icon: <CorporateFareIcon /> }]
+      : []),
+    { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
   ]
 
   return (
@@ -215,7 +221,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          © {new Date().getFullYear()} App — Sistema de Telecomunicações
+          © {new Date().getFullYear()} {user?.companyName || 'Master'} — Sistema de Telecomunicações
         </Typography>
         <Typography variant="caption" color="text.secondary">
           v1.0.0

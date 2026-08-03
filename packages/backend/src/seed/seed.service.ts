@@ -9,6 +9,13 @@ import { CreateScheduleEventInput } from '../schedule/schedule-event.schemas';
 import { TaskService } from '../tasks/task.service';
 import { CreateTaskInput } from '../tasks/task.schemas';
 import { MsProjectService } from '../ms-project/ms-project.service';
+import { SettingsService } from '../settings/settings.service';
+import { CompanyService } from '../companies/company.service';
+import { CompanyCollaboratorService } from '../companies/company-collaborator.service';
+import { CompanyFreelancerService } from '../companies/company-freelancer.service';
+import { AttachmentsService } from '../attachments/attachments.service';
+import { CommentsService } from '../comments/comments.service';
+import { ProjectsService } from '../projects/projects.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -20,6 +27,13 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly scheduleService: ScheduleService,
     private readonly taskService: TaskService,
     private readonly msProjectService: MsProjectService,
+    private readonly settingsService: SettingsService,
+    private readonly companyService: CompanyService,
+    private readonly companyCollaboratorService: CompanyCollaboratorService,
+    private readonly companyFreelancerService: CompanyFreelancerService,
+    private readonly attachmentsService: AttachmentsService,
+    private readonly commentsService: CommentsService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -33,6 +47,13 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedScheduleEvents();
     await this.seedTasks();
     await this.seedMsProject();
+    await this.seedSettings();
+    await this.seedCompanies();
+    await this.seedUsers();
+    await this.seedCompanyMembers();
+    await this.seedCompanyProjects();
+    await this.seedAttachments();
+    await this.seedComments();
   }
 
   private async seedAdmin() {
@@ -44,6 +65,8 @@ export class SeedService implements OnApplicationBootstrap {
       name: 'Admin',
       email: 'admin@admin.com',
       password: hashedPassword,
+      role: 'master',
+      companyId: null,
     });
 
     console.log('Seed: admin user created (admin@admin.com / 123456)');
@@ -785,5 +808,287 @@ export class SeedService implements OnApplicationBootstrap {
 
     await this.msProjectService.recomputeSchedule(project.id);
     console.log(`Seed: ms-project "${project.name}" created (${taskDefs.length} tasks, ${dependencies.length} dependencies, ${resources.length} resources, ${assignments.length} assignments)`);
+  }
+
+  private async seedSettings() {
+    const settings = await this.settingsService.findAll();
+    if (Object.keys(settings).length > 0) return;
+
+    await this.settingsService.upsert({
+      companyName: 'EA Projetos Telecom',
+      companyCnpj: '12.345.678/0001-90',
+      companyEmail: 'contato@eaprojetos.com.br',
+      companyPhone: '(11) 4000-0000',
+      companyAddress: 'Av. Paulista, 1000 – São Paulo/SP',
+      timezone: 'America/Sao_Paulo',
+      language: 'pt-BR',
+      currency: 'BRL',
+    });
+
+    console.log('Seed: system settings created');
+  }
+
+  private async seedCompanies() {
+    const { total } = await this.companyService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const companies: { nome: string; cnpj: string; email: string; telefone: string; endereco: string; cidade: string; uf: string; ativa: boolean; observacoes?: string }[] = [
+      {
+        nome: 'EA Projetos Telecom Ltda',
+        cnpj: '12.345.678/0001-90',
+        email: 'contato@eaprojetos.com.br',
+        telefone: '(11) 4000-0000',
+        endereco: 'Av. Paulista, 1000',
+        cidade: 'São Paulo',
+        uf: 'SP',
+        ativa: true,
+        observacoes: 'Empresa principal',
+      },
+      {
+        nome: 'Norte Redes Ltda',
+        cnpj: '98.765.432/0001-10',
+        email: 'contato@norteredes.com.br',
+        telefone: '(92) 3333-0000',
+        endereco: 'Av. das Torres, 500',
+        cidade: 'Manaus',
+        uf: 'AM',
+        ativa: true,
+      },
+    ];
+
+    for (const company of companies) {
+      await this.companyService.create(company);
+    }
+
+    console.log(`Seed: ${companies.length} companies created`);
+  }
+
+  private async seedUsers() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const companyId = (nome: string) => companies.find((c) => c.nome === nome)?.id ?? null;
+
+    const users: { name: string; email: string; company: string; role: 'master' | 'user' }[] = [
+      { name: 'Ricardo Almeida', email: 'ricardo.almeida@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Fernanda Souza', email: 'fernanda.souza@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Bruno Carvalho', email: 'bruno.carvalho@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Carla Mendes', email: 'carla.mendes@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Diego Ferreira', email: 'diego.ferreira@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Elisa Rocha', email: 'elisa.rocha@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Fábio Nunes', email: 'fabio.nunes@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Gabriela Lima', email: 'gabriela.lima@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Henrique Castro', email: 'henrique.castro@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Isabela Ramos', email: 'isabela.ramos@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Jorge Prado', email: 'jorge.prado@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Vitor Hugo', email: 'vitor.hugo@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'user' },
+      { name: 'Beatriz Campos', email: 'beatriz.campos@eaprojetos.com.br', company: 'EA Projetos Telecom Ltda', role: 'master' },
+      { name: 'Karina Teixeira', email: 'karina.teixeira@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Leonardo Barbosa', email: 'leonardo.barbosa@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Marina Duarte', email: 'marina.duarte@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Nelson Azevedo', email: 'nelson.azevedo@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Olívia Martins', email: 'olivia.martins@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Paulo Henrique', email: 'paulo.henrique@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Renata Cardoso', email: 'renata.cardoso@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Samuel Freitas', email: 'samuel.freitas@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+      { name: 'Tatiane Gonçalves', email: 'tatiane.goncalves@norteredes.com.br', company: 'Norte Redes Ltda', role: 'user' },
+    ];
+
+    let created = 0;
+    for (const u of users) {
+      const existing = await this.usersService.findByEmail(u.email);
+      if (existing) continue;
+      const linkedCompanyId = companyId(u.company);
+      if (linkedCompanyId == null) continue;
+
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      await this.usersService.create({
+        name: u.name,
+        email: u.email,
+        password: hashedPassword,
+        role: u.role,
+        companyId: linkedCompanyId,
+        status: 'active',
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} users created (password padrão: 123456)`);
+  }
+
+  private async seedCompanyMembers() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { data: collaborators } = await this.companyCollaboratorService.findAll(company.id, { limit: 100 });
+    if (collaborators.length === 0) {
+      const data = [
+        { nome: 'Ricardo Almeida', cargo: 'Diretor Técnico', email: 'ricardo@eaprojetos.com.br', telefone: '(11) 4000-0001' },
+        { nome: 'Fernanda Souza', cargo: 'Gerente de Projetos', email: 'fernanda@eaprojetos.com.br', telefone: '(11) 4000-0002' },
+        { nome: 'Bruno Carvalho', cargo: 'Coordenador de Obras', email: 'bruno@eaprojetos.com.br', telefone: '(11) 4000-0003' },
+      ];
+
+      for (const col of data) {
+        await this.companyCollaboratorService.create(company.id, col);
+      }
+
+      console.log(`Seed: ${data.length} collaborators created for company "${company.nome}"`);
+    }
+
+    const { data: linked } = await this.companyFreelancerService.findAll(company.id, { limit: 100 });
+    if (linked.length > 0) return;
+
+    const { data: freelancers } = await this.freelancersService.findAll({ limit: 100 });
+    const toAssociate = freelancers.slice(0, 3);
+    for (const freelancer of toAssociate) {
+      await this.companyFreelancerService.associate(company.id, freelancer.id);
+    }
+
+    console.log(`Seed: ${toAssociate.length} freelancers linked to company "${company.nome}"`);
+  }
+
+  private async seedCompanyProjects() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { total } = await this.projectsService.findAll({ limit: 1 });
+    if (total === 0) {
+      const projects = [
+        {
+          nome: 'Infraestrutura Site Norte',
+          cliente: 'Vivo',
+          descricao: 'Implantação de infraestrutura de telecomunicações para o site Norte.',
+          dataInicio: '2025-01-15',
+          dataFim: '2025-06-30',
+          status: 'ativo',
+        },
+        {
+          nome: 'Comissionamento 11 GHz',
+          cliente: 'Nokia',
+          descricao: 'Comissionamento de enlace de rádio de 11 GHz.',
+          dataInicio: '2025-03-01',
+          dataFim: '2025-09-15',
+          status: 'ativo',
+        },
+        {
+          nome: 'Otimização de Rede LTE',
+          cliente: 'Ericsson',
+          descricao: 'Otimização de parâmetros de rede LTE em área urbana.',
+          dataInicio: '2024-11-10',
+          dataFim: '2025-02-28',
+          status: 'inativo',
+        },
+      ];
+
+      for (const project of projects) {
+        await this.projectsService.create(project);
+      }
+
+      console.log(`Seed: ${projects.length} projects created`);
+    }
+
+    const { data: linked } = await this.projectsService.findByCompany(company.id, { limit: 100 });
+    if (linked.length > 0) return;
+
+    const { data: projects } = await this.projectsService.findAll({ limit: 100 });
+    for (const project of projects.slice(0, 3)) {
+      await this.projectsService.addCompany(project.id, company.id);
+    }
+
+    console.log(`Seed: ${Math.min(projects.length, 3)} projects linked to company "${company.nome}"`);
+  }
+
+  private async seedAttachments() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { total } = await this.attachmentsService.findByCompany(company.id, { limit: 1 });
+    if (total > 0) return;
+
+    const pdf = (content: string) => Buffer.from(
+      `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n4 0 obj\n<< /Length ${content.length + 22} >>\nstream\nBT /F1 18 Tf 72 720 Td (${content}) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \ntrailer\n<< /Size 6 /Root 1 0 R >>\n%%EOF\n`,
+      'utf8',
+    );
+
+    const attachments: {
+      originalname: string;
+      mimetype: string;
+      buffer: Buffer;
+    }[] = [
+      {
+        originalname: 'contrato-social-ea.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Contrato social - EA Projetos Telecom Ltda'),
+      },
+      {
+        originalname: 'alvara-de-funcionamento.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Alvara de funcionamento - EA Projetos Telecom Ltda'),
+      },
+      {
+        originalname: 'logo-ea.png',
+        mimetype: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'),
+      },
+      {
+        originalname: 'fatura-energia-junho-2026.txt',
+        mimetype: 'text/plain',
+        buffer: Buffer.from('Fatura de energia elétrica referente a junho/2026.\nTotal: R$ 1.847,90\nVencimento: 10/07/2026', 'utf8'),
+      },
+      {
+        originalname: 'relatorio-empresas-ativas.csv',
+        mimetype: 'text/csv',
+        buffer: Buffer.from('nome;cnpj;cidade;uf\nEA Projetos Telecom Ltda;12.345.678/0001-90;São Paulo;SP\nNorte Redes Ltda;98.765.432/0001-10;Manaus;AM\n', 'utf8'),
+      },
+      {
+        originalname: 'certificado-de-licitacao.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Certificado de habilitação em licitação pública'),
+      },
+      {
+        originalname: 'proposta-comercial-norte-redes.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Proposta comercial - Parceria Norte Redes Ltda'),
+      },
+      {
+        originalname: 'inventario-equipamentos.txt',
+        mimetype: 'text/plain',
+        buffer: Buffer.from('Inventário de equipamentos ativos e passivos\nRádio Ubiquiti - 3 unidades\nRádio Mimosa - 2 unidades\nAntena parabólica 1,2m - 1 unidade', 'utf8'),
+      },
+    ];
+
+    for (const attachment of attachments) {
+      await this.attachmentsService.uploadForCompany(company.id, {
+        originalname: attachment.originalname,
+        mimetype: attachment.mimetype,
+        size: attachment.buffer.length,
+        buffer: attachment.buffer,
+      } as Express.Multer.File);
+    }
+
+    console.log(`Seed: ${attachments.length} attachments created for company "${company.nome}"`);
+  }
+
+  private async seedComments() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { total } = await this.commentsService.findByCompany(company.id, { limit: 1 });
+    if (total > 0) return;
+
+    const comments = [
+      'Empresa principal do grupo, responsável pela gestão dos projetos de telecomunicações.',
+      'CNPJ validado e documentos societários em dia no cadastro.',
+      'Contrato anual de manutenção de enlaces renovado em julho/2026.',
+      'Faturamento consolidado ao final de cada mês — conferir com o setor financeiro.',
+    ];
+
+    for (const content of comments) {
+      await this.commentsService.createForCompany(company.id, { content }, 'admin@admin.com');
+    }
+
+    console.log(`Seed: ${comments.length} comments created for company "${company.nome}"`);
   }
 }

@@ -47,7 +47,13 @@ async function main() {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = userRepository.create({ name, email, password: hashedPassword });
+  const user = userRepository.create({
+    name,
+    email,
+    password: hashedPassword,
+    role: 'master',
+    companyId: null,
+  });
   await userRepository.save(user);
 
   console.log(`Usuário "${name}" (${email}) criado com sucesso!`);

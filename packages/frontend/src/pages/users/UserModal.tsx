@@ -21,6 +21,8 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { z } from 'zod'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 
 const baseUserSchema = z.object({
@@ -30,14 +32,24 @@ const baseUserSchema = z.object({
   phone: z.string().min(1, 'Informe o telefone.'),
   password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
   confirmPassword: z.string().min(1, 'Confirme a senha.'),
+  role: z.enum(['master', 'user']),
+  companyId: z.number().nullable(),
 })
 
-const createSchema = baseUserSchema.refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não conferem.',
-  path: ['confirmPassword'],
-})
+const createSchema = baseUserSchema
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não conferem.',
+    path: ['confirmPassword'],
+  })
+  .refine((data) => data.role === 'master' || data.companyId != null, {
+    message: 'Selecione a empresa do usuário.',
+    path: ['companyId'],
+  })
 
-const editSchema = baseUserSchema.partial()
+const editSchema = baseUserSchema.partial().refine((data) => data.role !== 'user' || data.companyId != null, {
+  message: 'Selecione a empresa do usuário.',
+  path: ['companyId'],
+})
 
 interface UserModalProps {
   open: boolean
@@ -48,6 +60,8 @@ interface UserModalProps {
 
 export default function UserModal({ open, editId, onClose, onSaved }: UserModalProps) {
   const isEdit = Boolean(editId)
+  const { user: currentUser } = useAuth()
+  const { showToast } = useToast()
 
   const [name, setName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -56,10 +70,38 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState('inactive')
+  const [role, setRole] = useState<'master' | 'user'>('user')
+  const [companyId, setCompanyId] = useState<number | null>(null)
+  const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const isMasterUser = currentUser?.role === 'master'
+  const showMasterOption = isMasterUser || role === 'master'
+  const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
+  const availableCompanies = isMasterUser
+    ? companies
+    : currentUser?.companyId != null
+      ? [{ id: currentUser.companyId, nome: currentUser.companyName || '' }]
+      : []
+
+  useEffect(() => {
+    if (!open) return
+    if (isMasterUser) {
+      api
+        .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
+        .then((res) => {
+          const d = res.data
+          setCompanies(Array.isArray(d) ? d : d.data ?? [])
+        })
+        .catch(() => {})
+    } else if (currentUser?.companyId != null) {
+      setCompanies([{ id: currentUser.companyId, nome: currentUser.companyName || '' }])
+      if (!isEdit) setCompanyId(currentUser.companyId)
+    }
+  }, [open, isMasterUser, isEdit, currentUser?.companyId, currentUser?.companyName])
 
   useEffect(() => {
     if (open && editId) {
@@ -73,6 +115,8 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
           setEmail(data.email || '')
           setPhone(data.phone ? formatPhone(data.phone) : '')
           setStatus(data.status || 'inactive')
+          setRole(data.role === 'master' ? 'master' : 'user')
+          setCompanyId(data.companyId ?? null)
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
@@ -97,6 +141,8 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       phone: phone.replace(/\D/g, ''),
       password: password || undefined,
       confirmPassword: confirmPassword || undefined,
+      role,
+      companyId: role === 'master' ? null : companyId,
     }
 
     const schema = isEdit ? editSchema : createSchema
@@ -106,7 +152,8 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       return
     }
 
-    const payload: any = { name, lastName, email, phone: phone.replace(/\D/g, '') }
+    const payload: any = { name, lastName, email, phone: phone.replace(/\D/g, ''), role }
+    payload.companyId = role === 'master' ? null : companyId
     if (password) payload.password = password
     if (isEdit) payload.status = status
 
@@ -119,6 +166,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       }
       onSaved()
       handleClose()
+      showToast(isEdit ? 'Usuário atualizado com sucesso.' : 'Usuário criado com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -137,6 +185,8 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     setPassword('')
     setConfirmPassword('')
     setStatus('inactive')
+    setRole('user')
+    setCompanyId(null)
     setShowPassword(false)
     onClose()
   }
@@ -292,6 +342,54 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               ),
             }}
           />
+          <TextField
+            fullWidth
+            select
+            label="Perfil"
+            value={role}
+            onChange={(e) => {
+              setRole(e.target.value as 'master' | 'user')
+              clearFieldError('role')
+            }}
+            margin="normal"
+            disabled={isEdit && role === 'master'}
+            helperText={
+              fieldErrors.role ||
+              (isEdit && role === 'master'
+                ? 'O perfil master não pode ser alterado para usuário.'
+                : isEdit && !showMasterOption
+                  ? 'Perfil master é exclusivo do administrador geral.'
+                  : undefined)
+            }
+            error={!!fieldErrors.role}
+          >
+            <MenuItem value="user">Usuário</MenuItem>
+            {showMasterOption && <MenuItem value="master">Master</MenuItem>}
+          </TextField>
+          {role !== 'master' && (
+            <TextField
+              fullWidth
+              select
+              label="Empresa"
+              value={companyId ?? ''}
+              onChange={(e) => {
+                setCompanyId(e.target.value ? Number(e.target.value) : null)
+                clearFieldError('companyId')
+              }}
+              margin="normal"
+              required
+              disabled={!isMasterUser}
+              error={!!fieldErrors.companyId}
+              helperText={
+                fieldErrors.companyId ||
+                (!isMasterUser ? 'Usuário não-master só pode criar usuários para a própria empresa.' : 'Usuário não-master deve estar vinculado a uma empresa.')
+              }
+            >
+              {availableCompanies.map((c) => (
+                <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
+              ))}
+            </TextField>
+          )}
           {isEdit ? (
             <TextField
               fullWidth
@@ -300,6 +398,14 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               margin="normal"
+              disabled={isEdit && (role === 'master' || isSelf)}
+              helperText={
+                isEdit && role === 'master'
+                  ? 'O administrador master não pode ser desativado.'
+                  : isEdit && isSelf
+                    ? 'Não é possível desativar o próprio usuário.'
+                    : undefined
+              }
             >
               <MenuItem value="active">Ativo</MenuItem>
               <MenuItem value="inactive">Inativo</MenuItem>

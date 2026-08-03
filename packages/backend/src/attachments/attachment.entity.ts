@@ -12,6 +12,7 @@ import { Station } from '../stations/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Project } from '../projects/project.entity';
 import { Client } from '../clients/client.entity';
+import { Company } from '../companies/company.entity';
 
 @Entity()
 export class Attachment {
@@ -59,6 +60,13 @@ export class Attachment {
   @ManyToOne(() => Client, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'clientId' })
   client: Client | null;
+
+  @Column({ type: 'integer', nullable: true })
+  companyId: number | null;
+
+  @ManyToOne(() => Company, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'companyId' })
+  company: Company | null;
 
   @Column({ type: 'text' })
   filename: string;

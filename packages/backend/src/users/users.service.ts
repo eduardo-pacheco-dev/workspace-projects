@@ -25,6 +25,8 @@ export class UsersService {
     private readonly companiesRepository: Repository<Company>,
   ) {}
 
+  private readonly generalAdminEmail = process.env.ADMIN_EMAIL || 'admin@admin.com';
+
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }
@@ -64,6 +66,9 @@ export class UsersService {
     const role = dto.role ?? 'user';
     const companyId = dto.companyId ?? null;
 
+    if (role === 'master' && dto.email !== this.generalAdminEmail) {
+      throw new BadRequestException('O perfil master é exclusivo do administrador geral.');
+    }
     if (role === 'user' && companyId == null) {
       throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
     }
@@ -143,7 +148,15 @@ export class UsersService {
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phone !== undefined) user.phone = dto.phone;
     if (dto.status !== undefined) user.status = dto.status;
-    if (dto.role !== undefined) user.role = dto.role;
+    if (dto.role !== undefined) {
+      if (dto.role === 'master' && user.email !== this.generalAdminEmail) {
+        throw new BadRequestException('O perfil master é exclusivo do administrador geral.');
+      }
+      if (user.role === 'master' && dto.role !== 'master') {
+        throw new BadRequestException('O perfil master do administrador geral não pode ser alterado.');
+      }
+      user.role = dto.role;
+    }
     if (dto.companyId !== undefined) user.companyId = dto.companyId;
 
     if (user.role === 'user' && user.companyId == null) {

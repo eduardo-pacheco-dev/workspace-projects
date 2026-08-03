@@ -21,6 +21,7 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { z } from 'zod'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatPhone } from '../../utils/phone'
 
 const baseUserSchema = z.object({
@@ -58,6 +59,7 @@ interface UserModalProps {
 
 export default function UserModal({ open, editId, onClose, onSaved }: UserModalProps) {
   const isEdit = Boolean(editId)
+  const { user: currentUser } = useAuth()
 
   const [name, setName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -73,6 +75,10 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const canSelectMaster =
+    isEdit && currentUser?.role === 'master' && String(editId) === String(currentUser.id)
+  const showMasterOption = canSelectMaster || role === 'master'
 
   useEffect(() => {
     if (!open) return
@@ -333,11 +339,11 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               clearFieldError('role')
             }}
             margin="normal"
-            helperText={fieldErrors.role}
+            helperText={fieldErrors.role || (isEdit && !showMasterOption ? 'Perfil master é exclusivo do administrador geral.' : undefined)}
             error={!!fieldErrors.role}
           >
             <MenuItem value="user">Usuário</MenuItem>
-            <MenuItem value="master">Master</MenuItem>
+            {showMasterOption && <MenuItem value="master">Master</MenuItem>}
           </TextField>
           {role !== 'master' && (
             <TextField

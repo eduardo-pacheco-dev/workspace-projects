@@ -59,12 +59,26 @@ export class UsersService {
     return user;
   }
 
-  async createUser(dto: CreateUserInput): Promise<User> {
+  async createUser(
+    dto: CreateUserInput,
+    currentUser?: { role: string; companyId: number | null },
+  ): Promise<User> {
     const existing = await this.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email já cadastrado');
 
     const role = dto.role ?? 'user';
     const companyId = dto.companyId ?? null;
+
+    if (currentUser && currentUser.role !== 'master') {
+      if (role === 'master') {
+        throw new BadRequestException('Somente o administrador master pode criar usuários master.');
+      }
+      if (currentUser.companyId == null || companyId !== currentUser.companyId) {
+        throw new BadRequestException(
+          'Usuário não-master só pode criar usuários para a própria empresa.',
+        );
+      }
+    }
 
     if (role === 'master' && dto.email !== this.generalAdminEmail) {
       throw new BadRequestException('O perfil master é exclusivo do administrador geral.');

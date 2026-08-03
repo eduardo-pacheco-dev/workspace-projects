@@ -27,8 +27,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput) {
-    const user = await this.usersService.createUser(dto);
+  @UseGuards(AuthGuard('jwt'))
+  async create(
+    @Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput,
+    @Request() req: any,
+  ) {
+    const user = await this.usersService.createUser(dto, req.user);
     return this.usersService.toPublicUser(user);
   }
 

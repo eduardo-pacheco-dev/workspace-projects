@@ -80,6 +80,10 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     isEdit && currentUser?.role === 'master' && String(editId) === String(currentUser.id)
   const showMasterOption = canSelectMaster || role === 'master'
   const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
+  const isMasterUser = currentUser?.role === 'master'
+  const availableCompanies = isMasterUser
+    ? companies
+    : companies.filter((c) => c.id === currentUser?.companyId)
 
   useEffect(() => {
     if (!open) return
@@ -88,9 +92,12 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       .then((res) => {
         const d = res.data
         setCompanies(Array.isArray(d) ? d : d.data ?? [])
+        if (!isMasterUser && currentUser?.companyId != null) {
+          setCompanyId(currentUser.companyId)
+        }
       })
       .catch(() => {})
-  }, [open])
+  }, [open, isMasterUser, currentUser?.companyId])
 
   useEffect(() => {
     if (open && editId) {
@@ -366,10 +373,14 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               }}
               margin="normal"
               required
+              disabled={!isMasterUser}
               error={!!fieldErrors.companyId}
-              helperText={fieldErrors.companyId || 'Usuário não-master deve estar vinculado a uma empresa.'}
+              helperText={
+                fieldErrors.companyId ||
+                (!isMasterUser ? 'Usuário não-master só pode criar usuários para a própria empresa.' : 'Usuário não-master deve estar vinculado a uma empresa.')
+              }
             >
-              {companies.map((c) => (
+              {availableCompanies.map((c) => (
                 <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
               ))}
             </TextField>

@@ -236,10 +236,24 @@ describe('UsersController (integration)', () => {
         .expect(200);
       expect(empty.body.total).toBe(0);
     });
+
+    it('should hide masters and other companies for a regular user', async () => {
+      currentUser = regularUser;
+
+      const res = await request(app.getHttpServer()).get('/users').expect(200);
+
+      const emails = res.body.data.map((u: any) => u.email);
+      expect(emails).not.toContain('admin@admin.com');
+      expect(emails).not.toContain('maria@master.com');
+      expect(emails).toContain('joao@empresa.com');
+      expect(emails).toContain('pedro@empresa.com');
+      expect(res.body.data.every((u: any) => u.role !== 'master')).toBe(true);
+    });
   });
 
   describe('GET /users/:id', () => {
     it('should return the user', async () => {
+      currentUser = masterUser;
       const res = await request(app.getHttpServer()).get('/users/1').expect(200);
 
       expect(res.body.email).toBe('admin@admin.com');
@@ -248,6 +262,11 @@ describe('UsersController (integration)', () => {
 
     it('should return 404 for a missing user', async () => {
       await request(app.getHttpServer()).get('/users/9999').expect(404);
+    });
+
+    it('should hide a master from a regular user', async () => {
+      currentUser = regularUser;
+      await request(app.getHttpServer()).get('/users/1').expect(404);
     });
   });
 

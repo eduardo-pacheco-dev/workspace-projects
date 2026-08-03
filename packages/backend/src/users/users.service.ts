@@ -57,6 +57,19 @@ export class UsersService {
     return user;
   }
 
+  async getUserVisibleOrFail(
+    id: number,
+    currentUser?: { role: string; companyId: number | null },
+  ): Promise<User> {
+    const user = await this.getUserOrFail(id);
+    if (currentUser && currentUser.role !== 'master') {
+      if (user.role === 'master' || user.companyId !== currentUser.companyId) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+    }
+    return user;
+  }
+
   async createUser(
     dto: CreateUserInput,
     currentUser?: { role: string; companyId: number | null },
@@ -104,13 +117,16 @@ export class UsersService {
     if (!company) throw new NotFoundException('Empresa não encontrada');
   }
 
-  async findAllPaged(query: {
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-    search?: string;
-  }): Promise<{ data: PublicUser[]; total: number }> {
+  async findAllPaged(
+    query: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+      search?: string;
+    },
+    currentUser?: { role: string; companyId: number | null },
+  ): Promise<{ data: PublicUser[]; total: number }> {
     const {
       page = 1,
       limit = 10,
@@ -119,13 +135,23 @@ export class UsersService {
       search,
     } = query;
 
+    const isMaster = currentUser?.role === 'master';
     const qb = this.usersRepository.createQueryBuilder('u');
 
+    if (!isMaster) {
+      qb.where('u.role != :role', { role: 'master' }).andWhere('u.companyId = :companyId', {
+        companyId: currentUser?.companyId ?? -1,
+      });
+    }
+
     if (search) {
-      qb.where(
-        'u.name LIKE :search OR u.lastName LIKE :search OR u.email LIKE :search OR u.phone LIKE :search',
-        { search: `%${search}%` },
-      );
+      const searchClause =
+        'u.name LIKE :search OR u.lastName LIKE :search OR u.email LIKE :search OR u.phone LIKE :search';
+      if (isMaster) {
+        qb.where(searchClause, { search: `%${search}%` });
+      } else {
+        qb.andWhere(`(${searchClause})`, { search: `%${search}%` });
+      }
     }
 
     const allowedSort = ['id', 'name', 'lastName', 'email', 'phone', 'status', 'createdAt'];

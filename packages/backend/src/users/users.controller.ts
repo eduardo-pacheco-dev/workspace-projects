@@ -37,19 +37,22 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('search') search?: string,
+    @Request() req?: any,
   ) {
-    return this.usersService.findAllPaged({ page, limit, sortBy, sortOrder, search });
+    return this.usersService.findAllPaged({ page, limit, sortBy, sortOrder, search }, req?.user);
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.getUserOrFail(id);
+  @UseGuards(AuthGuard('jwt'))
+  async findById(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const user = await this.usersService.getUserVisibleOrFail(id, req.user);
     return this.usersService.toPublicUser(user);
   }
 

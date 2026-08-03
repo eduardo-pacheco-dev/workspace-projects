@@ -35,6 +35,7 @@ describe('UsersService', () => {
   const buildQueryBuilder = (data: User[], total: number) => {
     const qb = {
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
@@ -128,6 +129,36 @@ describe('UsersService', () => {
     it('should throw NotFoundException when not found', async () => {
       userRepo.findOne.mockResolvedValue(null);
       await expect(service.getUserOrFail(99)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getUserVisibleOrFail', () => {
+    it('should return the user for a master', async () => {
+      const user = { id: 1, role: 'master', companyId: null };
+      userRepo.findOne.mockResolvedValue(user);
+
+      await expect(service.getUserVisibleOrFail(1, master)).resolves.toEqual(user);
+    });
+
+    it('should return a same-company non-master user for a regular user', async () => {
+      const user = { id: 3, role: 'user', companyId: 5 };
+      userRepo.findOne.mockResolvedValue(user);
+
+      await expect(service.getUserVisibleOrFail(3, regular)).resolves.toEqual(user);
+    });
+
+    it('should hide a master from a regular user', async () => {
+      const user = { id: 1, role: 'master', companyId: null };
+      userRepo.findOne.mockResolvedValue(user);
+
+      await expect(service.getUserVisibleOrFail(1, regular)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should hide a user from another company', async () => {
+      const user = { id: 3, role: 'user', companyId: 99 };
+      userRepo.findOne.mockResolvedValue(user);
+
+      await expect(service.getUserVisibleOrFail(3, regular)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -247,7 +278,7 @@ describe('UsersService', () => {
       const qb = buildQueryBuilder(data as User[], 1);
       userRepo.createQueryBuilder.mockReturnValue(qb);
 
-      const result = await service.findAllPaged({ page: 1, limit: 10 });
+      const result = await service.findAllPaged({ page: 1, limit: 10 }, master);
 
       expect(userRepo.createQueryBuilder).toHaveBeenCalledWith('u');
       expect(qb.orderBy).toHaveBeenCalledWith('u.id', 'ASC');
@@ -259,7 +290,7 @@ describe('UsersService', () => {
       const qb = buildQueryBuilder([], 0);
       userRepo.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAllPaged({ search: 'joao' });
+      await service.findAllPaged({ search: 'joao' }, master);
 
       expect(qb.where).toHaveBeenCalledWith(
         expect.stringContaining('u.name LIKE :search'),
@@ -271,9 +302,32 @@ describe('UsersService', () => {
       const qb = buildQueryBuilder([], 0);
       userRepo.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAllPaged({ sortBy: 'password;DROP', sortOrder: 'DESC' });
+      await service.findAllPaged({ sortBy: 'password;DROP', sortOrder: 'DESC' }, master);
 
       expect(qb.orderBy).toHaveBeenCalledWith('u.id', 'DESC');
+    });
+
+    it('should hide masters and other companies for non-master users', async () => {
+      const qb = buildQueryBuilder([], 0);
+      userRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ page: 1, limit: 10 }, regular);
+
+      expect(qb.where).toHaveBeenCalledWith('u.role != :role', { role: 'master' });
+      expect(qb.andWhere).toHaveBeenCalledWith('u.companyId = :companyId', { companyId: 5 });
+    });
+
+    it('should apply search as andWhere for non-master users', async () => {
+      const qb = buildQueryBuilder([], 0);
+      userRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ search: 'pedro' }, regular);
+
+      expect(qb.where).toHaveBeenCalledWith('u.role != :role', { role: 'master' });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('u.name LIKE :search'),
+        { search: '%pedro%' },
+      );
     });
   });
 

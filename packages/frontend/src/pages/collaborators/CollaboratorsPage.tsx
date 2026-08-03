@@ -54,6 +54,10 @@ interface Props {
 
 export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props) {
   const { showToast } = useToast()
+  const isFreelancerList = isFreelancer === true
+  const entityLabel = isFreelancerList ? 'Freelancer' : 'Colaborador'
+  const entityLabelLower = entityLabel.toLowerCase()
+  const entityLabelPlural = isFreelancerList ? 'Freelancers' : 'Colaboradores'
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -107,7 +111,7 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
     setDeleting(true)
     try {
       await api.delete(`/collaborators/${deleteTarget.id}`)
-      showToast('Colaborador excluído com sucesso.')
+      showToast(`${entityLabel} excluído com sucesso.`)
       fetchData()
       setDeleteTarget(null)
     } catch (err: any) {
@@ -139,9 +143,9 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Colaboradores</Typography>
+        <Typography variant="h4">{entityLabelPlural}</Typography>
         <Button variant="contained" startIcon={<PersonAdd />} onClick={onNew}>
-          Novo Colaborador
+          Novo {entityLabel}
         </Button>
       </Box>
 
@@ -207,7 +211,7 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
             {collaborators.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} align="center">
-                  Nenhum colaborador encontrado.
+                  Nenhum {entityLabelLower} encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -230,10 +234,10 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
         open={!!deleteTarget}
         onClose={() => { if (!deleting) setDeleteTarget(null) }}
       >
-        <DialogTitle>Excluir Colaborador</DialogTitle>
+        <DialogTitle>Excluir {entityLabel}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Tem certeza que deseja excluir o colaborador <strong>{deleteTarget?.nome}</strong>? Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir o {entityLabelLower} <strong>{deleteTarget?.nome}</strong>? Esta ação não pode ser desfeita.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

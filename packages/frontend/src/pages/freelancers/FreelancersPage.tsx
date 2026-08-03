@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Tabs, Tab, Box } from '@mui/material'
-import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
 import LpuList from '../lpu/LpuList'
 import CollaboratorsPage from '../collaborators/CollaboratorsPage'
@@ -31,7 +30,8 @@ export default function FreelancersPage() {
         <Tab label="LPU" />
       </Tabs>
       {tab === 0 && (
-        <FreelancerList
+        <CollaboratorsPage
+          isFreelancer={true}
           onNew={() => setFreelancerModal({ open: true, editId: null })}
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />

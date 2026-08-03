@@ -8,10 +8,11 @@ import { TasksModule } from '../tasks/task.module';
 import { MsProjectModule } from '../ms-project/ms-project.module';
 import { SettingsModule } from '../settings/settings.module';
 import { CompaniesModule } from '../companies/company.module';
+import { AttachmentsModule } from '../attachments/attachments.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule],
+  imports: [UsersModule, FreelancersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule, AttachmentsModule],
   providers: [SeedService],
 })
 export class SeedModule {}

@@ -20,6 +20,7 @@ import {
   Chip,
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import CompanyModal from './CompanyModal'
 import { Company } from './companiesTypes'
@@ -28,6 +29,7 @@ type SortBy = 'id' | 'nome' | 'cnpj' | 'email' | 'cidade' | 'uf' | 'ativa'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function CompaniesPage() {
+  const navigate = useNavigate()
   const [companies, setCompanies] = useState<Company[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -146,7 +148,12 @@ export default function CompaniesPage() {
           </TableHead>
           <TableBody>
             {companies.map((company) => (
-              <TableRow key={company.id} hover>
+              <TableRow
+                key={company.id}
+                hover
+                onClick={() => navigate(`/companies/${company.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell sx={{ fontWeight: 600 }}>{company.nome}</TableCell>
                 <TableCell>{company.cnpj || '-'}</TableCell>
                 <TableCell>{company.email || '-'}</TableCell>
@@ -160,10 +167,10 @@ export default function CompaniesPage() {
                   />
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton onClick={() => setModal({ open: true, editId: company.id })}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: company.id }) }}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(company.id)}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(company.id) }}>
                     <Delete />
                   </IconButton>
                 </TableCell>

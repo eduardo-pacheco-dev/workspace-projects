@@ -11,6 +11,7 @@ import { CreateTaskInput } from '../tasks/task.schemas';
 import { MsProjectService } from '../ms-project/ms-project.service';
 import { SettingsService } from '../settings/settings.service';
 import { CompanyService } from '../companies/company.service';
+import { AttachmentsService } from '../attachments/attachments.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -24,6 +25,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly msProjectService: MsProjectService,
     private readonly settingsService: SettingsService,
     private readonly companyService: CompanyService,
+    private readonly attachmentsService: AttachmentsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -39,6 +41,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedMsProject();
     await this.seedSettings();
     await this.seedCompanies();
+    await this.seedAttachments();
   }
 
   private async seedAdmin() {
@@ -844,5 +847,77 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${companies.length} companies created`);
+  }
+
+  private async seedAttachments() {
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const company = companies.find((c) => c.nome === 'EA Projetos Telecom Ltda');
+    if (!company) return;
+
+    const { total } = await this.attachmentsService.findByCompany(company.id, { limit: 1 });
+    if (total > 0) return;
+
+    const pdf = (content: string) => Buffer.from(
+      `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n4 0 obj\n<< /Length ${content.length + 22} >>\nstream\nBT /F1 18 Tf 72 720 Td (${content}) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \ntrailer\n<< /Size 6 /Root 1 0 R >>\n%%EOF\n`,
+      'utf8',
+    );
+
+    const attachments: {
+      originalname: string;
+      mimetype: string;
+      buffer: Buffer;
+    }[] = [
+      {
+        originalname: 'contrato-social-ea.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Contrato social - EA Projetos Telecom Ltda'),
+      },
+      {
+        originalname: 'alvara-de-funcionamento.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Alvara de funcionamento - EA Projetos Telecom Ltda'),
+      },
+      {
+        originalname: 'logo-ea.png',
+        mimetype: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'),
+      },
+      {
+        originalname: 'fatura-energia-junho-2026.txt',
+        mimetype: 'text/plain',
+        buffer: Buffer.from('Fatura de energia elétrica referente a junho/2026.\nTotal: R$ 1.847,90\nVencimento: 10/07/2026', 'utf8'),
+      },
+      {
+        originalname: 'relatorio-empresas-ativas.csv',
+        mimetype: 'text/csv',
+        buffer: Buffer.from('nome;cnpj;cidade;uf\nEA Projetos Telecom Ltda;12.345.678/0001-90;São Paulo;SP\nNorte Redes Ltda;98.765.432/0001-10;Manaus;AM\n', 'utf8'),
+      },
+      {
+        originalname: 'certificado-de-licitacao.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Certificado de habilitação em licitação pública'),
+      },
+      {
+        originalname: 'proposta-comercial-norte-redes.pdf',
+        mimetype: 'application/pdf',
+        buffer: pdf('Proposta comercial - Parceria Norte Redes Ltda'),
+      },
+      {
+        originalname: 'inventario-equipamentos.txt',
+        mimetype: 'text/plain',
+        buffer: Buffer.from('Inventário de equipamentos ativos e passivos\nRádio Ubiquiti - 3 unidades\nRádio Mimosa - 2 unidades\nAntena parabólica 1,2m - 1 unidade', 'utf8'),
+      },
+    ];
+
+    for (const attachment of attachments) {
+      await this.attachmentsService.uploadForCompany(company.id, {
+        originalname: attachment.originalname,
+        mimetype: attachment.mimetype,
+        size: attachment.buffer.length,
+        buffer: attachment.buffer,
+      } as Express.Multer.File);
+    }
+
+    console.log(`Seed: ${attachments.length} attachments created for company "${company.nome}"`);
   }
 }

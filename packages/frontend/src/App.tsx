@@ -34,6 +34,7 @@ import MsProjectPage from './pages/ms-project/MsProjectPage'
 import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
 import SettingsPage from './pages/settings/SettingsPage'
 import CompaniesPage from './pages/companies/CompaniesPage'
+import CompanyDetailPage from './pages/companies/CompanyDetailPage'
 import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/:id" element={<CompanyDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         </Routes>

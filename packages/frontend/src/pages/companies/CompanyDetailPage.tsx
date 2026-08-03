@@ -195,8 +195,9 @@ export default function CompanyDetailPage() {
       setEditingId(null)
       setEditContent('')
       fetchComments()
+      showToast('Comentário atualizado com sucesso.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível editar o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível editar o comentário.', 'error')
     }
   }
 

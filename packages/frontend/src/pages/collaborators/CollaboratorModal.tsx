@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { z } from 'zod'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 
 const collaboratorSchema = z.object({
@@ -26,12 +27,19 @@ const collaboratorSchema = z.object({
   uf: z.string().optional(),
   dataAdmissao: z.string().optional(),
   status: z.enum(['ativo', 'inativo']),
+  companyId: z.number().int().positive('Selecione a empresa.'),
+  isFreelancer: z.boolean().optional(),
 })
 
-const editSchema = collaboratorSchema.partial().refine(
-  (data) => data.nome !== undefined || data.status !== undefined,
-  { message: 'Informe ao menos um campo para atualizar.' },
-)
+const editSchema = collaboratorSchema
+  .partial()
+  .refine((data) => data.nome !== undefined || data.status !== undefined || data.companyId !== undefined || data.isFreelancer !== undefined, {
+    message: 'Informe ao menos um campo para atualizar.',
+  })
+  .refine((data) => data.companyId === undefined || data.companyId > 0, {
+    message: 'Selecione a empresa.',
+    path: ['companyId'],
+  })
 
 interface Props {
   open: boolean
@@ -42,6 +50,7 @@ interface Props {
 
 export default function CollaboratorModal({ open, editId, onClose, onSaved }: Props) {
   const isEdit = Boolean(editId)
+  const { user: currentUser } = useAuth()
   const { showToast } = useToast()
 
   const [nome, setNome] = useState('')
@@ -54,9 +63,35 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
   const [uf, setUf] = useState('')
   const [dataAdmissao, setDataAdmissao] = useState('')
   const [status, setStatus] = useState('ativo')
+  const [companyId, setCompanyId] = useState<number | null>(null)
+  const [isFreelancer, setIsFreelancer] = useState(false)
+  const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const isMasterUser = currentUser?.role === 'master'
+  const availableCompanies = isMasterUser
+    ? companies
+    : currentUser?.companyId != null
+      ? [{ id: currentUser.companyId, nome: currentUser.companyName || '' }]
+      : []
+
+  useEffect(() => {
+    if (!open) return
+    if (isMasterUser) {
+      api
+        .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
+        .then((res) => {
+          const d = res.data
+          setCompanies(Array.isArray(d) ? d : d.data ?? [])
+        })
+        .catch(() => {})
+    } else if (currentUser?.companyId != null) {
+      setCompanies([{ id: currentUser.companyId, nome: currentUser.companyName || '' }])
+      if (!isEdit) setCompanyId(currentUser.companyId)
+    }
+  }, [open, isMasterUser, isEdit, currentUser?.companyId, currentUser?.companyName])
 
   useEffect(() => {
     if (open && editId) {
@@ -75,6 +110,8 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
           setUf(data.uf || '')
           setDataAdmissao(data.dataAdmissao || '')
           setStatus(data.status || 'ativo')
+          setCompanyId(data.companyId ?? null)
+          setIsFreelancer(Boolean(data.isFreelancer))
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
@@ -89,7 +126,7 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
     setError('')
     setFieldErrors({})
 
-    const data = { nome, cpf, cargo, email, telefone, endereco, cidade, uf, dataAdmissao, status }
+    const data = { nome, cpf, cargo, email, telefone, endereco, cidade, uf, dataAdmissao, status, companyId, isFreelancer }
     const schema = isEdit ? editSchema : collaboratorSchema
     const result = schema.safeParse(data)
     if (!result.success) {
@@ -111,6 +148,8 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
     if (cidade) payload.cidade = cidade
     if (uf) payload.uf = uf
     if (dataAdmissao) payload.dataAdmissao = dataAdmissao
+    payload.companyId = companyId
+    payload.isFreelancer = isFreelancer
 
     setLoading(true)
     try {
@@ -143,6 +182,8 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
     setUf('')
     setDataAdmissao('')
     setStatus('ativo')
+    setCompanyId(null)
+    setIsFreelancer(false)
     onClose()
   }
 
@@ -223,6 +264,40 @@ export default function CollaboratorModal({ open, editId, onClose, onSaved }: Pr
             margin="normal"
             InputLabelProps={{ shrink: true }}
           />
+          <TextField
+            fullWidth
+            select
+            label="Tipo"
+            value={isFreelancer ? 'freelancer' : 'colaborador'}
+            onChange={(e) => setIsFreelancer(e.target.value === 'freelancer')}
+            margin="normal"
+            helperText="Freelancers mantêm todos os campos específicos (documentos, treinamentos, bancários etc.)."
+          >
+            <MenuItem value="colaborador">Colaborador</MenuItem>
+            <MenuItem value="freelancer">Freelancer</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth
+            select
+            label="Empresa"
+            value={companyId ?? ''}
+            onChange={(e) => {
+              setCompanyId(e.target.value ? Number(e.target.value) : null)
+              clearFieldError('companyId')
+            }}
+            margin="normal"
+            required
+            disabled={!isMasterUser}
+            error={!!fieldErrors.companyId}
+            helperText={
+              fieldErrors.companyId ||
+              (!isMasterUser ? 'Colaborador vinculado à própria empresa.' : undefined)
+            }
+          >
+            {availableCompanies.map((c) => (
+              <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
+            ))}
+          </TextField>
           {isEdit && (
             <TextField
               fullWidth

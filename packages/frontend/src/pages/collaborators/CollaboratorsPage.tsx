@@ -38,6 +38,9 @@ interface Collaborator {
   email: string | null
   telefone: string | null
   status: string
+  isFreelancer: boolean
+  companyId: number
+  company?: { id: number; nome: string } | null
   createdAt: string
 }
 
@@ -127,7 +130,7 @@ export default function CollaboratorsPage() {
     { id: 'telefone', label: 'Telefone' },
     { id: 'status', label: 'Status' },
   ]
-
+  const showCompany = true
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -163,6 +166,8 @@ export default function CollaboratorsPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
+              {showCompany && <TableCell>Empresa</TableCell>}
+              <TableCell>Tipo</TableCell>
               <TableCell align="center">Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -182,6 +187,14 @@ export default function CollaboratorsPage() {
                     color={c.status === 'ativo' ? 'success' : 'default'}
                   />
                 </TableCell>
+                {showCompany && <TableCell>{c.company?.nome || '-'}</TableCell>}
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={c.isFreelancer ? 'Freelancer' : 'Colaborador'}
+                    color={c.isFreelancer ? 'primary' : 'default'}
+                  />
+                </TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
                     <IconButton onClick={() => setModal({ open: true, editId: c.id })}>
@@ -196,7 +209,7 @@ export default function CollaboratorsPage() {
             ))}
             {collaborators.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={11} align="center">
                   Nenhum colaborador encontrado.
                 </TableCell>
               </TableRow>

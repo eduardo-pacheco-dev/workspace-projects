@@ -9,6 +9,10 @@ import {
 export class CreateFreelancerDto {
   @IsOptional()
   @IsNumber()
+  companyId?: number;
+
+  @IsOptional()
+  @IsNumber()
   userId?: number;
 
   @IsOptional()

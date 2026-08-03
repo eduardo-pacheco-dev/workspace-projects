@@ -43,6 +43,7 @@ export class SeedService implements OnApplicationBootstrap {
     if (!enabled) return;
 
     await this.seedAdmin();
+    await this.seedCompanies();
     await this.seedFreelancers();
     await this.seedJobs();
     await this.seedLpus();
@@ -50,7 +51,6 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedTasks();
     await this.seedMsProject();
     await this.seedSettings();
-    await this.seedCompanies();
     await this.seedUsers();
     await this.seedCompanyMembers();
     await this.seedCompanyProjects();
@@ -78,6 +78,9 @@ export class SeedService implements OnApplicationBootstrap {
   private async seedFreelancers() {
     const { total } = await this.freelancersService.findAll({ limit: 1 });
     if (total > 0) return;
+
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const firstCompanyId = companies[0]?.id;
 
     const freelancers = [
       {
@@ -138,7 +141,7 @@ export class SeedService implements OnApplicationBootstrap {
     ];
 
     for (const freelancer of freelancers) {
-      await this.freelancersService.create(freelancer);
+      await this.freelancersService.create({ ...freelancer, companyId: firstCompanyId });
     }
 
     console.log(`Seed: ${freelancers.length} freelancers created`);
@@ -1002,36 +1005,52 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   private async seedCollaborators() {
-    const { total } = await this.collaboratorsService.findAllPaged({ limit: 1 });
+    const { total } = await this.collaboratorsService.findAllPaged({ limit: 1, isFreelancer: false });
     if (total > 0) return;
 
-    const collaborators: { nome: string; cpf: string; cargo: string; email: string; telefone: string; cidade: string; uf: string; dataAdmissao: string; status: 'ativo' | 'inativo' }[] = [
-      { nome: 'Adriana Costa', cpf: '111.111.111-01', cargo: 'Engenheira de Telecom', email: 'adriana.costa@eaprojetos.com.br', telefone: '(11) 91001-0001', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2018-03-12', status: 'ativo' },
-      { nome: 'Bruno Martins', cpf: '111.111.111-02', cargo: 'Técnico de Campo', email: 'bruno.martins@eaprojetos.com.br', telefone: '(11) 91001-0002', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2019-07-01', status: 'ativo' },
-      { nome: 'Camila Rocha', cpf: '111.111.111-03', cargo: 'Analista Financeira', email: 'camila.rocha@eaprojetos.com.br', telefone: '(11) 91001-0003', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2020-01-20', status: 'ativo' },
-      { nome: 'Diego Nunes', cpf: '111.111.111-04', cargo: 'Coordenador de Obras', email: 'diego.nunes@eaprojetos.com.br', telefone: '(11) 91001-0004', cidade: 'Guarulhos', uf: 'SP', dataAdmissao: '2017-11-05', status: 'ativo' },
-      { nome: 'Elaine Dias', cpf: '111.111.111-05', cargo: 'Projetista', email: 'elaine.dias@eaprojetos.com.br', telefone: '(11) 91001-0005', cidade: 'Osasco', uf: 'SP', dataAdmissao: '2021-04-18', status: 'ativo' },
-      { nome: 'Felipe Araújo', cpf: '111.111.111-06', cargo: 'Técnico de Campo', email: 'felipe.araujo@eaprojetos.com.br', telefone: '(11) 91001-0006', cidade: 'São Bernardo do Campo', uf: 'SP', dataAdmissao: '2022-02-14', status: 'ativo' },
-      { nome: 'Gabriela Freitas', cpf: '111.111.111-07', cargo: 'Analista de RH', email: 'gabriela.freitas@eaprojetos.com.br', telefone: '(11) 91001-0007', cidade: 'Santo André', uf: 'SP', dataAdmissao: '2019-09-30', status: 'inativo' },
-      { nome: 'Henrique Lima', cpf: '111.111.111-08', cargo: 'Engenheiro de Redes', email: 'henrique.lima@eaprojetos.com.br', telefone: '(11) 91001-0008', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2016-05-22', status: 'ativo' },
-      { nome: 'Isabela Souza', cpf: '111.111.111-09', cargo: 'Assistente Administrativa', email: 'isabela.souza@eaprojetos.com.br', telefone: '(11) 91001-0009', cidade: 'Barueri', uf: 'SP', dataAdmissao: '2023-03-06', status: 'ativo' },
-      { nome: 'João Pedro Silva', cpf: '111.111.111-10', cargo: 'Técnico de Campo', email: 'joao.silva@eaprojetos.com.br', telefone: '(11) 91001-0010', cidade: 'Mauá', uf: 'SP', dataAdmissao: '2020-08-10', status: 'ativo' },
-      { nome: 'Karina Melo', cpf: '111.111.111-11', cargo: 'Analista de Compras', email: 'karina.melo@eaprojetos.com.br', telefone: '(11) 91001-0011', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2021-10-25', status: 'ativo' },
-      { nome: 'Lucas Prado', cpf: '111.111.111-12', cargo: 'Engenheiro Civil', email: 'lucas.prado@eaprojetos.com.br', telefone: '(11) 91001-0012', cidade: 'Campinas', uf: 'SP', dataAdmissao: '2018-12-03', status: 'ativo' },
-      { nome: 'Mariana Castro', cpf: '111.111.111-13', cargo: 'Supervisora de Campo', email: 'mariana.castro@eaprojetos.com.br', telefone: '(11) 91001-0013', cidade: 'Sorocaba', uf: 'SP', dataAdmissao: '2017-02-27', status: 'ativo' },
-      { nome: 'Nicolas Barros', cpf: '111.111.111-14', cargo: 'Técnico de Campo', email: 'nicolas.barros@eaprojetos.com.br', telefone: '(11) 91001-0014', cidade: 'Santos', uf: 'SP', dataAdmissao: '2022-06-13', status: 'inativo' },
-      { nome: 'Olivia Cardoso', cpf: '111.111.111-15', cargo: 'Analista de TI', email: 'olivia.cardoso@eaprojetos.com.br', telefone: '(11) 91001-0015', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2019-01-07', status: 'ativo' },
-      { nome: 'Paulo Otávio', cpf: '111.111.111-16', cargo: 'Motorista / Operador', email: 'paulo.otavio@eaprojetos.com.br', telefone: '(11) 91001-0016', cidade: 'Diadema', uf: 'SP', dataAdmissao: '2015-10-19', status: 'ativo' },
-      { nome: 'Raquel Vieira', cpf: '111.111.111-17', cargo: 'Analista de Qualidade', email: 'raquel.vieira@eaprojetos.com.br', telefone: '(11) 91001-0017', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2020-05-11', status: 'ativo' },
-      { nome: 'Samuel Ribeiro', cpf: '111.111.111-18', cargo: 'Técnico de Campo', email: 'samuel.ribeiro@eaprojetos.com.br', telefone: '(11) 91001-0018', cidade: 'Jundiaí', uf: 'SP', dataAdmissao: '2023-01-16', status: 'ativo' },
-      { nome: 'Tatiane Gomes', cpf: '111.111.111-19', cargo: 'Secretária Executiva', email: 'tatiane.gomes@eaprojetos.com.br', telefone: '(11) 91001-0019', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2018-06-04', status: 'ativo' },
-      { nome: 'Ubiratan Fonseca', cpf: '111.111.111-20', cargo: 'Eletricista', email: 'ubiratan.fonseca@eaprojetos.com.br', telefone: '(11) 91001-0020', cidade: 'Itapevi', uf: 'SP', dataAdmissao: '2016-09-28', status: 'ativo' },
-      { nome: 'Vanessa Alves', cpf: '111.111.111-21', cargo: 'Engenheira de Projetos', email: 'vanessa.alves@eaprojetos.com.br', telefone: '(11) 91001-0021', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2017-08-21', status: 'ativo' },
-      { nome: 'Wesley Santana', cpf: '111.111.111-22', cargo: 'Técnico de Campo', email: 'wesley.santana@eaprojetos.com.br', telefone: '(11) 91001-0022', cidade: 'Embu das Artes', uf: 'SP', dataAdmissao: '2021-12-09', status: 'inativo' },
+    const { data: companies } = await this.companyService.findAll({ limit: 100 });
+    const companyId = (nome: string) => companies.find((c) => c.nome === nome)?.id;
+
+    const collaborators: { nome: string; cpf: string; cargo: string; email: string; telefone: string; cidade: string; uf: string; dataAdmissao: string; status: 'ativo' | 'inativo'; company: string }[] = [
+      { nome: 'Adriana Costa', cpf: '111.111.111-01', cargo: 'Engenheira de Telecom', email: 'adriana.costa@eaprojetos.com.br', telefone: '(11) 91001-0001', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2018-03-12', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Bruno Martins', cpf: '111.111.111-02', cargo: 'Técnico de Campo', email: 'bruno.martins@eaprojetos.com.br', telefone: '(11) 91001-0002', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2019-07-01', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Camila Rocha', cpf: '111.111.111-03', cargo: 'Analista Financeira', email: 'camila.rocha@eaprojetos.com.br', telefone: '(11) 91001-0003', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2020-01-20', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Diego Nunes', cpf: '111.111.111-04', cargo: 'Coordenador de Obras', email: 'diego.nunes@eaprojetos.com.br', telefone: '(11) 91001-0004', cidade: 'Guarulhos', uf: 'SP', dataAdmissao: '2017-11-05', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Elaine Dias', cpf: '111.111.111-05', cargo: 'Projetista', email: 'elaine.dias@eaprojetos.com.br', telefone: '(11) 91001-0005', cidade: 'Osasco', uf: 'SP', dataAdmissao: '2021-04-18', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Felipe Araújo', cpf: '111.111.111-06', cargo: 'Técnico de Campo', email: 'felipe.araujo@eaprojetos.com.br', telefone: '(11) 91001-0006', cidade: 'São Bernardo do Campo', uf: 'SP', dataAdmissao: '2022-02-14', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Gabriela Freitas', cpf: '111.111.111-07', cargo: 'Analista de RH', email: 'gabriela.freitas@eaprojetos.com.br', telefone: '(11) 91001-0007', cidade: 'Santo André', uf: 'SP', dataAdmissao: '2019-09-30', status: 'inativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Henrique Lima', cpf: '111.111.111-08', cargo: 'Engenheiro de Redes', email: 'henrique.lima@eaprojetos.com.br', telefone: '(11) 91001-0008', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2016-05-22', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Isabela Souza', cpf: '111.111.111-09', cargo: 'Assistente Administrativa', email: 'isabela.souza@eaprojetos.com.br', telefone: '(11) 91001-0009', cidade: 'Barueri', uf: 'SP', dataAdmissao: '2023-03-06', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'João Pedro Silva', cpf: '111.111.111-10', cargo: 'Técnico de Campo', email: 'joao.silva@eaprojetos.com.br', telefone: '(11) 91001-0010', cidade: 'Mauá', uf: 'SP', dataAdmissao: '2020-08-10', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Karina Melo', cpf: '111.111.111-11', cargo: 'Analista de Compras', email: 'karina.melo@eaprojetos.com.br', telefone: '(11) 91001-0011', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2021-10-25', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Lucas Prado', cpf: '111.111.111-12', cargo: 'Engenheiro Civil', email: 'lucas.prado@eaprojetos.com.br', telefone: '(11) 91001-0012', cidade: 'Campinas', uf: 'SP', dataAdmissao: '2018-12-03', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Mariana Castro', cpf: '111.111.111-13', cargo: 'Supervisora de Campo', email: 'mariana.castro@eaprojetos.com.br', telefone: '(11) 91001-0013', cidade: 'Sorocaba', uf: 'SP', dataAdmissao: '2017-02-27', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Nicolas Barros', cpf: '111.111.111-14', cargo: 'Técnico de Campo', email: 'nicolas.barros@eaprojetos.com.br', telefone: '(11) 91001-0014', cidade: 'Santos', uf: 'SP', dataAdmissao: '2022-06-13', status: 'inativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Olivia Cardoso', cpf: '111.111.111-15', cargo: 'Analista de TI', email: 'olivia.cardoso@eaprojetos.com.br', telefone: '(11) 91001-0015', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2019-01-07', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Paulo Otávio', cpf: '111.111.111-16', cargo: 'Motorista / Operador', email: 'paulo.otavio@eaprojetos.com.br', telefone: '(11) 91001-0016', cidade: 'Diadema', uf: 'SP', dataAdmissao: '2015-10-19', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Raquel Vieira', cpf: '111.111.111-17', cargo: 'Analista de Qualidade', email: 'raquel.vieira@eaprojetos.com.br', telefone: '(11) 91001-0017', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2020-05-11', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Samuel Ribeiro', cpf: '111.111.111-18', cargo: 'Técnico de Campo', email: 'samuel.ribeiro@eaprojetos.com.br', telefone: '(11) 91001-0018', cidade: 'Jundiaí', uf: 'SP', dataAdmissao: '2023-01-16', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Tatiane Gomes', cpf: '111.111.111-19', cargo: 'Secretária Executiva', email: 'tatiane.gomes@eaprojetos.com.br', telefone: '(11) 91001-0019', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2018-06-04', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Ubiratan Fonseca', cpf: '111.111.111-20', cargo: 'Eletricista', email: 'ubiratan.fonseca@eaprojetos.com.br', telefone: '(11) 91001-0020', cidade: 'Itapevi', uf: 'SP', dataAdmissao: '2016-09-28', status: 'ativo', company: 'EA Projetos Telecom Ltda' },
+      { nome: 'Vanessa Alves', cpf: '111.111.111-21', cargo: 'Engenheira de Projetos', email: 'vanessa.alves@eaprojetos.com.br', telefone: '(11) 91001-0021', cidade: 'São Paulo', uf: 'SP', dataAdmissao: '2017-08-21', status: 'ativo', company: 'Norte Redes Ltda' },
+      { nome: 'Wesley Santana', cpf: '111.111.111-22', cargo: 'Técnico de Campo', email: 'wesley.santana@eaprojetos.com.br', telefone: '(11) 91001-0022', cidade: 'Embu das Artes', uf: 'SP', dataAdmissao: '2021-12-09', status: 'inativo', company: 'Norte Redes Ltda' },
     ];
 
     for (const collaborator of collaborators) {
-      await this.collaboratorsService.create(collaborator);
+      const id = companyId(collaborator.company);
+      if (id == null) continue;
+      await this.collaboratorsService.create({
+        nome: collaborator.nome,
+        cpf: collaborator.cpf,
+        cargo: collaborator.cargo,
+        email: collaborator.email,
+        telefone: collaborator.telefone,
+        cidade: collaborator.cidade,
+        uf: collaborator.uf,
+        dataAdmissao: collaborator.dataAdmissao,
+        status: collaborator.status,
+        companyId: id,
+      });
     }
 
     console.log(`Seed: ${collaborators.length} collaborators created`);

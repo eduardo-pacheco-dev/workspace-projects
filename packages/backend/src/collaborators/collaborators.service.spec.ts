@@ -1,8 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CollaboratorsService } from './collaborators.service';
 import { Collaborator } from './collaborator.entity';
+import { Company } from '../companies/company.entity';
 
 describe('CollaboratorsService', () => {
   let service: CollaboratorsService;
@@ -15,9 +16,15 @@ describe('CollaboratorsService', () => {
     createQueryBuilder: jest.fn(),
   };
 
+  const companyRepo = {
+    findOne: jest.fn(),
+  };
+
   const buildQueryBuilder = (data: Collaborator[], total: number) => {
     const qb = {
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
@@ -29,7 +36,11 @@ describe('CollaboratorsService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const moduleRef = await Test.createTestingModule({
-      providers: [CollaboratorsService, { provide: getRepositoryToken(Collaborator), useValue: repo }],
+      providers: [
+        CollaboratorsService,
+        { provide: getRepositoryToken(Collaborator), useValue: repo },
+        { provide: getRepositoryToken(Company), useValue: companyRepo },
+      ],
     }).compile();
 
     service = moduleRef.get(CollaboratorsService);
@@ -37,28 +48,86 @@ describe('CollaboratorsService', () => {
 
   describe('create', () => {
     it('should create a collaborator with ativo default and generated codigo', async () => {
-      const saved = { id: 1, nome: 'João Silva', codigo: null, status: 'ativo' };
+      const saved = { id: 1, nome: 'João Silva', codigo: null, status: 'ativo', companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1, nome: 'EA Projetos' });
       repo.create.mockReturnValue(saved);
       repo.save
         .mockResolvedValueOnce(saved)
         .mockResolvedValueOnce({ ...saved, codigo: 'COL-0001' });
 
-      const result = await service.create({ nome: 'João Silva' });
+      const result = await service.create({ nome: 'João Silva', companyId: 1 });
 
-      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ nome: 'João Silva', status: 'ativo' }));
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ nome: 'João Silva', status: 'ativo', companyId: 1 }));
       expect(repo.save).toHaveBeenCalledTimes(2);
       expect(result.codigo).toBe('COL-0001');
     });
 
     it('should not regenerate codigo when already present', async () => {
-      const saved = { id: 1, nome: 'João', codigo: 'COL-0001' };
+      const saved = { id: 1, nome: 'João', codigo: 'COL-0001', companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
       repo.create.mockReturnValue(saved);
       repo.save.mockResolvedValue(saved);
 
-      const result = await service.create({ nome: 'João' });
+      const result = await service.create({ nome: 'João', companyId: 1 });
 
       expect(repo.save).toHaveBeenCalledTimes(1);
       expect(result.codigo).toBe('COL-0001');
+    });
+
+    it('should keep the provided status instead of the default', async () => {
+      const saved = { id: 1, nome: 'João', codigo: null, status: 'inativo', companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save.mockResolvedValueOnce(saved).mockResolvedValueOnce({ ...saved, codigo: 'COL-0001' });
+
+      const result = await service.create({ nome: 'João', status: 'inativo', companyId: 1 });
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'inativo' }));
+      expect(result.status).toBe('inativo');
+    });
+
+    it('should throw when company does not exist', async () => {
+      companyRepo.findOne.mockResolvedValue(null);
+      await expect(service.create({ nome: 'João', companyId: 99 })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject non-master creating for another company', async () => {
+      await expect(
+        service.create({ nome: 'João', companyId: 2 }, { role: 'user', companyId: 1 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should force company for non-master', async () => {
+      const saved = { id: 1, nome: 'João', codigo: 'COL-0001', companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save.mockResolvedValue(saved);
+
+      const result = await service.create({ nome: 'João', companyId: 1 }, { role: 'user', companyId: 1 });
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ companyId: 1 }));
+      expect(result.companyId).toBe(1);
+    });
+
+    it('should create a freelancer with isFreelancer true and FR codigo', async () => {
+      const saved = { id: 1, nome: 'Carlos Silva', codigo: null, isFreelancer: true, companyId: 1 };
+      companyRepo.findOne.mockResolvedValue({ id: 1 });
+      repo.create.mockReturnValue(saved);
+      repo.save
+        .mockResolvedValueOnce(saved)
+        .mockResolvedValueOnce({ ...saved, codigo: 'FR-0001' });
+
+      const result = await service.create({
+        nome: 'Carlos Silva',
+        companyId: 1,
+        isFreelancer: true,
+        hourlyRate: 150,
+        experienceLevel: 'senior',
+        availability: 'available',
+      });
+
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ isFreelancer: true, hourlyRate: 150 }));
+      expect(result.codigo).toBe('FR-0001');
     });
   });
 
@@ -71,6 +140,7 @@ describe('CollaboratorsService', () => {
       const result = await service.findAllPaged({ page: 1, limit: 10 });
 
       expect(repo.createQueryBuilder).toHaveBeenCalledWith('c');
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('c.company', 'company');
       expect(qb.orderBy).toHaveBeenCalledWith('c.id', 'ASC');
       expect(result).toEqual({ data, total: 1 });
     });
@@ -79,7 +149,7 @@ describe('CollaboratorsService', () => {
       const qb = buildQueryBuilder([], 0);
       repo.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAllPaged({ search: 'joao' });
+      await service.findAllPaged({ search: 'joao' }, { role: 'master', companyId: null });
 
       expect(qb.where).toHaveBeenCalledWith(
         expect.stringContaining('c.nome LIKE :search'),
@@ -95,11 +165,38 @@ describe('CollaboratorsService', () => {
 
       expect(qb.orderBy).toHaveBeenCalledWith('c.id', 'DESC');
     });
+
+    it('should support ascending order', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ sortBy: 'nome', sortOrder: 'ASC' });
+
+      expect(qb.orderBy).toHaveBeenCalledWith('c.nome', 'ASC');
+    });
+
+    it('should filter by company for non-master', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({}, { role: 'user', companyId: 1 });
+
+      expect(qb.where).toHaveBeenCalledWith('c.companyId = :companyId', { companyId: 1 });
+    });
+
+    it('should filter by isFreelancer', async () => {
+      const qb = buildQueryBuilder([], 0);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAllPaged({ isFreelancer: true }, { role: 'master', companyId: null });
+
+      expect(qb.where).toHaveBeenCalledWith('c.isFreelancer = :isFreelancer', { isFreelancer: true });
+    });
   });
 
   describe('getByIdOrFail', () => {
     it('should return the collaborator when found', async () => {
-      const collaborator = { id: 1, nome: 'João' };
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
       repo.findOne.mockResolvedValue(collaborator);
 
       await expect(service.getByIdOrFail(1)).resolves.toEqual(collaborator);
@@ -109,11 +206,16 @@ describe('CollaboratorsService', () => {
       repo.findOne.mockResolvedValue(null);
       await expect(service.getByIdOrFail(99)).rejects.toThrow(NotFoundException);
     });
+
+    it('should throw NotFoundException for collaborator from another company (non-master)', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, nome: 'João', companyId: 2 });
+      await expect(service.getByIdOrFail(1, { role: 'user', companyId: 1 })).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('update', () => {
     it('should update existing collaborator', async () => {
-      const collaborator = { id: 1, nome: 'Antigo', cargo: null };
+      const collaborator = { id: 1, nome: 'Antigo', cargo: null, companyId: 1 };
       repo.findOne.mockResolvedValue(collaborator);
       repo.save.mockResolvedValue({ ...collaborator, cargo: 'Diretor' });
 
@@ -127,17 +229,33 @@ describe('CollaboratorsService', () => {
       repo.findOne.mockResolvedValue(null);
       await expect(service.update(99, { nome: 'X' })).rejects.toThrow(NotFoundException);
     });
+
+    it('should validate company on update', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      companyRepo.findOne.mockResolvedValue({ id: 2 });
+
+      await service.update(1, { companyId: 2 });
+
+      expect(companyRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
+    });
   });
 
   describe('delete', () => {
     it('should delete an existing collaborator', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, nome: 'João', companyId: 1 });
       repo.delete.mockResolvedValue({ affected: 1 });
       await expect(service.delete(1)).resolves.toBeUndefined();
     });
 
     it('should throw NotFoundException when collaborator does not exist', async () => {
-      repo.delete.mockResolvedValue({ affected: 0 });
+      repo.findOne.mockResolvedValue(null);
       await expect(service.delete(99)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for collaborator from another company (non-master)', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, nome: 'João', companyId: 2 });
+      await expect(service.delete(1, { role: 'user', companyId: 1 })).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -81,6 +81,19 @@ export class CommentsService {
     return this.commentRepository.save(comment);
   }
 
+  async createForCompany(
+    companyId: number,
+    dto: CreateCommentDto,
+    author: string,
+  ): Promise<Comment> {
+    const comment = this.commentRepository.create({
+      companyId,
+      content: dto.content,
+      author,
+    });
+    return this.commentRepository.save(comment);
+  }
+
   async findByJob(jobId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { jobId },
@@ -119,6 +132,13 @@ export class CommentsService {
   async findByClient(clientId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { clientId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByCompany(companyId: number): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { companyId },
       order: { createdAt: 'DESC' },
     });
   }

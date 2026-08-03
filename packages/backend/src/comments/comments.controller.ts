@@ -109,6 +109,21 @@ export class CommentsController {
     return this.commentsService.findByClient(clientId);
   }
 
+  @Post('company/:companyId')
+  createForCompany(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForCompany(companyId, dto, author);
+  }
+
+  @Get('company/:companyId')
+  findByCompany(@Param('companyId', ParseIntPipe) companyId: number) {
+    return this.commentsService.findByCompany(companyId);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

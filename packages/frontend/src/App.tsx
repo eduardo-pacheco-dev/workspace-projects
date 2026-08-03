@@ -37,7 +37,6 @@ import SettingsPage from './pages/settings/SettingsPage'
 import CompaniesPage from './pages/companies/CompaniesPage'
 import CompanyDetailPage from './pages/companies/CompanyDetailPage'
 import ProfilePage from './pages/users/ProfilePage'
-import CollaboratorsPage from './pages/collaborators/CollaboratorsPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -74,7 +73,6 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/users" element={<UsersPage />} />
-          <Route path="/collaborators" element={<CollaboratorsPage />} />
           <Route path="/service-orders" element={<ServiceOrdersPage />} />
           <Route path="/service-orders/:id" element={<ServiceOrderDetail />} />
           <Route path="/freelancers" element={<FreelancersPage />} />

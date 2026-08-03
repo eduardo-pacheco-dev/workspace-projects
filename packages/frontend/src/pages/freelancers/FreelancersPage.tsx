@@ -4,6 +4,7 @@ import { Tabs, Tab, Box } from '@mui/material'
 import FreelancerList from './FreelancerList'
 import FreelancerModal from './FreelancerModal'
 import LpuList from '../lpu/LpuList'
+import CollaboratorsPage from '../collaborators/CollaboratorsPage'
 
 export default function FreelancersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -24,6 +25,7 @@ export default function FreelancersPage() {
     <Box>
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Freelancers" />
+        <Tab label="Colaboradores" />
         <Tab label="LPU" />
       </Tabs>
       {tab === 0 && (
@@ -32,7 +34,8 @@ export default function FreelancersPage() {
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />
       )}
-      {tab === 1 && <LpuList />}
+      {tab === 1 && <CollaboratorsPage />}
+      {tab === 2 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}

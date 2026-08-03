@@ -19,7 +19,6 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import PersonIcon from '@mui/icons-material/Person'
 import GroupIcon from '@mui/icons-material/Group'
-import BadgeIcon from '@mui/icons-material/Badge'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import CellTowerIcon from '@mui/icons-material/CellTower'
@@ -97,7 +96,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
     { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon /> },
     { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
-    { label: 'Colaboradores', path: '/collaborators', icon: <BadgeIcon /> },
     { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
     { label: 'Freelancers', path: '/freelancers', icon: <PersonIcon /> },
     { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon /> },

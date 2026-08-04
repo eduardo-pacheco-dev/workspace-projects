@@ -29,6 +29,9 @@ export class Project {
   cliente?: string;
 
   @Column({ type: 'text', nullable: true })
+  responsavel?: string;
+
+  @Column({ type: 'text', nullable: true })
   dataInicio?: string;
 
   @Column({ type: 'text', nullable: true })

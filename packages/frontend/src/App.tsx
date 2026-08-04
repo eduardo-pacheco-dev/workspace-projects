@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
+import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ToastProvider } from './contexts/ToastContext'
@@ -31,6 +31,7 @@ import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailsPage from './pages/clients/ClientDetailsPage'
 import SchedulePage from './pages/schedule/SchedulePage'
 import TasksPage from './pages/tasks/TasksPage'
+import TaskDetail from './pages/tasks/TaskDetail'
 import MsProjectPage from './pages/ms-project/MsProjectPage'
 import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
 import SettingsPage from './pages/settings/SettingsPage'
@@ -41,9 +42,19 @@ import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
+const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients']
+const USER_ALWAYS_ALLOWED = ['/', '/profile']
+
 function ProtectedLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const location = useLocation()
   if (!isAuthenticated) return <Navigate to="/signin" replace />
+  const isMaster = user?.role === 'master'
+  const isAllowed =
+    isMaster ||
+    USER_ALWAYS_ALLOWED.includes(location.pathname) ||
+    USER_MODULES.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
+  if (!isAllowed) return <Navigate to="/" replace />
   return (
     <Layout>
       <Outlet />
@@ -97,6 +108,7 @@ export default function App() {
           <Route path="/clients/:id" element={<ClientDetailsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/tasks/:id" element={<TaskDetail />} />
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />

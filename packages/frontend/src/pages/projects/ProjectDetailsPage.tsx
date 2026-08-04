@@ -52,6 +52,7 @@ interface Project {
   codigo: string | null
   descricao: string | null
   cliente: string | null
+  responsavel: string | null
   dataInicio: string | null
   dataFim: string | null
   observacoes: string | null
@@ -372,6 +373,7 @@ export default function ProjectDetailsPage() {
     ? [
         { label: 'Código', value: project.codigo || '-' },
         { label: 'Cliente', value: project.cliente || '-' },
+        { label: 'Responsável', value: project.responsavel || '-' },
         { label: 'Data de Início', value: formatDate(project.dataInicio) || '-' },
         { label: 'Data de Término', value: formatDate(project.dataFim) || 'Indeterminado' },
         { label: 'Descrição', value: project.descricao || '-' },

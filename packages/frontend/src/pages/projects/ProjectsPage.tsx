@@ -31,10 +31,12 @@ interface Project {
   codigo: string | null
   descricao: string | null
   cliente: string | null
+  responsavel: string | null
   dataInicio: string | null
   dataFim: string | null
   observacoes: string | null
   status: string
+  companies?: { id: number; nome: string }[]
 }
 
 type SortBy = 'id' | 'nome' | 'codigo' | 'cliente' | 'dataInicio' | 'status'
@@ -123,6 +125,11 @@ export default function ProjectsPage() {
     { id: 'status', label: 'Status' },
   ]
 
+  const companyLabel = (p: Project) => {
+    const names = (p.companies ?? []).map((c) => c.nome).filter(Boolean)
+    return names.length ? names.join(', ') : '-'
+  }
+
   const terminoLabel = (dataFim: string | null) => (dataFim ? formatDate(dataFim) : 'Indeterminado')
 
   return (
@@ -179,6 +186,8 @@ export default function ProjectsPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
+              <TableCell>Empresa</TableCell>
+              <TableCell>Responsável</TableCell>
               <TableCell>Término</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
@@ -203,6 +212,8 @@ export default function ProjectsPage() {
                     color={p.status === 'ativo' ? 'success' : 'default'}
                   />
                 </TableCell>
+                <TableCell>{companyLabel(p)}</TableCell>
+                <TableCell>{p.responsavel || '-'}</TableCell>
                 <TableCell>
                   <IconButton
                     onClick={(e) => {
@@ -225,7 +236,7 @@ export default function ProjectsPage() {
             ))}
             {projects.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={9} align="center">
                   Nenhum projeto encontrado.
                 </TableCell>
               </TableRow>

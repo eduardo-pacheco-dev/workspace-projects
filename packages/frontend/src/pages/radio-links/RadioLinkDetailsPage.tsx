@@ -38,6 +38,8 @@ import DownloadIcon from '@mui/icons-material/Download'
 import SendIcon from '@mui/icons-material/Send'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { formatDateTime } from '../../utils/format'
 import RadioLinkModal from './RadioLinkModal'
 
@@ -126,6 +128,7 @@ export default function RadioLinkDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const radioLinkId = Number(id)
   const [radioLink, setRadioLink] = useState<RadioLink | null>(null)
   const [error, setError] = useState('')
@@ -141,6 +144,9 @@ export default function RadioLinkDetailsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null)
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -183,12 +189,15 @@ export default function RadioLinkDetailsPage() {
   }
 
   const handleDeleteAttachment = async (attId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
     try {
       await api.delete(`/attachments/${attId}`)
       fetchAttachments()
+      showToast('Anexo excluído com sucesso.')
+      setAttachmentToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir o anexo.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o anexo.', 'error')
+      setAttachmentToDelete(null)
     }
   }
 
@@ -254,12 +263,15 @@ export default function RadioLinkDetailsPage() {
   }
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este comentário?')) return
     try {
       await api.delete(`/comments/${commentId}`)
       fetchComments()
+      showToast('Comentário excluído com sucesso.')
+      setCommentToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o comentário.', 'error')
+      setCommentToDelete(null)
     }
   }
 
@@ -315,12 +327,13 @@ export default function RadioLinkDetailsPage() {
   }, [radioLink])
 
   const handleDelete = async () => {
-    if (!confirm(`Tem certeza que deseja excluir o enlace "${radioLink?.nome}"?`)) return
     try {
       await api.delete(`/radio-links/${radioLinkId}`)
+      showToast('Enlace de rádio excluído com sucesso.')
       navigate('/radio-links')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
     }
   }
 
@@ -419,7 +432,7 @@ export default function RadioLinkDetailsPage() {
                   <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ mr: 1 }}>
                     Editar
                   </Button>
-                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleDelete}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setConfirmDelete(true)}>
                     Excluir
                   </Button>
                 </Box>
@@ -570,7 +583,7 @@ export default function RadioLinkDetailsPage() {
                         <IconButton size="small" component="a" href={`/api/attachments/download/${att.id}`} target="_blank">
                           <DownloadIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                        <IconButton size="small" onClick={() => setAttachmentToDelete(att)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </ListItemSecondaryAction>
@@ -604,7 +617,7 @@ export default function RadioLinkDetailsPage() {
                               <IconButton size="small" onClick={() => handleEditComment(c)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteComment(c.id)}>
+                              <IconButton size="small" onClick={() => setCommentToDelete(c.id)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </>
@@ -686,6 +699,30 @@ export default function RadioLinkDetailsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir enlace de rádio"
+        message={`Tem certeza que deseja excluir o enlace "${radioLink?.nome}"?`}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={!!attachmentToDelete}
+        title="Excluir anexo"
+        message={`Tem certeza que deseja excluir o anexo "${attachmentToDelete?.originalName}"?`}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={() => attachmentToDelete && handleDeleteAttachment(attachmentToDelete.id)}
+      />
+
+      <ConfirmDialog
+        open={commentToDelete != null}
+        title="Excluir comentário"
+        message="Tem certeza que deseja excluir este comentário?"
+        onClose={() => setCommentToDelete(null)}
+        onConfirm={() => commentToDelete != null && handleDeleteComment(commentToDelete)}
+      />
     </Container>
   )
 }

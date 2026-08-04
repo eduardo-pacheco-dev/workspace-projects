@@ -16,6 +16,10 @@ import { AttachmentsService } from '../attachments/attachments.service';
 import { CommentsService } from '../comments/comments.service';
 import { ProjectsService } from '../projects/projects.service';
 import { CollaboratorsService } from '../collaborators/collaborators.service';
+import { StationsService } from '../stations/stations.service';
+import { RadioLinksService } from '../radio-links/radio-links.service';
+import { ServiceOrdersService } from '../service-orders/service-orders.service';
+import { ClientsService } from '../clients/clients.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -34,6 +38,10 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly commentsService: CommentsService,
     private readonly projectsService: ProjectsService,
     private readonly collaboratorsService: CollaboratorsService,
+    private readonly stationsService: StationsService,
+    private readonly radioLinksService: RadioLinksService,
+    private readonly serviceOrdersService: ServiceOrdersService,
+    private readonly clientsService: ClientsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -53,6 +61,10 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedCompanyMembers();
     await this.seedCompanyProjects();
     await this.seedCollaborators();
+    await this.seedStations();
+    await this.seedRadiolinks();
+    await this.seedServiceOrders();
+    await this.seedClients();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1158,5 +1170,269 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${comments.length} comments created for company "${company.nome}"`);
+  }
+
+  private async seedStations() {
+    const { total } = await this.stationsService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    type SeedStation = {
+      siteId: string;
+      endId: string;
+      endereco: string;
+      latitude: number;
+      longitude: number;
+      operadora: 'TIM' | 'CLARO' | 'VIVO' | 'Outras';
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const stations: SeedStation[] = [
+      { siteId: 'SP-0001', endId: 'SP0001', endereco: 'Av. Paulista, 1000 – Centro', latitude: -23.5614, longitude: -46.6559, operadora: 'VIVO', observacoes: 'ERBS urbana com 3 setores', status: 'ativo' },
+      { siteId: 'SP-0002', endId: 'SP0002', endereco: 'Rua Augusta, 2500 – Consolação', latitude: -23.5561, longitude: -46.6604, operadora: 'CLARO', observacoes: 'Micro célula em cobertura rooftop', status: 'ativo' },
+      { siteId: 'SP-0003', endId: 'SP0003', endereco: 'Av. Brigadeiro Faria Lima, 3000 – Itaim', latitude: -23.5862, longitude: -46.6824, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'SP-0004', endId: 'SP0004', endereco: 'Av. das Nações Unidas, 14000 – Brooklin', latitude: -23.6018, longitude: -46.6936, operadora: 'VIVO', observacoes: 'Radio link 11 GHz para site vizinho', status: 'ativo' },
+      { siteId: 'SP-0005', endId: 'SP0005', endereco: 'Rua Oscar Freire, 900 – Jardins', latitude: -23.5661, longitude: -46.6751, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SP-0006', endId: 'SP0006', endereco: 'Av. Ibirapuera, 3100 – Moema', latitude: -23.5874, longitude: -46.6576, operadora: 'TIM', observacoes: 'Antena setorial em poste', status: 'ativo' },
+      { siteId: 'SP-0007', endId: 'SP0007', endereco: 'Av. do Estado, 3500 – Mooca', latitude: -23.5596, longitude: -46.6164, operadora: 'VIVO', status: 'inativo' },
+      { siteId: 'SP-0008', endId: 'SP0008', endereco: 'Rua Tabapuã, 1200 – Itaim', latitude: -23.5828, longitude: -46.6809, operadora: 'CLARO', observacoes: 'Indoor solution (DAS)', status: 'ativo' },
+      { siteId: 'SP-0009', endId: 'SP0009', endereco: 'Av. Luiz Carlos Berrini, 1500 – Berrini', latitude: -23.6105, longitude: -46.6966, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'SP-0010', endId: 'SP0010', endereco: 'Praça da Sé, 1 – Centro', latitude: -23.5505, longitude: -46.6333, operadora: 'VIVO', observacoes: 'Torre em edifício histórico', status: 'ativo' },
+      { siteId: 'SP-0011', endId: 'SP0011', endereco: 'Av. Marginal Tietê, 3000 – Vila Maria', latitude: -23.5156, longitude: -46.5875, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SP-0012', endId: 'SP0012', endereco: 'Rua do Gasômetro, 800 – Brás', latitude: -23.5457, longitude: -46.6134, operadora: 'TIM', status: 'inativo' },
+      { siteId: 'RJ-0001', endId: 'RJ0001', endereco: 'Av. Atlântica, 2000 – Copacabana', latitude: -22.9711, longitude: -43.1822, operadora: 'VIVO', observacoes: 'ERBS próxima ao calçadão', status: 'ativo' },
+      { siteId: 'RJ-0002', endId: 'RJ0002', endereco: 'Av. das Américas, 5000 – Barra da Tijuca', latitude: -23.0063, longitude: -43.3239, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RJ-0003', endId: 'RJ0003', endereco: 'Rua Voluntários da Pátria, 450 – Botafogo', latitude: -22.9519, longitude: -43.1842, operadora: 'TIM', observacoes: 'Site compartilhado (colocation)', status: 'ativo' },
+      { siteId: 'RJ-0004', endId: 'RJ0004', endereco: 'Estrada das Canoas, 1200 – São Conrado', latitude: -22.9931, longitude: -43.2703, operadora: 'VIVO', observacoes: 'Cobertura em morro', status: 'ativo' },
+      { siteId: 'RJ-0005', endId: 'RJ0005', endereco: 'Av. Brasil, 10000 – Maré', latitude: -22.8707, longitude: -43.2719, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RJ-0006', endId: 'RJ0006', endereco: 'Praia de Botafogo, 700 – Botafogo', latitude: -22.9468, longitude: -43.1832, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'RJ-0007', endId: 'RJ0007', endereco: 'Av. Nossa Senhora de Copacabana, 1200 – Copacabana', latitude: -22.9679, longitude: -43.1839, operadora: 'VIVO', status: 'ativo' },
+      { siteId: 'RJ-0008', endId: 'RJ0008', endereco: 'Estrada do Galeão, 1500 – Ilha do Governador', latitude: -22.8116, longitude: -43.2016, operadora: 'CLARO', observacoes: 'Suporte à cobertura do aeroporto', status: 'ativo' },
+      { siteId: 'RJ-0009', endId: 'RJ0009', endereco: 'Rua do Ouvidor, 100 – Centro', latitude: -22.9035, longitude: -43.1796, operadora: 'TIM', status: 'inativo' },
+      { siteId: 'MG-0001', endId: 'MG0001', endereco: 'Av. Afonso Pena, 2500 – Funcionários', latitude: -19.9227, longitude: -43.9451, operadora: 'VIVO', observacoes: 'ERBS com painel solar', status: 'ativo' },
+      { siteId: 'MG-0002', endId: 'MG0002', endereco: 'Av. do Contorno, 6500 – Savassi', latitude: -19.9318, longitude: -43.9359, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'MG-0003', endId: 'MG0003', endereco: 'Av. Antônio Carlos, 4000 – Pampulha', latitude: -19.8466, longitude: -43.9485, operadora: 'TIM', observacoes: 'Site próximo ao campus universitário', status: 'ativo' },
+      { siteId: 'MG-0004', endId: 'MG0004', endereco: 'Av. Cristiano Machado, 3500 – Venda Nova', latitude: -19.8528, longitude: -43.9378, operadora: 'VIVO', status: 'ativo' },
+      { siteId: 'MG-0005', endId: 'MG0005', endereco: 'Rua da Bahia, 1800 – Centro', latitude: -19.9265, longitude: -43.9346, operadora: 'CLARO', status: 'inativo' },
+      { siteId: 'RS-0001', endId: 'RS0001', endereco: 'Av. Ipiranga, 6681 – Partenon', latitude: -30.0553, longitude: -51.1717, operadora: 'VIVO', observacoes: 'Site universitário com alta demanda', status: 'ativo' },
+      { siteId: 'RS-0002', endId: 'RS0002', endereco: 'Av. Borges de Medeiros, 800 – Centro', latitude: -30.0318, longitude: -51.2302, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RS-0003', endId: 'RS0003', endereco: 'Av. Assis Brasil, 1200 – Passo D´Areia', latitude: -30.0063, longitude: -51.1654, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'PR-0001', endId: 'PR0001', endereco: 'Av. Sete de Setembro, 3000 – Rebouças', latitude: -25.4385, longitude: -49.2781, operadora: 'VIVO', observacoes: 'ERBS em torre de concreto', status: 'ativo' },
+      { siteId: 'PR-0002', endId: 'PR0002', endereco: 'Rua XV de Novembro, 1500 – Centro', latitude: -25.4286, longitude: -49.2715, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SC-0001', endId: 'SC0001', endereco: 'Av. Beira-Mar Norte, 1500 – Centro', latitude: -27.5935, longitude: -48.5483, operadora: 'TIM', observacoes: 'Cobertura da orla', status: 'ativo' },
+      { siteId: 'BA-0001', endId: 'BA0001', endereco: 'Av. Oceânica, 2000 – Ondina', latitude: -13.0068, longitude: -38.4954, operadora: 'VIVO', observacoes: 'Site litorâneo em edifício', status: 'ativo' },
+    ];
+
+    for (const station of stations) {
+      await this.stationsService.create(station);
+    }
+
+    console.log(`Seed: ${stations.length} stations created`);
+  }
+
+  private async seedRadiolinks() {
+    const { total } = await this.radioLinksService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const { data: stations } = await this.stationsService.findAll({ limit: 100 });
+    if (stations.length === 0) return;
+
+    type SeedRadioLink = {
+      aIdx: number;
+      bIdx: number;
+      frequencia?: string;
+      capacidade?: string;
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const radioLinks: SeedRadioLink[] = [
+      { aIdx: 0, bIdx: 1, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Enlace urbano de baixa distância', status: 'ativo' },
+      { aIdx: 2, bIdx: 3, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Backbone local', status: 'ativo' },
+      { aIdx: 4, bIdx: 5, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 6, bIdx: 7, frequencia: '5.8 GHz', capacidade: '100 Mbps', status: 'inativo' },
+      { aIdx: 8, bIdx: 9, frequencia: '13 GHz', capacidade: '500 Mbps', status: 'ativo' },
+      { aIdx: 10, bIdx: 11, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 0, bIdx: 3, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Rede em anel - caminho de reserva', status: 'ativo' },
+      { aIdx: 0, bIdx: 9, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 13, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Enlace costeiro', status: 'ativo' },
+      { aIdx: 14, bIdx: 15, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 16, bIdx: 17, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 18, bIdx: 19, frequencia: '13 GHz', capacidade: '500 Mbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 16, frequencia: '5.8 GHz', capacidade: '100 Mbps', observacoes: 'Suporte a cobertura de evento', status: 'inativo' },
+      { aIdx: 21, bIdx: 22, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 23, bIdx: 24, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 26, bIdx: 27, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Travessia urbana', status: 'ativo' },
+      { aIdx: 29, bIdx: 30, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 20, bIdx: 21, frequencia: '11 GHz', capacidade: '300 Mbps', observacoes: 'Backbone inter-cidade', status: 'ativo' },
+      { aIdx: 25, bIdx: 26, frequencia: '13 GHz', capacidade: '500 Mbps', observacoes: 'Enlace de longa distância', status: 'ativo' },
+      { aIdx: 28, bIdx: 29, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 31, bIdx: 32, frequencia: '11 GHz', capacidade: '300 Mbps', observacoes: 'Enlace costeiro Norte-Sul', status: 'ativo' },
+      { aIdx: 3, bIdx: 5, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 5, bIdx: 7, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 7, bIdx: 9, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 9, bIdx: 11, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 18, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Rede em anel - orla', status: 'ativo' },
+      { aIdx: 13, bIdx: 19, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 14, bIdx: 16, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'inativo' },
+      { aIdx: 21, bIdx: 23, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 26, bIdx: 28, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Backbone regional', status: 'ativo' },
+      { aIdx: 0, bIdx: 2, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 2, bIdx: 4, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 4, bIdx: 6, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+    ];
+
+    let created = 0;
+    for (const link of radioLinks) {
+      const stationA = stations[link.aIdx];
+      const stationB = stations[link.bIdx];
+      if (!stationA || !stationB) continue;
+
+      await this.radioLinksService.create({
+        nome: `${stationA.siteId} – ${stationB.siteId}`,
+        frequencia: link.frequencia,
+        capacidade: link.capacidade,
+        stationAId: stationA.id,
+        stationBId: stationB.id,
+        observacoes: link.observacoes,
+        status: link.status,
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} radio links created`);
+  }
+
+  private async seedServiceOrders() {
+    const { total } = await this.serviceOrdersService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const { data: stations } = await this.stationsService.findAll({ limit: 100 });
+
+    type SeedServiceOrder = {
+      cliente: string;
+      descricao: string;
+      stationIdx?: number;
+      operadora?: 'TIM' | 'CLARO' | 'VIVO' | 'Outras';
+      dataInicio: string;
+      dataFim: string;
+      status: 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
+      observacoes?: string;
+    };
+
+    const serviceOrders: SeedServiceOrder[] = [
+      { cliente: 'Operadora Alpha', descricao: 'Instalação de antena setorial e rádio na estação do centro.', stationIdx: 0, dataInicio: '2026-08-03', dataFim: '2026-08-05', status: 'em_andamento', observacoes: 'Equipe alocada: Carlos Silva.' },
+      { cliente: 'Operadora Beta', descricao: 'Alinhamento de enlace ponto a ponto de 18 GHz.', stationIdx: 1, dataInicio: '2026-08-04', dataFim: '2026-08-04', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Manutenção preventiva: limpeza, aperto de conectores e medições de potência.', stationIdx: 2, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Comissionamento de rádio link 11 GHz com testes de throughput.', stationIdx: 3, dataInicio: '2026-08-07', dataFim: '2026-08-08', status: 'em_andamento', observacoes: 'Aguardando janela de acesso.' },
+      { cliente: 'Operadora Beta', descricao: 'Substituição de rádio danificado por incêndio.', stationIdx: 4, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Atualização de firmware da BTS.', stationIdx: 5, dataInicio: '2026-08-12', dataFim: '2026-08-12', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de CFTV e controle de acesso no site.', stationIdx: 6, dataInicio: '2026-08-13', dataFim: '2026-08-15', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Otimização de cobertura da região central.', stationIdx: 7, dataInicio: '2026-08-17', dataFim: '2026-08-18', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Migração de célula 4G para 5G NSA.', stationIdx: 8, dataInicio: '2026-08-19', dataFim: '2026-08-19', status: 'cancelada', observacoes: 'Cancelada pela operadora.' },
+      { cliente: 'Operadora Gamma', descricao: 'Levantamento topográfico para nova ERBS.', stationIdx: 9, dataInicio: '2026-08-20', dataFim: '2026-08-21', status: 'em_andamento' },
+      { cliente: 'Operadora Alpha', descricao: 'Teste de aceitação (SAT/UAT) da estação recém-instalada.', stationIdx: 10, dataInicio: '2026-08-24', dataFim: '2026-08-25', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de rádio 5.8 GHz para ponto de internet rural.', stationIdx: 11, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Manutenção corretiva de perda de sinal no enlace.', stationIdx: 12, dataInicio: '2026-08-03', dataFim: '2026-08-03', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de painéis solares e banco de baterias.', stationIdx: 13, dataInicio: '2026-08-05', dataFim: '2026-08-08', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Conectorização e emenda de fibra óptica na DIO.', stationIdx: 14, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Revisão de inventário de equipamentos ativos e passivos.', stationIdx: 15, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de rádio de backup com failover automático.', stationIdx: 16, dataInicio: '2026-08-12', dataFim: '2026-08-14', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Georreferenciamento das coordenadas do site.', stationIdx: 17, dataInicio: '2026-08-13', dataFim: '2026-08-13', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Ampliação da capacidade do enlace de retorno.', stationIdx: 18, dataInicio: '2026-08-17', dataFim: '2026-08-19', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Pintura e adequação de segurança da torre.', stationIdx: 19, dataInicio: '2026-08-20', dataFim: '2026-08-22', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de iluminação de obstrução na torre.', stationIdx: 20, dataInicio: '2026-08-24', dataFim: '2026-08-25', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Análise de interferência no enlace de 23 GHz.', stationIdx: 21, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de rádios 13 GHz e realinhamento de antenas.', stationIdx: 22, dataInicio: '2026-08-03', dataFim: '2026-08-04', status: 'concluida' },
+      { cliente: 'Operadora Beta', descricao: 'Manutenção preventiva de energia e aterramento.', stationIdx: 23, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Comissionamento de enlace de 18 GHz entre torres.', stationIdx: 24, dataInicio: '2026-08-07', dataFim: '2026-08-08', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de antena parabólica de 1,2m.', stationIdx: 25, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Atualização de licença de software do rádio.', stationIdx: 26, dataInicio: '2026-08-13', dataFim: '2026-08-13', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Troca de cabos de alimentação da torre.', stationIdx: 27, dataInicio: '2026-08-14', dataFim: '2026-08-15', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Levantamento de visada para novo enlace.', stationIdx: 28, dataInicio: '2026-08-17', dataFim: '2026-08-18', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de quadros de energia e disjuntores.', stationIdx: 29, dataInicio: '2026-08-19', dataFim: '2026-08-20', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Teste de failover e comutação automática de enlace.', stationIdx: 30, dataInicio: '2026-08-21', dataFim: '2026-08-21', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Reaperto de conectores e medições de VSWR.', stationIdx: 31, dataInicio: '2026-08-24', dataFim: '2026-08-24', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Inspeção e laudo fotográfico da estação.', stationIdx: 32, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+    ];
+
+    let created = 0;
+    for (const so of serviceOrders) {
+      const station = so.stationIdx != null ? stations[so.stationIdx] : undefined;
+      await this.serviceOrdersService.create({
+        cliente: so.cliente,
+        descricao: so.descricao,
+        siteId: station?.siteId,
+        endId: station?.endId,
+        operadora: (so.operadora ?? station?.operadora ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
+        endereco: station?.endereco,
+        dataInicio: so.dataInicio,
+        dataFim: so.dataFim,
+        status: so.status,
+        observacoes: so.observacoes,
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} service orders created`);
+  }
+
+  private async seedClients() {
+    const { total } = await this.clientsService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    type SeedClient = {
+      nome: string;
+      documento?: string;
+      email?: string;
+      telefone?: string;
+      endereco?: string;
+      cidade?: string;
+      uf?: string;
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const clients: SeedClient[] = [
+      { nome: 'Operadora Alpha Telecom', documento: '12.345.678/0001-90', email: 'contato@alpha.com.br', telefone: '(11) 4000-1001', endereco: 'Av. Paulista, 1000', cidade: 'São Paulo', uf: 'SP', observacoes: 'Contrato anual de manutenção de enlaces.', status: 'ativo' },
+      { nome: 'Operadora Beta Mobile', documento: '23.456.789/0001-01', email: 'contato@betamobile.com.br', telefone: '(11) 4000-1002', endereco: 'Av. Faria Lima, 2000', cidade: 'São Paulo', uf: 'SP', status: 'ativo' },
+      { nome: 'Operadora Gamma Fiber', documento: '34.567.890/0001-12', email: 'contato@gammafiber.com.br', telefone: '(11) 4000-1003', endereco: 'Av. Ibirapuera, 2500', cidade: 'São Paulo', uf: 'SP', observacoes: 'Expandindo rede de fibra em condomínios.', status: 'ativo' },
+      { nome: 'Norte Redes Telecom', documento: '45.678.901/0001-23', email: 'contato@norteredestelecom.com.br', telefone: '(92) 3000-1004', endereco: 'Av. das Torres, 500', cidade: 'Manaus', uf: 'AM', status: 'ativo' },
+      { nome: 'Sul Conecta Ltda', documento: '56.789.012/0001-34', email: 'contato@sulconecta.com.br', telefone: '(51) 3000-1005', endereco: 'Av. Ipiranga, 1500', cidade: 'Porto Alegre', uf: 'RS', status: 'ativo' },
+      { nome: 'Leste Fibra Óptica', documento: '67.890.123/0001-45', email: 'contato@lestefibra.com.br', telefone: '(21) 3000-1006', endereco: 'Av. das Américas, 3000', cidade: 'Rio de Janeiro', uf: 'RJ', status: 'ativo' },
+      { nome: 'Centro Telecom SP', documento: '78.901.234/0001-56', email: 'contato@centrotelecom.com.br', telefone: '(11) 3000-1007', endereco: 'Rua da Consolação, 1500', cidade: 'São Paulo', uf: 'SP', status: 'ativo' },
+      { nome: 'Vale Rádio Comunicações', documento: '89.012.345/0001-67', email: 'contato@valeradio.com.br', telefone: '(12) 3000-1008', endereco: 'Av. Paraibuna, 900', cidade: 'São José dos Campos', uf: 'SP', observacoes: 'Enlaces rurais de longa distância.', status: 'ativo' },
+      { nome: 'Serra Antenas Ltda', documento: '90.123.456/0001-78', email: 'contato@serraantenas.com.br', telefone: '(27) 3000-1009', endereco: 'Av. Nossa Senhora da Penha, 700', cidade: 'Vitória', uf: 'ES', status: 'ativo' },
+      { nome: 'Praia Net Banda Larga', documento: '11.234.567/0001-89', email: 'contato@praianet.com.br', telefone: '(48) 3000-1010', endereco: 'Av. Beira-Mar, 800', cidade: 'Florianópolis', uf: 'SC', status: 'ativo' },
+      { nome: 'Campo Wireless', documento: '22.345.678/0001-90', email: 'contato@campowireless.com.br', telefone: '(62) 3000-1011', endereco: 'Av. Goiás, 1200', cidade: 'Goiânia', uf: 'GO', status: 'ativo' },
+      { nome: 'Sertão Telecom', documento: '33.456.789/0001-01', email: 'contato@sertaotelecom.com.br', telefone: '(81) 3000-1012', endereco: 'Av. Agamenon Magalhães, 800', cidade: 'Recife', uf: 'PE', status: 'inativo' },
+      { nome: 'Bahia Link', documento: '44.567.890/0001-12', email: 'contato@bahialink.com.br', telefone: '(71) 3000-1013', endereco: 'Av. Oceânica, 2000', cidade: 'Salvador', uf: 'BA', status: 'ativo' },
+      { nome: 'Centro-Oeste Comunic', documento: '55.678.901/0001-23', email: 'contato@centrooestecomunic.com.br', telefone: '(67) 3000-1014', endereco: 'Av. Afonso Pena, 1500', cidade: 'Campo Grande', uf: 'MS', status: 'ativo' },
+      { nome: 'Norte Forte Telecom', documento: '66.789.012/0001-34', email: 'contato@norteforte.com.br', telefone: '(91) 3000-1015', endereco: 'Av. Presidente Vargas, 500', cidade: 'Belém', uf: 'PA', status: 'ativo' },
+      { nome: 'Nordeste Digital', documento: '77.890.123/0001-45', email: 'contato@nordestedigital.com.br', telefone: '(85) 3000-1016', endereco: 'Av. Bezerra de Menezes, 1800', cidade: 'Fortaleza', uf: 'CE', status: 'ativo' },
+      { nome: 'Minas Conecta', documento: '88.901.234/0001-56', email: 'contato@minasconecta.com.br', telefone: '(31) 3000-1017', endereco: 'Av. Afonso Pena, 2500', cidade: 'Belo Horizonte', uf: 'MG', observacoes: 'Projeto de expansão 5G.', status: 'ativo' },
+      { nome: 'Paraná Rádio Enlaces', documento: '99.012.345/0001-67', email: 'contato@paranaradio.com.br', telefone: '(41) 3000-1018', endereco: 'Av. Sete de Setembro, 3000', cidade: 'Curitiba', uf: 'PR', status: 'ativo' },
+      { nome: 'Catarina Fibra', documento: '10.987.654/0001-78', email: 'contato@catarinafibra.com.br', telefone: '(49) 3000-1019', endereco: 'Rua Frei Gabriel, 400', cidade: 'Blumenau', uf: 'SC', status: 'inativo' },
+      { nome: 'Rio Grande Net', documento: '21.876.543/0001-89', email: 'contato@riograndenet.com.br', telefone: '(53) 3000-1020', endereco: 'Av. Rio Branco, 600', cidade: 'Pelotas', uf: 'RS', status: 'ativo' },
+      { nome: 'Goiás Rural Link', documento: '32.765.432/0001-90', email: 'contato@goiasrural.com.br', telefone: '(64) 3000-1021', endereco: 'Av. Paranaíba, 300', cidade: 'Rio Verde', uf: 'GO', observacoes: 'Internet rural via rádio.', status: 'ativo' },
+      { nome: 'Mato Grosso Fibra', documento: '43.654.321/0001-01', email: 'contato@mtfibra.com.br', telefone: '(65) 3000-1022', endereco: 'Av. Fernando Corrêa da Costa, 700', cidade: 'Cuiabá', uf: 'MT', status: 'ativo' },
+      { nome: 'Tocantins Telecom', documento: '54.543.210/0001-12', email: 'contato@totelecom.com.br', telefone: '(63) 3000-1023', endereco: 'Av. Joaquim Teotônio Segurado, 1000', cidade: 'Palmas', uf: 'TO', status: 'ativo' },
+      { nome: 'Amazônia Link', documento: '65.432.109/0001-23', email: 'contato@amazonialink.com.br', telefone: '(92) 3000-1024', endereco: 'Av. Constantino Nery, 800', cidade: 'Manaus', uf: 'AM', status: 'ativo' },
+      { nome: 'Rondônia Conecta', documento: '76.321.098/0001-34', email: 'contato@roconecta.com.br', telefone: '(69) 3000-1025', endereco: 'Av. Presidente Dutra, 600', cidade: 'Porto Velho', uf: 'RO', status: 'ativo' },
+      { nome: 'Acre Net', documento: '87.210.987/0001-45', email: 'contato@acrenet.com.br', telefone: '(68) 3000-1026', endereco: 'Av. Ceará, 400', cidade: 'Rio Branco', uf: 'AC', status: 'inativo' },
+      { nome: 'Espírito Santo Rádio', documento: '98.109.876/0001-56', email: 'contato@esradio.com.br', telefone: '(27) 3000-1027', endereco: 'Av. Dante Michelini, 1000', cidade: 'Vitória', uf: 'ES', status: 'ativo' },
+      { nome: 'Pernambuco Digital', documento: '09.098.765/0001-67', email: 'contato@pe-digital.com.br', telefone: '(81) 3000-1028', endereco: 'Av. Caxangá, 1200', cidade: 'Recife', uf: 'PE', status: 'ativo' },
+      { nome: 'Ceará Wireless', documento: '01.987.654/0001-78', email: 'contato@cearawireless.com.br', telefone: '(85) 3000-1029', endereco: 'Av. Washington Soares, 900', cidade: 'Fortaleza', uf: 'CE', status: 'ativo' },
+      { nome: 'Alagoas Link', documento: '02.876.543/0001-89', email: 'contato@alagolaslink.com.br', telefone: '(82) 3000-1030', endereco: 'Av. Fernandes Lima, 800', cidade: 'Maceió', uf: 'AL', status: 'ativo' },
+      { nome: 'Sergipe Net', documento: '03.765.432/0001-90', email: 'contato@sergipenet.com.br', telefone: '(79) 3000-1031', endereco: 'Av. Tancredo Neves, 1000', cidade: 'Aracaju', uf: 'SE', status: 'ativo' },
+      { nome: 'Paraíba Conecta', documento: '04.654.321/0001-01', email: 'contato@pbconecta.com.br', telefone: '(83) 3000-1032', endereco: 'Av. Epitácio Pessoa, 1200', cidade: 'João Pessoa', uf: 'PB', status: 'ativo' },
+      { nome: 'Piauí Telecom', documento: '05.543.210/0001-12', email: 'contato@piauitelecom.com.br', telefone: '(86) 3000-1033', endereco: 'Av. Maranhão, 700', cidade: 'Teresina', uf: 'PI', status: 'ativo' },
+    ];
+
+    for (const client of clients) {
+      await this.clientsService.create(client);
+    }
+
+    console.log(`Seed: ${clients.length} clients created`);
   }
 }

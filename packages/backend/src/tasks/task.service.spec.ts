@@ -11,6 +11,7 @@ describe('TaskService', () => {
     create: jest.fn(),
     save: jest.fn(),
     findOne: jest.fn(),
+    find: jest.fn(),
     delete: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
@@ -77,6 +78,31 @@ describe('TaskService', () => {
       expect(result.status).toBe('in_progress');
       expect(result.priority).toBe('high');
     });
+
+    it('should create a subtask when the parent task exists', async () => {
+      const created = {
+        id: 3,
+        title: 'Subtarefa',
+        status: 'pending',
+        priority: 'medium',
+        parentId: 1,
+      } as Task;
+      repository.findOne.mockResolvedValue({ id: 1, title: 'Tarefa' });
+      repository.create.mockReturnValue(created);
+      repository.save.mockResolvedValue(created);
+
+      const result = await service.create({ title: 'Subtarefa', parentId: 1 });
+
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ parentId: 1 }));
+      expect(result.parentId).toBe(1);
+    });
+
+    it('should throw NotFoundException when creating a subtask with an unknown parent', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.create({ title: 'Subtarefa', parentId: 99 })).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('findAll', () => {
@@ -101,7 +127,8 @@ describe('TaskService', () => {
 
       await service.findAll({ search: 'manu', status: 'pending', priority: 'high' });
 
-      expect(qb.where).toHaveBeenCalledWith(
+      expect(qb.where).toHaveBeenCalledWith('t.parentId IS NULL');
+      expect(qb.andWhere).toHaveBeenCalledWith(
         't.title LIKE :search OR t.description LIKE :search OR t.project LIKE :search OR t.client LIKE :search OR t.assignedTo LIKE :search',
         { search: '%manu%' },
       );
@@ -129,13 +156,17 @@ describe('TaskService', () => {
   });
 
   describe('findById', () => {
-    it('should return the task when found', async () => {
-      const task = { id: 1, title: 'Tarefa' } as Task;
+    it('should return the task with subtasks when found', async () => {
+      const task = { id: 1, title: 'Tarefa', subtasks: [] } as unknown as Task;
       repository.findOne.mockResolvedValue(task);
 
       const result = await service.findById(1);
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { subtasks: true },
+        order: { subtasks: { createdAt: 'ASC' } },
+      });
       expect(result).toEqual(task);
     });
 
@@ -143,6 +174,30 @@ describe('TaskService', () => {
       repository.findOne.mockResolvedValue(null);
 
       await expect(service.findById(1)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findSubtasks', () => {
+    it('should return the subtasks of a task', async () => {
+      repository.findOne.mockResolvedValue({ id: 1, title: 'Tarefa' });
+      repository.find = jest.fn().mockResolvedValue([
+        { id: 2, title: 'Subtarefa 1', parentId: 1 },
+        { id: 3, title: 'Subtarefa 2', parentId: 1 },
+      ]);
+
+      const result = await service.findSubtasks(1);
+
+      expect(repository.find).toHaveBeenCalledWith({
+        where: { parentId: 1 },
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toHaveLength(2);
+    });
+
+    it('should throw NotFoundException when the parent task does not exist', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.findSubtasks(99)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -168,10 +223,11 @@ describe('TaskService', () => {
   });
 
   describe('delete', () => {
-    it('should delete the task when found', async () => {
+    it('should delete the subtasks and then the task when found', async () => {
       repository.delete.mockResolvedValue({ affected: 1 });
 
       await expect(service.delete(1)).resolves.toBeUndefined();
+      expect(repository.delete).toHaveBeenCalledWith({ parentId: 1 });
       expect(repository.delete).toHaveBeenCalledWith(1);
     });
 

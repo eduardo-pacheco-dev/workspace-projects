@@ -12,6 +12,10 @@ export class TaskService {
   ) {}
 
   async create(dto: CreateTaskInput): Promise<Task> {
+    if (dto.parentId != null) {
+      const parent = await this.taskRepository.findOne({ where: { id: dto.parentId } });
+      if (!parent) throw new NotFoundException('Tarefa pai não encontrada');
+    }
     const task = this.taskRepository.create({
       ...dto,
       status: dto.status ?? 'pending',
@@ -40,9 +44,10 @@ export class TaskService {
     } = query;
 
     const qb = this.taskRepository.createQueryBuilder('t');
+    qb.where('t.parentId IS NULL');
 
     if (search) {
-      qb.where(
+      qb.andWhere(
         't.title LIKE :search OR t.description LIKE :search OR t.project LIKE :search OR t.client LIKE :search OR t.assignedTo LIKE :search',
         { search: `%${search}%` },
       );
@@ -70,18 +75,35 @@ export class TaskService {
   }
 
   async findById(id: number): Promise<Task> {
-    const task = await this.taskRepository.findOne({ where: { id } });
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      relations: { subtasks: true },
+      order: { subtasks: { createdAt: 'ASC' } },
+    });
     if (!task) throw new NotFoundException('Tarefa não encontrada');
     return task;
   }
 
+  async findSubtasks(id: number): Promise<Task[]> {
+    await this.findById(id);
+    return this.taskRepository.find({
+      where: { parentId: id },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async update(id: number, dto: UpdateTaskInput): Promise<Task> {
     const task = await this.findById(id);
+    if (dto.parentId != null) {
+      const parent = await this.taskRepository.findOne({ where: { id: dto.parentId } });
+      if (!parent) throw new NotFoundException('Tarefa pai não encontrada');
+    }
     Object.assign(task, dto);
     return this.taskRepository.save(task);
   }
 
   async delete(id: number): Promise<void> {
+    await this.taskRepository.delete({ parentId: id });
     const result = await this.taskRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException('Tarefa não encontrada');

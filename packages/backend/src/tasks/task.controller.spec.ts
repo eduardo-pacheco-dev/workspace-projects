@@ -204,4 +204,80 @@ describe('TaskController (integration)', () => {
         .expect(404);
     });
   });
+
+  describe('subtasks', () => {
+    it('should create a subtask with parentId and list only top-level tasks', async () => {
+      const parent = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Tarefa pai' })
+        .expect(201);
+
+      const sub = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Subtarefa 1', parentId: parent.body.id })
+        .expect(201);
+
+      expect(sub.body.parentId).toBe(parent.body.id);
+
+      const list = await request(app.getHttpServer())
+        .get('/tasks')
+        .query({ search: 'Tarefa pai' })
+        .expect(200);
+      expect(list.body.total).toBe(1);
+
+      const subs = await request(app.getHttpServer())
+        .get(`/tasks/${parent.body.id}/subtasks`)
+        .expect(200);
+      expect(Array.isArray(subs.body)).toBe(true);
+      expect(subs.body.some((t: any) => t.id === sub.body.id)).toBe(true);
+    });
+
+    it('should include subtasks in the task detail', async () => {
+      const parent = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Tarefa com sub' })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Sub A', parentId: parent.body.id })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Sub B', parentId: parent.body.id })
+        .expect(201);
+
+      const res = await request(app.getHttpServer())
+        .get(`/tasks/${parent.body.id}`)
+        .expect(200);
+
+      expect(res.body.subtasks).toHaveLength(2);
+    });
+
+    it('should return 404 when creating a subtask with an unknown parent', async () => {
+      await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Sub órfã', parentId: 9999 })
+        .expect(404);
+    });
+
+    it('should delete subtasks when the parent is deleted', async () => {
+      const parent = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Pai para excluir' })
+        .expect(201);
+      const sub = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: 'Sub para excluir', parentId: parent.body.id })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/tasks/${parent.body.id}`)
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/tasks/${sub.body.id}`)
+        .expect(404);
+    });
+  });
 });

@@ -173,7 +173,7 @@ export default function ClientsPage() {
                   </TableSortLabel>
                 </TableCell>
               ))}
-              <TableCell>Ações</TableCell>
+              <TableCell align="right">Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -199,7 +199,7 @@ export default function ClientsPage() {
                     color={c.status === 'ativo' ? 'success' : 'default'}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <IconButton
                     onClick={(e) => {
                       e.stopPropagation()

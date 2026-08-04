@@ -12,7 +12,8 @@ export class AttachmentsService {
     private readonly attachmentRepository: Repository<Attachment>,
   ) {}
 
-  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId' | 'clientId' | 'companyId'>): string {
+  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId' | 'clientId' | 'companyId' | 'taskId'>): string {
+    if (attachment.taskId) return path.resolve('uploads', `task-${attachment.taskId}`);
     if (attachment.companyId) return path.resolve('uploads', `company-${attachment.companyId}`);
     if (attachment.clientId) return path.resolve('uploads', `client-${attachment.clientId}`);
     if (attachment.projectId) return path.resolve('uploads', `project-${attachment.projectId}`);
@@ -50,6 +51,21 @@ export class AttachmentsService {
 
     const attachment = this.attachmentRepository.create({
       jobId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
+  async uploadForTask(taskId: number, file: Express.Multer.File): Promise<Attachment> {
+    const dir = path.resolve('uploads', `task-${taskId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      taskId,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,
@@ -176,6 +192,13 @@ export class AttachmentsService {
   async findByJob(jobId: number): Promise<Attachment[]> {
     return this.attachmentRepository.find({
       where: { jobId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByTask(taskId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { taskId },
       order: { createdAt: 'DESC' },
     });
   }

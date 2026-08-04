@@ -13,10 +13,15 @@ import {
   Grid,
   IconButton,
   Tooltip,
+  Tabs,
+  Tab,
+  Paper,
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
 import { z } from 'zod'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import Markdown from '../../components/Markdown'
 import {
   Task,
   statusOptions,
@@ -47,8 +52,25 @@ interface TaskModalProps {
   onSaved: () => void
 }
 
+interface ProjectOption {
+  id: number
+  nome: string
+  cliente: string | null
+}
+
+interface CollaboratorOption {
+  id: number
+  nome: string | null
+  firstName?: string | null
+  lastName?: string | null
+}
+
+const collaboratorName = (c: CollaboratorOption) =>
+  c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
+
 export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalProps) {
   const isEdit = Boolean(editId)
+  const { showToast } = useToast()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -59,10 +81,35 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   const [project, setProject] = useState('')
   const [client, setClient] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [clients, setClients] = useState<string[]>([])
+  const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
+  const [previewMode, setPreviewMode] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    api
+      .get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setProjects(d)
+        const clientSet = new Set<string>()
+        d.forEach((p: any) => { if (p.cliente) clientSet.add(p.cliente) })
+        setClients(Array.from(clientSet))
+      })
+      .catch(() => {})
+    api
+      .get('/collaborators', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setCollaborators(d)
+      })
+      .catch(() => {})
+  }, [open])
 
   useEffect(() => {
     if (open && editId) {
@@ -97,6 +144,7 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
     setProject('')
     setClient('')
     setAssignedTo('')
+    setPreviewMode(false)
     setError('')
     setFieldErrors({})
     setDeleting(false)
@@ -140,11 +188,13 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
       } else {
         await api.post('/tasks', payload)
       }
+      showToast(isEdit ? 'Tarefa atualizada com sucesso.' : 'Tarefa criada com sucesso.')
       reset()
       onSaved()
       onClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }
@@ -192,20 +242,34 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             error={!!fieldErrors.title}
             helperText={fieldErrors.title}
           />
-          <TextField
-            fullWidth
-            label="Descrição"
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value)
-              clearFieldError('description')
-            }}
-            margin="normal"
-            error={!!fieldErrors.description}
-            helperText={fieldErrors.description}
-          />
+          <Tabs
+            value={previewMode ? 1 : 0}
+            onChange={(_, v) => setPreviewMode(v === 1)}
+            sx={{ mt: 1, mb: 0.5, minHeight: 32 }}
+          >
+            <Tab label="Editar" sx={{ minHeight: 32, p: 0.5 }} />
+            <Tab label="Preview" sx={{ minHeight: 32, p: 0.5 }} />
+          </Tabs>
+          {previewMode ? (
+            <Paper variant="outlined" sx={{ p: 2, minHeight: 100, bgcolor: 'background.default' }}>
+              <Markdown>{description}</Markdown>
+            </Paper>
+          ) : (
+            <TextField
+              fullWidth
+              label="Descrição"
+              multiline
+              rows={3}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value)
+                clearFieldError('description')
+              }}
+              margin="normal"
+              error={!!fieldErrors.description}
+              helperText={fieldErrors.description || 'Suporta Markdown'}
+            />
+          )}
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <TextField
@@ -270,20 +334,31 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                select
                 label="Projeto"
                 value={project}
                 onChange={(e) => {
                   setProject(e.target.value)
+                  if (!client) {
+                    const selected = projects.find((p) => p.nome === e.target.value)
+                    if (selected?.cliente) setClient(selected.cliente)
+                  }
                   clearFieldError('project')
                 }}
                 margin="normal"
                 error={!!fieldErrors.project}
-                helperText={fieldErrors.project}
-              />
+                helperText={fieldErrors.project || 'Opcional'}
+              >
+                <MenuItem value="">Sem projeto</MenuItem>
+                {projects.map((p) => (
+                  <MenuItem key={p.id} value={p.nome}>{p.nome}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                select
                 label="Cliente"
                 value={client}
                 onChange={(e) => {
@@ -292,12 +367,18 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
                 }}
                 margin="normal"
                 error={!!fieldErrors.client}
-                helperText={fieldErrors.client}
-              />
+                helperText={fieldErrors.client || 'Opcional'}
+              >
+                <MenuItem value="">Sem cliente</MenuItem>
+                {clients.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
           </Grid>
           <TextField
             fullWidth
+            select
             label="Responsável"
             value={assignedTo}
             onChange={(e) => {
@@ -306,8 +387,13 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             }}
             margin="normal"
             error={!!fieldErrors.assignedTo}
-            helperText={fieldErrors.assignedTo}
-          />
+            helperText={fieldErrors.assignedTo || 'Opcional'}
+          >
+            <MenuItem value="">Sem responsável</MenuItem>
+            {collaborators.map((c) => (
+              <MenuItem key={c.id} value={collaboratorName(c)}>{collaboratorName(c)}</MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (

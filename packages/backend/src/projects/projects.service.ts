@@ -46,7 +46,10 @@ export class ProjectsService {
     return saved;
   }
 
-  async findAll(query: ProjectQuery): Promise<{ data: Project[]; total: number }> {
+  async findAll(
+    query: ProjectQuery,
+    currentUser?: { role: string; companyId: number | null },
+  ): Promise<{ data: Project[]; total: number }> {
     const {
       page = 1,
       limit = 10,
@@ -57,11 +60,19 @@ export class ProjectsService {
       cliente,
     } = query;
 
-    const qb = this.projectsRepository.createQueryBuilder('p');
+    const qb = this.projectsRepository
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.companies', 'companies');
+
+    if (currentUser && currentUser.role !== 'master') {
+      qb.innerJoin('p.companies', 'userCompany').andWhere('userCompany.id = :companyId', {
+        companyId: currentUser?.companyId ?? -1,
+      });
+    }
 
     if (search) {
-      qb.where(
-        'p.nome LIKE :search OR p.codigo LIKE :search OR p.cliente LIKE :search OR p.descricao LIKE :search',
+      qb.andWhere(
+        'p.nome LIKE :search OR p.codigo LIKE :search OR p.cliente LIKE :search OR p.responsavel LIKE :search OR p.descricao LIKE :search',
         { search: `%${search}%` },
       );
     }

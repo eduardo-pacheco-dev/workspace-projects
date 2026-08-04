@@ -18,6 +18,10 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsString()
+  responsavel?: string;
+
+  @IsOptional()
+  @IsString()
   dataInicio?: string;
 
   @IsOptional()

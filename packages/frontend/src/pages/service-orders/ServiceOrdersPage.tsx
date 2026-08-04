@@ -203,7 +203,7 @@ export default function ServiceOrdersPage() {
                   )}
                 </TableCell>
               ))}
-              <TableCell>Ações</TableCell>
+              <TableCell align="right">Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -222,7 +222,7 @@ export default function ServiceOrdersPage() {
                     color={statusColors[so.status] || 'default'}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: so.id }) }}>
                     <Edit />
                   </IconButton>

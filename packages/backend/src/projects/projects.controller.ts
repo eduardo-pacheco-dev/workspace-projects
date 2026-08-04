@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Request,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -33,8 +34,12 @@ export class ProjectsController {
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('cliente') cliente?: string,
+    @Request() req?: any,
   ) {
-    return this.projectsService.findAll({ page, limit, sortBy, sortOrder, search, status, cliente });
+    return this.projectsService.findAll(
+      { page, limit, sortBy, sortOrder, search, status, cliente },
+      req?.user,
+    );
   }
 
   @Get(':id')

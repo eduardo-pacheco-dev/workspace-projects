@@ -10,13 +10,13 @@ import { CompanyCollaboratorController } from './company-collaborator.controller
 import { CompanyFreelancerService } from './company-freelancer.service';
 import { CompanyFreelancerController } from './company-freelancer.controller';
 import { CompanyProjectController } from './company-project.controller';
-import { FreelancersModule } from '../freelancers/freelancers.module';
+import { CollaboratorsModule } from '../collaborators/collaborators.module';
 import { ProjectsModule } from '../projects/projects.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Company, CompanyCollaborator, CompanyFreelancer]),
-    FreelancersModule,
+    CollaboratorsModule,
     ProjectsModule,
   ],
   providers: [CompanyService, CompanyCollaboratorService, CompanyFreelancerService],

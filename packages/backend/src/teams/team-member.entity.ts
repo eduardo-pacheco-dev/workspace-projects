@@ -5,28 +5,30 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Unique,
 } from 'typeorm';
-import { Company } from './company.entity';
+import { Team } from './team.entity';
 import { Collaborator } from '../collaborators/collaborator.entity';
 
-@Entity('company_freelancer')
-export class CompanyFreelancer {
+@Entity('team_member')
+@Unique(['teamId', 'collaboratorId'])
+export class TeamMember {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer' })
-  companyId: number;
+  teamId: number;
 
-  @ManyToOne(() => Company, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'companyId' })
-  company: Company;
+  @ManyToOne(() => Team, (team) => team.members, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'teamId' })
+  team: Team;
 
   @Column({ type: 'integer' })
-  freelancerId: number;
+  collaboratorId: number;
 
   @ManyToOne(() => Collaborator, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'freelancerId' })
-  freelancer: Collaborator;
+  @JoinColumn({ name: 'collaboratorId' })
+  collaborator: Collaborator;
 
   @CreateDateColumn()
   createdAt: Date;

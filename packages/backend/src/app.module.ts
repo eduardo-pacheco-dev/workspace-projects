@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { FreelancersModule } from './freelancers/freelancers.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { ContractsModule } from './contracts/contracts.module';
@@ -21,6 +20,8 @@ import { TasksModule } from './tasks/task.module';
 import { MsProjectModule } from './ms-project/ms-project.module';
 import { SettingsModule } from './settings/settings.module';
 import { CompaniesModule } from './companies/company.module';
+import { CollaboratorsModule } from './collaborators/collaborators.module';
+import { TeamsModule } from './teams/teams.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -51,7 +52,6 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     ),
     AuthModule,
     UsersModule,
-    FreelancersModule,
     JobsModule,
     ProposalsModule,
     ContractsModule,
@@ -70,6 +70,8 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     MsProjectModule,
     SettingsModule,
     CompaniesModule,
+    CollaboratorsModule,
+    TeamsModule,
     SeedModule,
   ],
 })

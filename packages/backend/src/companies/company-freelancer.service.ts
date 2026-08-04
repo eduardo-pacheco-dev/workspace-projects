@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyFreelancer } from './company-freelancer.entity';
 import { CompanyService } from './company.service';
-import { FreelancersService } from '../freelancers/freelancers.service';
-import { Freelancer } from '../freelancers/freelancer.entity';
+import { CollaboratorsService } from '../collaborators/collaborators.service';
+import { Collaborator } from '../collaborators/collaborator.entity';
 
 @Injectable()
 export class CompanyFreelancerService {
@@ -12,7 +12,7 @@ export class CompanyFreelancerService {
     @InjectRepository(CompanyFreelancer)
     private readonly companyFreelancerRepository: Repository<CompanyFreelancer>,
     private readonly companyService: CompanyService,
-    private readonly freelancersService: FreelancersService,
+    private readonly collaboratorsService: CollaboratorsService,
   ) {}
 
   async findAll(
@@ -24,7 +24,7 @@ export class CompanyFreelancerService {
       sortOrder?: 'ASC' | 'DESC';
       search?: string;
     },
-  ): Promise<{ data: (CompanyFreelancer & { freelancer: Freelancer })[]; total: number }> {
+  ): Promise<{ data: (CompanyFreelancer & { freelancer: Collaborator })[]; total: number }> {
     await this.companyService.findById(companyId);
     const {
       page = 1,
@@ -58,12 +58,12 @@ export class CompanyFreelancerService {
       .take(limit)
       .getManyAndCount();
 
-    return { data: data as (CompanyFreelancer & { freelancer: Freelancer })[], total };
+    return { data: data as (CompanyFreelancer & { freelancer: Collaborator })[], total };
   }
 
   async associate(companyId: number, freelancerId: number): Promise<CompanyFreelancer> {
     await this.companyService.findById(companyId);
-    await this.freelancersService.findById(freelancerId);
+    await this.collaboratorsService.getFreelancerOrFail(freelancerId);
 
     const existing = await this.companyFreelancerRepository.findOne({
       where: { companyId, freelancerId },

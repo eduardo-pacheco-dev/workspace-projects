@@ -97,7 +97,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon /> },
     { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
     { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
-    { label: 'Freelancers', path: '/freelancers', icon: <PersonIcon /> },
+    { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon /> },
     { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon /> },
     { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },

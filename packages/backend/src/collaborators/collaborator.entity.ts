@@ -2,22 +2,65 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
+  JoinColumn,
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Company } from '../companies/company.entity';
 import { Lpu } from '../lpu/lpu.entity';
 
-@Entity()
-export class Freelancer {
+@Entity('collaborator')
+export class Collaborator {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'integer', nullable: true })
-  userId?: number;
+  @Column({ type: 'boolean', default: false })
+  isFreelancer: boolean;
 
   @Column({ type: 'text', nullable: true })
-  codigo?: string;
+  codigo: string | null;
+
+  @Column({ type: 'text' })
+  nome: string;
+
+  @Column({ type: 'text', nullable: true })
+  cpf: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  cargo: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  email: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  telefone: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  endereco: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  cidade: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  uf: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  dataAdmissao: string | null;
+
+  @Column({ type: 'text', default: 'ativo' })
+  status: string;
+
+  @Column({ type: 'integer' })
+  companyId: number;
+
+  @ManyToOne(() => Company, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'companyId' })
+  company: Company;
+
+  @Column({ type: 'integer', nullable: true })
+  userId?: number;
 
   @Column({ type: 'text', nullable: true })
   razaoSocial?: string;
@@ -34,23 +77,14 @@ export class Freelancer {
   @Column({ type: 'text', nullable: true })
   foto?: string;
 
-  @Column({ type: 'text', default: 'ativo' })
-  status: string;
-
-  @Column({ type: 'text' })
-  firstName: string;
-
-  @Column({ type: 'text' })
-  lastName: string;
+  @Column({ type: 'text', nullable: true })
+  firstName?: string;
 
   @Column({ type: 'text', nullable: true })
-  email?: string;
+  lastName?: string;
 
   @Column({ type: 'text', nullable: true })
   birthDate?: string;
-
-  @Column({ type: 'text', nullable: true })
-  cpf?: string;
 
   @Column({ type: 'text', nullable: true })
   rg?: string;
@@ -80,6 +114,24 @@ export class Freelancer {
   habilitacaoArquivo?: string;
 
   @Column({ type: 'text', nullable: true })
+  nr10Arquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  nr35Arquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  asoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  epiArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  ordemServicoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  contratoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
   cnh?: string;
 
   @Column({ type: 'text', nullable: true })
@@ -102,15 +154,6 @@ export class Freelancer {
 
   @Column({ type: 'text', nullable: true })
   contatoEmergenciaParentesco?: string;
-
-  @Column({ type: 'text', nullable: true })
-  endereco?: string;
-
-  @Column({ type: 'text', nullable: true })
-  cidade?: string;
-
-  @Column({ type: 'text', nullable: true })
-  uf?: string;
 
   @Column({ type: 'text', nullable: true })
   cep?: string;
@@ -193,23 +236,23 @@ export class Freelancer {
   @Column({ type: 'text', nullable: true })
   epis?: string;
 
-  @Column({ type: 'text' })
-  bio: string;
+  @Column({ type: 'text', nullable: true })
+  bio?: string;
 
-  @Column({ type: 'real' })
-  hourlyRate: number;
+  @Column({ type: 'real', nullable: true })
+  hourlyRate?: number;
 
-  @Column({ type: 'text' })
-  skills: string;
+  @Column({ type: 'text', nullable: true })
+  skills?: string;
 
-  @Column({ type: 'text' })
-  portfolio: string;
+  @Column({ type: 'text', nullable: true })
+  portfolio?: string;
 
-  @Column({ type: 'text' })
-  experienceLevel: string;
+  @Column({ type: 'text', nullable: true })
+  experienceLevel?: string;
 
-  @Column({ type: 'text' })
-  availability: string;
+  @Column({ type: 'text', nullable: true })
+  availability?: string;
 
   @OneToMany(() => Lpu, (lpu) => lpu.freelancer)
   lpus: Lpu[];

@@ -48,7 +48,7 @@ export default function LpuList() {
   const [editId, setEditId] = useState<number | null>(null)
 
   useEffect(() => {
-    api.get('/freelancers?limit=100')
+    api.get('/collaborators', { params: { limit: 100, isFreelancer: true } })
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
         setFreelancers(data)

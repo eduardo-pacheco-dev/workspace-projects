@@ -11,11 +11,12 @@ import {
   CircularProgress,
   MenuItem,
   Grid,
+  Switch,
+  FormControlLabel,
+  Autocomplete,
 } from '@mui/material'
 import { z } from 'zod'
 import api from '../../services/api'
-
-const operadoraOptions = ['TIM', 'CLARO', 'VIVO', 'Outras']
 
 const baseSchema = z.object({
   cliente: z.string().min(1, 'Informe o cliente.'),
@@ -23,6 +24,7 @@ const baseSchema = z.object({
   siteId: z.string().optional(),
   endId: z.string().optional(),
   operadora: z.string().optional(),
+  endereco: z.string().optional(),
   dataInicio: z.string().optional(),
   dataFim: z.string().optional(),
   observacoes: z.string().optional(),
@@ -38,6 +40,28 @@ interface ServiceOrderModalProps {
   onSaved: () => void
 }
 
+interface ClientOption {
+  id: number
+  nome: string
+}
+
+interface StationOption {
+  id: number
+  siteId: string
+  endId: string
+  endereco: string | null
+  operadora: string | null
+}
+
+interface RadioLinkOption {
+  id: number
+  nome: string
+  siteIdA: string | null
+  endIdA: string | null
+  enderecoA: string | null
+  operadoraA: string | null
+}
+
 export default function ServiceOrderModal({ open, editId, onClose, onSaved }: ServiceOrderModalProps) {
   const isEdit = Boolean(editId)
 
@@ -47,6 +71,7 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
   const [siteId, setSiteId] = useState('')
   const [endId, setEndId] = useState('')
   const [operadora, setOperadora] = useState('')
+  const [endereco, setEndereco] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [status, setStatus] = useState('aberta')
@@ -54,6 +79,36 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const [clients, setClients] = useState<ClientOption[]>([])
+  const [stations, setStations] = useState<StationOption[]>([])
+  const [radioLinks, setRadioLinks] = useState<RadioLinkOption[]>([])
+  const [targetType, setTargetType] = useState<'estacao' | 'enlace'>('estacao')
+  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null)
+  const [selectedStation, setSelectedStation] = useState<StationOption | null>(null)
+  const [selectedRadioLink, setSelectedRadioLink] = useState<RadioLinkOption | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    api.get('/clients', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setClients(d)
+      })
+      .catch(() => {})
+    api.get('/stations', { params: { limit: 1000, sortBy: 'siteId', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setStations(d)
+      })
+      .catch(() => {})
+    api.get('/radio-links', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setRadioLinks(d)
+      })
+      .catch(() => {})
+  }, [open])
 
   useEffect(() => {
     if (open && editId) {
@@ -64,10 +119,12 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
           const d = res.data
           setNumero(d.numero || '')
           setCliente(d.cliente || '')
+          setSelectedClient(clients.find((c) => c.nome === d.cliente) || null)
           setDescricao(d.descricao || '')
           setSiteId(d.siteId || '')
           setEndId(d.endId || '')
           setOperadora(d.operadora || '')
+          setEndereco(d.endereco || '')
           setDataInicio(d.dataInicio || '')
           setDataFim(d.dataFim || '')
           setStatus(d.status || 'aberta')
@@ -76,13 +133,29 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
     }
-  }, [open, editId])
+  }, [open, editId, clients])
 
   const getFieldErrors = (error: z.ZodError) =>
     Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
 
   const clearFieldError = (field: string) =>
     setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+
+  const handleSelectStation = (station: StationOption | null) => {
+    setSelectedStation(station)
+    setSiteId(station?.siteId ?? '')
+    setEndId(station?.endId ?? '')
+    setOperadora(station?.operadora ?? '')
+    setEndereco(station?.endereco ?? '')
+  }
+
+  const handleSelectRadioLink = (link: RadioLinkOption | null) => {
+    setSelectedRadioLink(link)
+    setSiteId(link?.siteIdA ?? '')
+    setEndId(link?.endIdA ?? '')
+    setOperadora(link?.operadoraA ?? '')
+    setEndereco(link?.enderecoA ?? '')
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -95,6 +168,7 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
       siteId,
       endId,
       operadora,
+      endereco,
       dataInicio,
       dataFim,
       observacoes,
@@ -113,6 +187,7 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
       siteId,
       endId,
       operadora,
+      endereco,
       dataInicio,
       dataFim,
       observacoes,
@@ -145,10 +220,15 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     setSiteId('')
     setEndId('')
     setOperadora('')
+    setEndereco('')
     setDataInicio('')
     setDataFim('')
     setStatus('aberta')
     setObservacoes('')
+    setTargetType('estacao')
+    setSelectedClient(null)
+    setSelectedStation(null)
+    setSelectedRadioLink(null)
     onClose()
   }
 
@@ -161,18 +241,28 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
           {isEdit && (
             <TextField fullWidth label="Número da OS" value={numero} margin="normal" disabled />
           )}
-          <TextField
+          <Autocomplete
             fullWidth
-            label="Cliente"
-            value={cliente}
-            onChange={(e) => {
-              setCliente(e.target.value)
+            options={clients}
+            getOptionLabel={(c) => c.nome}
+            value={selectedClient}
+            onChange={(_, v) => {
+              setSelectedClient(v)
+              setCliente(v?.nome ?? '')
               clearFieldError('cliente')
             }}
-            margin="normal"
-            required
-            error={!!fieldErrors.cliente}
-            helperText={fieldErrors.cliente}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Cliente"
+                margin="normal"
+                required
+                placeholder="Busque pelo nome do cliente"
+                error={!!fieldErrors.cliente}
+                helperText={fieldErrors.cliente}
+              />
+            )}
           />
           <TextField
             fullWidth
@@ -188,56 +278,69 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
             error={!!fieldErrors.descricao}
             helperText={fieldErrors.descricao}
           />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Site ID"
-                value={siteId}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={targetType === 'enlace'}
                 onChange={(e) => {
-                  setSiteId(e.target.value)
-                  clearFieldError('siteId')
+                  setTargetType(e.target.checked ? 'enlace' : 'estacao')
+                  setSelectedStation(null)
+                  setSelectedRadioLink(null)
+                  setSiteId('')
+                  setEndId('')
+                  setOperadora('')
+                  setEndereco('')
                 }}
-                margin="normal"
-                error={!!fieldErrors.siteId}
-                helperText={fieldErrors.siteId}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="End ID"
-                value={endId}
-                onChange={(e) => {
-                  setEndId(e.target.value)
-                  clearFieldError('endId')
-                }}
-                margin="normal"
-                error={!!fieldErrors.endId}
-                helperText={fieldErrors.endId}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                select
-                label="Operadora"
-                value={operadora}
-                onChange={(e) => {
-                  setOperadora(e.target.value)
-                  clearFieldError('operadora')
-                }}
-                margin="normal"
-                error={!!fieldErrors.operadora}
-                helperText={fieldErrors.operadora}
-              >
-                <MenuItem value="">Selecione</MenuItem>
-                {operadoraOptions.map((op) => (
-                  <MenuItem key={op} value={op}>{op}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-          </Grid>
+            }
+            label={targetType === 'estacao' ? 'Estação' : 'Enlace de Rádio'}
+            sx={{ mt: 1 }}
+          />
+          {targetType === 'estacao' ? (
+            <Autocomplete
+              fullWidth
+              options={stations}
+              getOptionLabel={(s) => `${s.siteId} - ${s.endereco || s.endId}`}
+              value={selectedStation}
+              onChange={(_, v) => {
+                handleSelectStation(v)
+                clearFieldError('siteId')
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Estação"
+                  margin="normal"
+                  placeholder="Busque pelo site id ou endereço"
+                  error={!!fieldErrors.siteId}
+                  helperText={fieldErrors.siteId}
+                />
+              )}
+            />
+          ) : (
+            <Autocomplete
+              fullWidth
+              options={radioLinks}
+              getOptionLabel={(r) => r.nome}
+              value={selectedRadioLink}
+              onChange={(_, v) => {
+                handleSelectRadioLink(v)
+                clearFieldError('siteId')
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Enlace de Rádio"
+                  margin="normal"
+                  placeholder="Busque pelo nome do enlace"
+                  error={!!fieldErrors.siteId}
+                  helperText={fieldErrors.siteId}
+                />
+              )}
+            />
+          )}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField

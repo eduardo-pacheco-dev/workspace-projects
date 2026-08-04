@@ -115,6 +115,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
+    { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
   ]
 
   const items = user?.role === 'master' ? masterItems : userItems

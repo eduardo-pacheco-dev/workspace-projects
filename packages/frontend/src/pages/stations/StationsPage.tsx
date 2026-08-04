@@ -23,6 +23,8 @@ import {
 import { Edit, Delete, Add } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import StationModal from './StationModal'
 
 interface Station {
@@ -42,6 +44,7 @@ type SortOrder = 'ASC' | 'DESC'
 
 export default function StationsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [stations, setStations] = useState<Station[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -52,6 +55,7 @@ export default function StationsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -91,12 +95,15 @@ export default function StationsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta estação?')) return
     try {
       await api.delete(`/stations/${id}`)
       fetchData()
+      showToast('Estação excluída com sucesso.')
+      setStationToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+      setStationToDelete(null)
     }
   }
 
@@ -205,7 +212,7 @@ export default function StationsPage() {
                   <IconButton
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDelete(s.id)
+                      setStationToDelete(s)
                     }}
                   >
                     <Delete />
@@ -240,6 +247,14 @@ export default function StationsPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={!!stationToDelete}
+        title="Excluir estação"
+        message={`Tem certeza que deseja excluir a estação "${stationToDelete?.siteId}"?`}
+        onClose={() => setStationToDelete(null)}
+        onConfirm={() => stationToDelete && handleDelete(stationToDelete.id)}
       />
     </Container>
   )

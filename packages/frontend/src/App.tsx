@@ -42,7 +42,7 @@ import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
-const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects']
+const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients']
 const USER_ALWAYS_ALLOWED = ['/', '/profile']
 
 function ProtectedLayout() {

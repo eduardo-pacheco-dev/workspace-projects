@@ -18,6 +18,7 @@ import { ProjectsService } from '../projects/projects.service';
 import { CollaboratorsService } from '../collaborators/collaborators.service';
 import { StationsService } from '../stations/stations.service';
 import { RadioLinksService } from '../radio-links/radio-links.service';
+import { ServiceOrdersService } from '../service-orders/service-orders.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -38,6 +39,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly collaboratorsService: CollaboratorsService,
     private readonly stationsService: StationsService,
     private readonly radioLinksService: RadioLinksService,
+    private readonly serviceOrdersService: ServiceOrdersService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -59,6 +61,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedCollaborators();
     await this.seedStations();
     await this.seedRadiolinks();
+    await this.seedServiceOrders();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1295,5 +1298,79 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${created} radio links created`);
+  }
+
+  private async seedServiceOrders() {
+    const { total } = await this.serviceOrdersService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const { data: stations } = await this.stationsService.findAll({ limit: 100 });
+
+    type SeedServiceOrder = {
+      cliente: string;
+      descricao: string;
+      stationIdx?: number;
+      operadora?: 'TIM' | 'CLARO' | 'VIVO' | 'Outras';
+      dataInicio: string;
+      dataFim: string;
+      status: 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
+      observacoes?: string;
+    };
+
+    const serviceOrders: SeedServiceOrder[] = [
+      { cliente: 'Operadora Alpha', descricao: 'Instalação de antena setorial e rádio na estação do centro.', stationIdx: 0, dataInicio: '2026-08-03', dataFim: '2026-08-05', status: 'em_andamento', observacoes: 'Equipe alocada: Carlos Silva.' },
+      { cliente: 'Operadora Beta', descricao: 'Alinhamento de enlace ponto a ponto de 18 GHz.', stationIdx: 1, dataInicio: '2026-08-04', dataFim: '2026-08-04', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Manutenção preventiva: limpeza, aperto de conectores e medições de potência.', stationIdx: 2, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Comissionamento de rádio link 11 GHz com testes de throughput.', stationIdx: 3, dataInicio: '2026-08-07', dataFim: '2026-08-08', status: 'em_andamento', observacoes: 'Aguardando janela de acesso.' },
+      { cliente: 'Operadora Beta', descricao: 'Substituição de rádio danificado por incêndio.', stationIdx: 4, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Atualização de firmware da BTS.', stationIdx: 5, dataInicio: '2026-08-12', dataFim: '2026-08-12', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de CFTV e controle de acesso no site.', stationIdx: 6, dataInicio: '2026-08-13', dataFim: '2026-08-15', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Otimização de cobertura da região central.', stationIdx: 7, dataInicio: '2026-08-17', dataFim: '2026-08-18', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Migração de célula 4G para 5G NSA.', stationIdx: 8, dataInicio: '2026-08-19', dataFim: '2026-08-19', status: 'cancelada', observacoes: 'Cancelada pela operadora.' },
+      { cliente: 'Operadora Gamma', descricao: 'Levantamento topográfico para nova ERBS.', stationIdx: 9, dataInicio: '2026-08-20', dataFim: '2026-08-21', status: 'em_andamento' },
+      { cliente: 'Operadora Alpha', descricao: 'Teste de aceitação (SAT/UAT) da estação recém-instalada.', stationIdx: 10, dataInicio: '2026-08-24', dataFim: '2026-08-25', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de rádio 5.8 GHz para ponto de internet rural.', stationIdx: 11, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Manutenção corretiva de perda de sinal no enlace.', stationIdx: 12, dataInicio: '2026-08-03', dataFim: '2026-08-03', status: 'concluida' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de painéis solares e banco de baterias.', stationIdx: 13, dataInicio: '2026-08-05', dataFim: '2026-08-08', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Conectorização e emenda de fibra óptica na DIO.', stationIdx: 14, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Revisão de inventário de equipamentos ativos e passivos.', stationIdx: 15, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de rádio de backup com failover automático.', stationIdx: 16, dataInicio: '2026-08-12', dataFim: '2026-08-14', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Georreferenciamento das coordenadas do site.', stationIdx: 17, dataInicio: '2026-08-13', dataFim: '2026-08-13', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Ampliação da capacidade do enlace de retorno.', stationIdx: 18, dataInicio: '2026-08-17', dataFim: '2026-08-19', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Pintura e adequação de segurança da torre.', stationIdx: 19, dataInicio: '2026-08-20', dataFim: '2026-08-22', status: 'em_andamento' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de iluminação de obstrução na torre.', stationIdx: 20, dataInicio: '2026-08-24', dataFim: '2026-08-25', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Análise de interferência no enlace de 23 GHz.', stationIdx: 21, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de rádios 13 GHz e realinhamento de antenas.', stationIdx: 22, dataInicio: '2026-08-03', dataFim: '2026-08-04', status: 'concluida' },
+      { cliente: 'Operadora Beta', descricao: 'Manutenção preventiva de energia e aterramento.', stationIdx: 23, dataInicio: '2026-08-06', dataFim: '2026-08-06', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Comissionamento de enlace de 18 GHz entre torres.', stationIdx: 24, dataInicio: '2026-08-07', dataFim: '2026-08-08', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Instalação de antena parabólica de 1,2m.', stationIdx: 25, dataInicio: '2026-08-10', dataFim: '2026-08-11', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Atualização de licença de software do rádio.', stationIdx: 26, dataInicio: '2026-08-13', dataFim: '2026-08-13', status: 'concluida' },
+      { cliente: 'Operadora Alpha', descricao: 'Troca de cabos de alimentação da torre.', stationIdx: 27, dataInicio: '2026-08-14', dataFim: '2026-08-15', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Levantamento de visada para novo enlace.', stationIdx: 28, dataInicio: '2026-08-17', dataFim: '2026-08-18', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Instalação de quadros de energia e disjuntores.', stationIdx: 29, dataInicio: '2026-08-19', dataFim: '2026-08-20', status: 'aberta' },
+      { cliente: 'Operadora Alpha', descricao: 'Teste de failover e comutação automática de enlace.', stationIdx: 30, dataInicio: '2026-08-21', dataFim: '2026-08-21', status: 'em_andamento' },
+      { cliente: 'Operadora Gamma', descricao: 'Reaperto de conectores e medições de VSWR.', stationIdx: 31, dataInicio: '2026-08-24', dataFim: '2026-08-24', status: 'aberta' },
+      { cliente: 'Operadora Beta', descricao: 'Inspeção e laudo fotográfico da estação.', stationIdx: 32, dataInicio: '2026-08-26', dataFim: '2026-08-27', status: 'aberta' },
+    ];
+
+    let created = 0;
+    for (const so of serviceOrders) {
+      const station = so.stationIdx != null ? stations[so.stationIdx] : undefined;
+      await this.serviceOrdersService.create({
+        cliente: so.cliente,
+        descricao: so.descricao,
+        siteId: station?.siteId,
+        endId: station?.endId,
+        operadora: (so.operadora ?? station?.operadora ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
+        endereco: station?.endereco,
+        dataInicio: so.dataInicio,
+        dataFim: so.dataFim,
+        status: so.status,
+        observacoes: so.observacoes,
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} service orders created`);
   }
 }

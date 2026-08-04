@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
@@ -15,9 +15,28 @@ import {
   Stack,
   TextField,
   Checkbox,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemSecondaryAction,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material'
-import { ArrowBack, Edit, Assignment, Add, Delete } from '@mui/icons-material'
+import {
+  ArrowBack,
+  Edit,
+  Assignment,
+  Add,
+  Delete,
+  AttachFile,
+  PictureAsPdf,
+  Visibility,
+  Download,
+} from '@mui/icons-material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import TaskModal from './TaskModal'
 import Markdown from '../../components/Markdown'
 import {
@@ -29,15 +48,28 @@ import {
   formatDateTime,
 } from './tasksTypes'
 
+interface Attachment {
+  id: number
+  filename: string
+  originalName: string
+  mimetype: string
+  size: number
+}
+
 export default function TaskDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [task, setTask] = useState<Task | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [subtaskTitle, setSubtaskTitle] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -60,6 +92,58 @@ export default function TaskDetail() {
     load()
   }, [load])
 
+  const fetchAttachments = useCallback(() => {
+    api.get(`/attachments/task/${id}`)
+      .then((res) => setAttachments(res.data ?? []))
+      .catch(() => {})
+  }, [id])
+
+  useEffect(() => {
+    fetchAttachments()
+  }, [fetchAttachments])
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      await api.post(`/attachments/upload/task/${id}`, form)
+      fetchAttachments()
+      showToast('Anexo adicionado com sucesso.')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível enviar o arquivo.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o arquivo.', 'error')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteAttachment = async (attId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
+    try {
+      await api.delete(`/attachments/${attId}`)
+      fetchAttachments()
+      showToast('Anexo excluído com sucesso.')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível excluir o anexo.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o anexo.', 'error')
+    }
+  }
+
+  const handlePreview = (att: Attachment) => {
+    setPreview({ url: `/api/attachments/file/${att.id}`, type: att.mimetype, name: att.originalName })
+  }
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   const addSubtask = async () => {
     if (!subtaskTitle.trim()) return
     setSubmitting(true)
@@ -68,8 +152,10 @@ export default function TaskDetail() {
       await api.post('/tasks', { title: subtaskTitle.trim(), parentId: Number(id) })
       setSubtaskTitle('')
       await reloadSubtasks()
+      showToast('Subtarefa adicionada com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível adicionar a subtarefa.')
+      showToast(err.response?.data?.message || 'Não foi possível adicionar a subtarefa.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -79,8 +165,10 @@ export default function TaskDetail() {
     try {
       await api.patch(`/tasks/${sub.id}`, { status: sub.status === 'completed' ? 'pending' : 'completed' })
       await reloadSubtasks()
+      showToast(sub.status === 'completed' ? 'Subtarefa reaberta.' : 'Subtarefa concluída.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível atualizar a subtarefa.')
+      showToast(err.response?.data?.message || 'Não foi possível atualizar a subtarefa.', 'error')
     }
   }
 
@@ -89,8 +177,10 @@ export default function TaskDetail() {
     try {
       await api.delete(`/tasks/${subId}`)
       await reloadSubtasks()
+      showToast('Subtarefa excluída com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir a subtarefa.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir a subtarefa.', 'error')
     }
   }
 
@@ -230,6 +320,68 @@ export default function TaskDetail() {
         )}
       </Paper>
 
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Anexos ({attachments.length})
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AttachFile />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Enviando...' : 'Adicionar Anexo'}
+          </Button>
+          <input ref={fileInputRef} type="file" hidden onChange={handleUpload} />
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        {attachments.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            Nenhum anexo cadastrado.
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {attachments.map((att) => {
+              const isImage = att.mimetype.startsWith('image/')
+              const isPdf = att.mimetype === 'application/pdf'
+              return (
+                <ListItem key={att.id} sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 44 }}>
+                    {isImage ? (
+                      <Box
+                        component="img"
+                        src={`/api/attachments/file/${att.id}`}
+                        sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
+                      />
+                    ) : isPdf ? (
+                      <PictureAsPdf color="error" />
+                    ) : (
+                      <AttachFile fontSize="small" />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText primary={att.originalName} secondary={formatSize(att.size)} />
+                  <ListItemSecondaryAction>
+                    {(isImage || isPdf) && (
+                      <IconButton size="small" onClick={() => handlePreview(att)}>
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    )}
+                    <IconButton size="small" component="a" href={`/api/attachments/download/${att.id}`} target="_blank">
+                      <Download fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              )
+            })}
+          </List>
+        )}
+      </Paper>
+
       <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
         <Button variant="outlined" onClick={() => navigate('/tasks')}>
           Voltar para a Lista
@@ -242,6 +394,30 @@ export default function TaskDetail() {
         onClose={() => setModalOpen(false)}
         onSaved={load}
       />
+
+      <Dialog open={!!preview} onClose={() => setPreview(null)} maxWidth="lg" fullWidth>
+        <DialogTitle>{preview?.name || 'Preview'}</DialogTitle>
+        <DialogContent>
+          {preview?.type.startsWith('image/') ? (
+            <Box
+              component="img"
+              src={preview?.url}
+              sx={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', mx: 'auto' }}
+            />
+          ) : preview?.type === 'application/pdf' ? (
+            <Box
+              component="iframe"
+              src={preview?.url}
+              sx={{ width: '100%', height: '80vh', border: 'none' }}
+              title="PDF Preview"
+            />
+          ) : (
+            <Typography variant="body1">
+              Pré-visualização não disponível para este tipo de arquivo.
+            </Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </Container>
   )
 }

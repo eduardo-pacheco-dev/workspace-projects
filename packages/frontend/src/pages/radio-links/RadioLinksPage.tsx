@@ -23,6 +23,8 @@ import {
 import { Edit, Delete, Add } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import RadioLinkModal from './RadioLinkModal'
 
 interface RadioLink {
@@ -44,6 +46,7 @@ type SortOrder = 'ASC' | 'DESC'
 
 export default function RadioLinksPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [radioLinks, setRadioLinks] = useState<RadioLink[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -54,6 +57,7 @@ export default function RadioLinksPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -93,12 +97,15 @@ export default function RadioLinksPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este enlace de rádio?')) return
     try {
       await api.delete(`/radio-links/${id}`)
       fetchData()
+      showToast('Enlace de rádio excluído com sucesso.')
+      setLinkToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+      setLinkToDelete(null)
     }
   }
 
@@ -209,7 +216,7 @@ export default function RadioLinksPage() {
                   <IconButton
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDelete(r.id)
+                      setLinkToDelete(r)
                     }}
                   >
                     <Delete />
@@ -244,6 +251,14 @@ export default function RadioLinksPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={!!linkToDelete}
+        title="Excluir enlace de rádio"
+        message={`Tem certeza que deseja excluir o enlace "${linkToDelete?.nome}"?`}
+        onClose={() => setLinkToDelete(null)}
+        onConfirm={() => linkToDelete && handleDelete(linkToDelete.id)}
       />
     </Container>
   )

@@ -17,6 +17,7 @@ import { CommentsService } from '../comments/comments.service';
 import { ProjectsService } from '../projects/projects.service';
 import { CollaboratorsService } from '../collaborators/collaborators.service';
 import { StationsService } from '../stations/stations.service';
+import { RadioLinksService } from '../radio-links/radio-links.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -36,6 +37,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly projectsService: ProjectsService,
     private readonly collaboratorsService: CollaboratorsService,
     private readonly stationsService: StationsService,
+    private readonly radioLinksService: RadioLinksService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -56,6 +58,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedCompanyProjects();
     await this.seedCollaborators();
     await this.seedStations();
+    await this.seedRadiolinks();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1219,5 +1222,78 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${stations.length} stations created`);
+  }
+
+  private async seedRadiolinks() {
+    const { total } = await this.radioLinksService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const { data: stations } = await this.stationsService.findAll({ limit: 100 });
+    if (stations.length === 0) return;
+
+    type SeedRadioLink = {
+      aIdx: number;
+      bIdx: number;
+      frequencia?: string;
+      capacidade?: string;
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const radioLinks: SeedRadioLink[] = [
+      { aIdx: 0, bIdx: 1, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Enlace urbano de baixa distância', status: 'ativo' },
+      { aIdx: 2, bIdx: 3, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Backbone local', status: 'ativo' },
+      { aIdx: 4, bIdx: 5, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 6, bIdx: 7, frequencia: '5.8 GHz', capacidade: '100 Mbps', status: 'inativo' },
+      { aIdx: 8, bIdx: 9, frequencia: '13 GHz', capacidade: '500 Mbps', status: 'ativo' },
+      { aIdx: 10, bIdx: 11, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 0, bIdx: 3, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Rede em anel - caminho de reserva', status: 'ativo' },
+      { aIdx: 0, bIdx: 9, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 13, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Enlace costeiro', status: 'ativo' },
+      { aIdx: 14, bIdx: 15, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 16, bIdx: 17, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 18, bIdx: 19, frequencia: '13 GHz', capacidade: '500 Mbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 16, frequencia: '5.8 GHz', capacidade: '100 Mbps', observacoes: 'Suporte a cobertura de evento', status: 'inativo' },
+      { aIdx: 21, bIdx: 22, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 23, bIdx: 24, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 26, bIdx: 27, frequencia: '18 GHz', capacidade: '1 Gbps', observacoes: 'Travessia urbana', status: 'ativo' },
+      { aIdx: 29, bIdx: 30, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 20, bIdx: 21, frequencia: '11 GHz', capacidade: '300 Mbps', observacoes: 'Backbone inter-cidade', status: 'ativo' },
+      { aIdx: 25, bIdx: 26, frequencia: '13 GHz', capacidade: '500 Mbps', observacoes: 'Enlace de longa distância', status: 'ativo' },
+      { aIdx: 28, bIdx: 29, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 31, bIdx: 32, frequencia: '11 GHz', capacidade: '300 Mbps', observacoes: 'Enlace costeiro Norte-Sul', status: 'ativo' },
+      { aIdx: 3, bIdx: 5, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 5, bIdx: 7, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 7, bIdx: 9, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+      { aIdx: 9, bIdx: 11, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 12, bIdx: 18, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Rede em anel - orla', status: 'ativo' },
+      { aIdx: 13, bIdx: 19, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 14, bIdx: 16, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'inativo' },
+      { aIdx: 21, bIdx: 23, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 26, bIdx: 28, frequencia: '23 GHz', capacidade: '2 Gbps', observacoes: 'Backbone regional', status: 'ativo' },
+      { aIdx: 0, bIdx: 2, frequencia: '11 GHz', capacidade: '300 Mbps', status: 'ativo' },
+      { aIdx: 2, bIdx: 4, frequencia: '18 GHz', capacidade: '1 Gbps', status: 'ativo' },
+      { aIdx: 4, bIdx: 6, frequencia: '23 GHz', capacidade: '2 Gbps', status: 'ativo' },
+    ];
+
+    let created = 0;
+    for (const link of radioLinks) {
+      const stationA = stations[link.aIdx];
+      const stationB = stations[link.bIdx];
+      if (!stationA || !stationB) continue;
+
+      await this.radioLinksService.create({
+        nome: `${stationA.siteId} – ${stationB.siteId}`,
+        frequencia: link.frequencia,
+        capacidade: link.capacidade,
+        stationAId: stationA.id,
+        stationBId: stationB.id,
+        observacoes: link.observacoes,
+        status: link.status,
+      });
+      created++;
+    }
+
+    console.log(`Seed: ${created} radio links created`);
   }
 }

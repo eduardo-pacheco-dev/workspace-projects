@@ -19,6 +19,7 @@ import { CollaboratorsService } from '../collaborators/collaborators.service';
 import { StationsService } from '../stations/stations.service';
 import { RadioLinksService } from '../radio-links/radio-links.service';
 import { ServiceOrdersService } from '../service-orders/service-orders.service';
+import { ClientsService } from '../clients/clients.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -40,6 +41,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly stationsService: StationsService,
     private readonly radioLinksService: RadioLinksService,
     private readonly serviceOrdersService: ServiceOrdersService,
+    private readonly clientsService: ClientsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -62,6 +64,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedStations();
     await this.seedRadiolinks();
     await this.seedServiceOrders();
+    await this.seedClients();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1372,5 +1375,64 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${created} service orders created`);
+  }
+
+  private async seedClients() {
+    const { total } = await this.clientsService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    type SeedClient = {
+      nome: string;
+      documento?: string;
+      email?: string;
+      telefone?: string;
+      endereco?: string;
+      cidade?: string;
+      uf?: string;
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const clients: SeedClient[] = [
+      { nome: 'Operadora Alpha Telecom', documento: '12.345.678/0001-90', email: 'contato@alpha.com.br', telefone: '(11) 4000-1001', endereco: 'Av. Paulista, 1000', cidade: 'São Paulo', uf: 'SP', observacoes: 'Contrato anual de manutenção de enlaces.', status: 'ativo' },
+      { nome: 'Operadora Beta Mobile', documento: '23.456.789/0001-01', email: 'contato@betamobile.com.br', telefone: '(11) 4000-1002', endereco: 'Av. Faria Lima, 2000', cidade: 'São Paulo', uf: 'SP', status: 'ativo' },
+      { nome: 'Operadora Gamma Fiber', documento: '34.567.890/0001-12', email: 'contato@gammafiber.com.br', telefone: '(11) 4000-1003', endereco: 'Av. Ibirapuera, 2500', cidade: 'São Paulo', uf: 'SP', observacoes: 'Expandindo rede de fibra em condomínios.', status: 'ativo' },
+      { nome: 'Norte Redes Telecom', documento: '45.678.901/0001-23', email: 'contato@norteredestelecom.com.br', telefone: '(92) 3000-1004', endereco: 'Av. das Torres, 500', cidade: 'Manaus', uf: 'AM', status: 'ativo' },
+      { nome: 'Sul Conecta Ltda', documento: '56.789.012/0001-34', email: 'contato@sulconecta.com.br', telefone: '(51) 3000-1005', endereco: 'Av. Ipiranga, 1500', cidade: 'Porto Alegre', uf: 'RS', status: 'ativo' },
+      { nome: 'Leste Fibra Óptica', documento: '67.890.123/0001-45', email: 'contato@lestefibra.com.br', telefone: '(21) 3000-1006', endereco: 'Av. das Américas, 3000', cidade: 'Rio de Janeiro', uf: 'RJ', status: 'ativo' },
+      { nome: 'Centro Telecom SP', documento: '78.901.234/0001-56', email: 'contato@centrotelecom.com.br', telefone: '(11) 3000-1007', endereco: 'Rua da Consolação, 1500', cidade: 'São Paulo', uf: 'SP', status: 'ativo' },
+      { nome: 'Vale Rádio Comunicações', documento: '89.012.345/0001-67', email: 'contato@valeradio.com.br', telefone: '(12) 3000-1008', endereco: 'Av. Paraibuna, 900', cidade: 'São José dos Campos', uf: 'SP', observacoes: 'Enlaces rurais de longa distância.', status: 'ativo' },
+      { nome: 'Serra Antenas Ltda', documento: '90.123.456/0001-78', email: 'contato@serraantenas.com.br', telefone: '(27) 3000-1009', endereco: 'Av. Nossa Senhora da Penha, 700', cidade: 'Vitória', uf: 'ES', status: 'ativo' },
+      { nome: 'Praia Net Banda Larga', documento: '11.234.567/0001-89', email: 'contato@praianet.com.br', telefone: '(48) 3000-1010', endereco: 'Av. Beira-Mar, 800', cidade: 'Florianópolis', uf: 'SC', status: 'ativo' },
+      { nome: 'Campo Wireless', documento: '22.345.678/0001-90', email: 'contato@campowireless.com.br', telefone: '(62) 3000-1011', endereco: 'Av. Goiás, 1200', cidade: 'Goiânia', uf: 'GO', status: 'ativo' },
+      { nome: 'Sertão Telecom', documento: '33.456.789/0001-01', email: 'contato@sertaotelecom.com.br', telefone: '(81) 3000-1012', endereco: 'Av. Agamenon Magalhães, 800', cidade: 'Recife', uf: 'PE', status: 'inativo' },
+      { nome: 'Bahia Link', documento: '44.567.890/0001-12', email: 'contato@bahialink.com.br', telefone: '(71) 3000-1013', endereco: 'Av. Oceânica, 2000', cidade: 'Salvador', uf: 'BA', status: 'ativo' },
+      { nome: 'Centro-Oeste Comunic', documento: '55.678.901/0001-23', email: 'contato@centrooestecomunic.com.br', telefone: '(67) 3000-1014', endereco: 'Av. Afonso Pena, 1500', cidade: 'Campo Grande', uf: 'MS', status: 'ativo' },
+      { nome: 'Norte Forte Telecom', documento: '66.789.012/0001-34', email: 'contato@norteforte.com.br', telefone: '(91) 3000-1015', endereco: 'Av. Presidente Vargas, 500', cidade: 'Belém', uf: 'PA', status: 'ativo' },
+      { nome: 'Nordeste Digital', documento: '77.890.123/0001-45', email: 'contato@nordestedigital.com.br', telefone: '(85) 3000-1016', endereco: 'Av. Bezerra de Menezes, 1800', cidade: 'Fortaleza', uf: 'CE', status: 'ativo' },
+      { nome: 'Minas Conecta', documento: '88.901.234/0001-56', email: 'contato@minasconecta.com.br', telefone: '(31) 3000-1017', endereco: 'Av. Afonso Pena, 2500', cidade: 'Belo Horizonte', uf: 'MG', observacoes: 'Projeto de expansão 5G.', status: 'ativo' },
+      { nome: 'Paraná Rádio Enlaces', documento: '99.012.345/0001-67', email: 'contato@paranaradio.com.br', telefone: '(41) 3000-1018', endereco: 'Av. Sete de Setembro, 3000', cidade: 'Curitiba', uf: 'PR', status: 'ativo' },
+      { nome: 'Catarina Fibra', documento: '10.987.654/0001-78', email: 'contato@catarinafibra.com.br', telefone: '(49) 3000-1019', endereco: 'Rua Frei Gabriel, 400', cidade: 'Blumenau', uf: 'SC', status: 'inativo' },
+      { nome: 'Rio Grande Net', documento: '21.876.543/0001-89', email: 'contato@riograndenet.com.br', telefone: '(53) 3000-1020', endereco: 'Av. Rio Branco, 600', cidade: 'Pelotas', uf: 'RS', status: 'ativo' },
+      { nome: 'Goiás Rural Link', documento: '32.765.432/0001-90', email: 'contato@goiasrural.com.br', telefone: '(64) 3000-1021', endereco: 'Av. Paranaíba, 300', cidade: 'Rio Verde', uf: 'GO', observacoes: 'Internet rural via rádio.', status: 'ativo' },
+      { nome: 'Mato Grosso Fibra', documento: '43.654.321/0001-01', email: 'contato@mtfibra.com.br', telefone: '(65) 3000-1022', endereco: 'Av. Fernando Corrêa da Costa, 700', cidade: 'Cuiabá', uf: 'MT', status: 'ativo' },
+      { nome: 'Tocantins Telecom', documento: '54.543.210/0001-12', email: 'contato@totelecom.com.br', telefone: '(63) 3000-1023', endereco: 'Av. Joaquim Teotônio Segurado, 1000', cidade: 'Palmas', uf: 'TO', status: 'ativo' },
+      { nome: 'Amazônia Link', documento: '65.432.109/0001-23', email: 'contato@amazonialink.com.br', telefone: '(92) 3000-1024', endereco: 'Av. Constantino Nery, 800', cidade: 'Manaus', uf: 'AM', status: 'ativo' },
+      { nome: 'Rondônia Conecta', documento: '76.321.098/0001-34', email: 'contato@roconecta.com.br', telefone: '(69) 3000-1025', endereco: 'Av. Presidente Dutra, 600', cidade: 'Porto Velho', uf: 'RO', status: 'ativo' },
+      { nome: 'Acre Net', documento: '87.210.987/0001-45', email: 'contato@acrenet.com.br', telefone: '(68) 3000-1026', endereco: 'Av. Ceará, 400', cidade: 'Rio Branco', uf: 'AC', status: 'inativo' },
+      { nome: 'Espírito Santo Rádio', documento: '98.109.876/0001-56', email: 'contato@esradio.com.br', telefone: '(27) 3000-1027', endereco: 'Av. Dante Michelini, 1000', cidade: 'Vitória', uf: 'ES', status: 'ativo' },
+      { nome: 'Pernambuco Digital', documento: '09.098.765/0001-67', email: 'contato@pe-digital.com.br', telefone: '(81) 3000-1028', endereco: 'Av. Caxangá, 1200', cidade: 'Recife', uf: 'PE', status: 'ativo' },
+      { nome: 'Ceará Wireless', documento: '01.987.654/0001-78', email: 'contato@cearawireless.com.br', telefone: '(85) 3000-1029', endereco: 'Av. Washington Soares, 900', cidade: 'Fortaleza', uf: 'CE', status: 'ativo' },
+      { nome: 'Alagoas Link', documento: '02.876.543/0001-89', email: 'contato@alagolaslink.com.br', telefone: '(82) 3000-1030', endereco: 'Av. Fernandes Lima, 800', cidade: 'Maceió', uf: 'AL', status: 'ativo' },
+      { nome: 'Sergipe Net', documento: '03.765.432/0001-90', email: 'contato@sergipenet.com.br', telefone: '(79) 3000-1031', endereco: 'Av. Tancredo Neves, 1000', cidade: 'Aracaju', uf: 'SE', status: 'ativo' },
+      { nome: 'Paraíba Conecta', documento: '04.654.321/0001-01', email: 'contato@pbconecta.com.br', telefone: '(83) 3000-1032', endereco: 'Av. Epitácio Pessoa, 1200', cidade: 'João Pessoa', uf: 'PB', status: 'ativo' },
+      { nome: 'Piauí Telecom', documento: '05.543.210/0001-12', email: 'contato@piauitelecom.com.br', telefone: '(86) 3000-1033', endereco: 'Av. Maranhão, 700', cidade: 'Teresina', uf: 'PI', status: 'ativo' },
+    ];
+
+    for (const client of clients) {
+      await this.clientsService.create(client);
+    }
+
+    console.log(`Seed: ${clients.length} clients created`);
   }
 }

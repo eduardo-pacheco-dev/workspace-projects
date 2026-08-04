@@ -20,6 +20,8 @@ import FolderIcon from '@mui/icons-material/Folder'
 import CellTowerIcon from '@mui/icons-material/CellTower'
 import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
 import AssignmentIcon from '@mui/icons-material/Assignment'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import PersonIcon from '@mui/icons-material/Person'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
@@ -44,6 +46,14 @@ interface RecentProject {
   nome: string
   codigo: string | null
   status: string
+}
+
+interface TaskSummary {
+  id: number
+  title: string
+  status: string
+  priority: string
+  dueAt?: string | null
 }
 
 interface Station {
@@ -254,6 +264,200 @@ function GlobalDashboard() {
   )
 }
 
+function UserDashboard() {
+  const navigate = useNavigate()
+  const [stats, setStats] = useState({
+    tasks: 0,
+    serviceOrders: 0,
+    collaborators: 0,
+    stations: 0,
+    radioLinks: 0,
+    projects: 0,
+  })
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
+  const [recentTasks, setRecentTasks] = useState<TaskSummary[]>([])
+
+  useEffect(() => {
+    Promise.allSettled([
+      api.get('/tasks', { params: { limit: 1 } }),
+      api.get('/service-orders', { params: { limit: 1 } }),
+      api.get('/collaborators', { params: { limit: 1 } }),
+      api.get('/stations', { params: { limit: 1 } }),
+      api.get('/radio-links', { params: { limit: 1 } }),
+      api.get('/projects', { params: { limit: 1 } }),
+      api.get('/projects', { params: { limit: 4, sortBy: 'createdAt', sortOrder: 'DESC' } }),
+      api.get('/tasks', { params: { limit: 5, sortBy: 'dueAt', sortOrder: 'ASC' } }),
+    ]).then(([tasks, serviceOrders, collaborators, stations, radioLinks, projects, recent, recentTasks]) => {
+      const totalOf = (r: PromiseSettledResult<any>) =>
+        r.status === 'fulfilled'
+          ? Array.isArray(r.value.data) ? r.value.data.length : (r.value.data.total ?? 0)
+          : 0
+      setStats({
+        tasks: totalOf(tasks),
+        serviceOrders: totalOf(serviceOrders),
+        collaborators: totalOf(collaborators),
+        stations: totalOf(stations),
+        radioLinks: totalOf(radioLinks),
+        projects: totalOf(projects),
+      })
+      const data = recent.status === 'fulfilled'
+        ? (Array.isArray(recent.value.data) ? recent.value.data : (recent.value.data.data ?? []))
+        : []
+      setRecentProjects(data)
+      const taskData = recentTasks.status === 'fulfilled'
+        ? (Array.isArray(recentTasks.value.data) ? recentTasks.value.data : (recentTasks.value.data.data ?? []))
+        : []
+      setRecentTasks(taskData)
+    })
+  }, [])
+
+  const statCards: StatCard[] = [
+    { label: 'Tarefas', value: String(stats.tasks), icon: <CheckCircleIcon />, gradient: 'linear-gradient(135deg, #1976d2, #42a5f5)', path: '/tasks' },
+    { label: 'Ordens de Serviço', value: String(stats.serviceOrders), icon: <AssignmentIcon />, gradient: 'linear-gradient(135deg, #00695c, #26a69a)', path: '/service-orders' },
+    { label: 'Colaboradores', value: String(stats.collaborators), icon: <PersonIcon />, gradient: 'linear-gradient(135deg, #6a1b9a, #ab47bc)', path: '/collaborators' },
+    { label: 'Estações', value: String(stats.stations), icon: <CellTowerIcon />, gradient: 'linear-gradient(135deg, #2e7d32, #66bb6a)', path: '/stations' },
+    { label: 'Enlaces de Rádio', value: String(stats.radioLinks), icon: <SettingsInputAntennaIcon />, gradient: 'linear-gradient(135deg, #e65100, #ff9800)', path: '/radio-links' },
+    { label: 'Projetos', value: String(stats.projects), icon: <FolderIcon />, gradient: 'linear-gradient(135deg, #1565c0, #42a5f5)', path: '/projects' },
+  ]
+
+  const taskStatusMap: Record<string, { label: string; color: 'info' | 'warning' | 'success' }> = {
+    pending: { label: 'Pendente', color: 'info' },
+    in_progress: { label: 'Em andamento', color: 'warning' },
+    completed: { label: 'Concluída', color: 'success' },
+  }
+
+  return (
+    <>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {statCards.map((item) => (
+          <Grid item xs={12} sm={6} md={4} key={item.label}>
+            <Card
+              onClick={() => navigate(item.path)}
+              sx={{
+                borderRadius: 3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(0,0,0,0.04)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.12)' },
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ width: 44, height: 44, background: item.gradient, boxShadow: 2 }}>
+                    {item.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      {item.value}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={7}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Projetos Recentes</Typography>
+              <Button size="small" endIcon={<ArrowForwardIcon />} onClick={() => navigate('/projects')}>
+                Ver todos
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {recentProjects.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Nenhum projeto cadastrado.
+              </Typography>
+            ) : (
+              recentProjects.map((p, index) => (
+                <Box key={p.id}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      py: 1.5,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.03)' },
+                    }}
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                  >
+                    <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #2e7d32, #66bb6a)' }}>
+                      <FolderIcon fontSize="small" />
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.nome}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">{p.codigo || 'Sem código'}</Typography>
+                    </Box>
+                    <Chip
+                      size="small"
+                      label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      color={p.status === 'ativo' ? 'success' : 'default'}
+                      variant="outlined"
+                    />
+                  </Box>
+                  {index < recentProjects.length - 1 && <Divider />}
+                </Box>
+              ))
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={5}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Próximas Tarefas</Typography>
+              <Button size="small" endIcon={<ArrowForwardIcon />} onClick={() => navigate('/tasks')}>
+                Ver todas
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {recentTasks.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Nenhuma tarefa cadastrada.
+              </Typography>
+            ) : (
+              recentTasks.map((t, index) => {
+                const info = taskStatusMap[t.status] || { label: t.status, color: 'info' as const }
+                return (
+                  <Box key={t.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                      <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #1976d2, #42a5f5)' }}>
+                        <CheckCircleIcon fontSize="small" />
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t.dueAt ? `Vence em ${new Date(t.dueAt).toLocaleDateString('pt-BR')}` : 'Sem prazo'}
+                        </Typography>
+                      </Box>
+                      <Chip size="small" label={info.label} color={info.color} variant="outlined" />
+                    </Box>
+                    {index < recentTasks.length - 1 && <Divider />}
+                  </Box>
+                )
+              })
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </>
+  )
+}
+
 function ProjectDashboard({ projectId }: { projectId: number }) {
   const navigate = useNavigate()
   const [project, setProject] = useState<Project | null>(null)
@@ -419,6 +623,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const { projectId, setProjectId } = useProject()
   const navigate = useNavigate()
+  const isMaster = user?.role === 'master'
 
   const today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -487,9 +692,9 @@ export default function Dashboard() {
                 <Button
                   variant="outlined"
                   sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
-                  onClick={() => navigate('/finance')}
+                  onClick={() => navigate(isMaster ? '/finance' : '/tasks')}
                 >
-                  Ver Finanças
+                  {isMaster ? 'Ver Finanças' : 'Ver Tarefas'}
                 </Button>
               </>
             )}
@@ -497,7 +702,7 @@ export default function Dashboard() {
         </Box>
       </Paper>
 
-      {projectId ? <ProjectDashboard projectId={projectId} /> : <GlobalDashboard />}
+      {projectId ? <ProjectDashboard projectId={projectId} /> : (isMaster ? <GlobalDashboard /> : <UserDashboard />)}
     </Container>
   )
 }

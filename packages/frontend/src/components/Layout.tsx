@@ -108,6 +108,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ]
 
   const userItems = [
+    { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
     { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
     { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon /> },

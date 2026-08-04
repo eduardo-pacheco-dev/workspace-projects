@@ -397,4 +397,58 @@ describe('CollaboratorsService', () => {
       await expect(service.delete(1, { role: 'user', companyId: 1 })).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('updateDocument', () => {
+    it('should store the nr10 document url', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockImplementation(async (c) => c);
+
+      const result = await service.updateDocument(1, 'nr10', '/uploads/freelancer-1/nr10-123.pdf');
+
+      expect(result).toEqual({ ...collaborator, nr10Arquivo: '/uploads/freelancer-1/nr10-123.pdf' });
+    });
+
+    it('should store the nr35 document url', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockImplementation(async (c) => c);
+
+      const result = await service.updateDocument(1, 'nr35', '/uploads/freelancer-1/nr35-123.pdf');
+
+      expect(result).toEqual({ ...collaborator, nr35Arquivo: '/uploads/freelancer-1/nr35-123.pdf' });
+    });
+
+    it('should keep rg, carteira and habilitacao unchanged', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockImplementation(async (c) => c);
+
+      const result = await service.updateDocument(1, 'rg', '/uploads/rg.pdf');
+
+      expect(result).toEqual({ ...collaborator, rgArquivo: '/uploads/rg.pdf' });
+    });
+
+    it('should store the aso, epi, ordemServico and contrato urls', async () => {
+      const collaborator = { id: 1, nome: 'João', companyId: 1 };
+      repo.findOne.mockResolvedValue(collaborator);
+      repo.save.mockImplementation(async (c) => c);
+
+      const aso = await service.updateDocument(1, 'aso', '/uploads/aso.pdf');
+      const epi = await service.updateDocument(1, 'epi', '/uploads/epi.pdf');
+      const os = await service.updateDocument(1, 'ordemServico', '/uploads/os.pdf');
+      const contrato = await service.updateDocument(1, 'contrato', '/uploads/contrato.pdf');
+
+      expect(aso.asoArquivo).toBe('/uploads/aso.pdf');
+      expect(epi.epiArquivo).toBe('/uploads/epi.pdf');
+      expect(os.ordemServicoArquivo).toBe('/uploads/os.pdf');
+      expect(contrato.contratoArquivo).toBe('/uploads/contrato.pdf');
+    });
+
+    it('should throw for an invalid document type', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, nome: 'João', companyId: 1 });
+
+      await expect(service.updateDocument(1, 'invalid', '/x')).rejects.toThrow(NotFoundException);
+    });
+  });
 });

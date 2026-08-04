@@ -90,6 +90,12 @@ interface Collaborator {
   rgArquivo?: string | null
   carteiraArquivo?: string | null
   habilitacaoArquivo?: string | null
+  nr10Arquivo?: string | null
+  nr35Arquivo?: string | null
+  asoArquivo?: string | null
+  epiArquivo?: string | null
+  ordemServicoArquivo?: string | null
+  contratoArquivo?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -355,8 +361,14 @@ export default function CollaboratorDetail() {
             { label: 'RG', arquivo: collaborator.rgArquivo },
             { label: 'Carteira de Trabalho', arquivo: collaborator.carteiraArquivo },
             { label: 'Habilitação', arquivo: collaborator.habilitacaoArquivo },
+            { label: 'NR 10', arquivo: collaborator.nr10Arquivo },
+            { label: 'NR 35', arquivo: collaborator.nr35Arquivo },
+            { label: 'ASO', arquivo: collaborator.asoArquivo },
+            { label: 'Ficha de EPI', arquivo: collaborator.epiArquivo },
+            { label: 'Ordem de Serviço', arquivo: collaborator.ordemServicoArquivo },
+            { label: 'Contrato', arquivo: collaborator.contratoArquivo },
           ].map((item) => (
-            <Grid item xs={12} sm={4} key={item.label}>
+            <Grid item xs={12} sm={4} md={3} key={item.label}>
               <Box sx={{ border: '1px dashed rgba(0,0,0,0.2)', borderRadius: 2, p: 2, textAlign: 'center' }}>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>{item.label}</Typography>
                 {item.arquivo ? (

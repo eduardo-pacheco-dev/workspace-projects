@@ -114,6 +114,24 @@ export class Collaborator {
   habilitacaoArquivo?: string;
 
   @Column({ type: 'text', nullable: true })
+  nr10Arquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  nr35Arquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  asoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  epiArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  ordemServicoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
+  contratoArquivo?: string;
+
+  @Column({ type: 'text', nullable: true })
   cnh?: string;
 
   @Column({ type: 'text', nullable: true })

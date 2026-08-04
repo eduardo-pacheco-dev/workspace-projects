@@ -231,6 +231,18 @@ export class CollaboratorsService {
       collaborator.carteiraArquivo = url;
     } else if (tipo === 'habilitacao') {
       collaborator.habilitacaoArquivo = url;
+    } else if (tipo === 'nr10') {
+      collaborator.nr10Arquivo = url;
+    } else if (tipo === 'nr35') {
+      collaborator.nr35Arquivo = url;
+    } else if (tipo === 'aso') {
+      collaborator.asoArquivo = url;
+    } else if (tipo === 'epi') {
+      collaborator.epiArquivo = url;
+    } else if (tipo === 'ordemServico') {
+      collaborator.ordemServicoArquivo = url;
+    } else if (tipo === 'contrato') {
+      collaborator.contratoArquivo = url;
     } else {
       throw new NotFoundException('Tipo de documento inválido');
     }

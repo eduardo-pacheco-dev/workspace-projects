@@ -111,9 +111,21 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
   const [rgArquivo, setRgArquivo] = useState('')
   const [carteiraArquivo, setCarteiraArquivo] = useState('')
   const [habilitacaoArquivo, setHabilitacaoArquivo] = useState('')
+  const [nr10Arquivo, setNr10Arquivo] = useState('')
+  const [nr35Arquivo, setNr35Arquivo] = useState('')
+  const [asoArquivo, setAsoArquivo] = useState('')
+  const [epiArquivo, setEpiArquivo] = useState('')
+  const [ordemServicoArquivo, setOrdemServicoArquivo] = useState('')
+  const [contratoArquivo, setContratoArquivo] = useState('')
   const [rgFile, setRgFile] = useState<File | null>(null)
   const [carteiraFile, setCarteiraFile] = useState<File | null>(null)
   const [habilitacaoFile, setHabilitacaoFile] = useState<File | null>(null)
+  const [nr10File, setNr10File] = useState<File | null>(null)
+  const [nr35File, setNr35File] = useState<File | null>(null)
+  const [asoFile, setAsoFile] = useState<File | null>(null)
+  const [epiFile, setEpiFile] = useState<File | null>(null)
+  const [ordemServicoFile, setOrdemServicoFile] = useState<File | null>(null)
+  const [contratoFile, setContratoFile] = useState<File | null>(null)
 
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -274,7 +286,11 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
     setFoto(res.data.foto || '')
   }
 
-  const uploadDocument = async (id: number, tipo: 'rg' | 'carteira' | 'habilitacao', file: File | null) => {
+  const uploadDocument = async (
+    id: number,
+    tipo: 'rg' | 'carteira' | 'habilitacao' | 'nr10' | 'nr35' | 'aso' | 'epi' | 'ordemServico' | 'contrato',
+    file: File | null,
+  ) => {
     if (!file) return
     const form = new FormData()
     form.append('file', file)
@@ -282,12 +298,24 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
     if (tipo === 'rg') setRgArquivo(res.data.rgArquivo || '')
     if (tipo === 'carteira') setCarteiraArquivo(res.data.carteiraArquivo || '')
     if (tipo === 'habilitacao') setHabilitacaoArquivo(res.data.habilitacaoArquivo || '')
+    if (tipo === 'nr10') setNr10Arquivo(res.data.nr10Arquivo || '')
+    if (tipo === 'nr35') setNr35Arquivo(res.data.nr35Arquivo || '')
+    if (tipo === 'aso') setAsoArquivo(res.data.asoArquivo || '')
+    if (tipo === 'epi') setEpiArquivo(res.data.epiArquivo || '')
+    if (tipo === 'ordemServico') setOrdemServicoArquivo(res.data.ordemServicoArquivo || '')
+    if (tipo === 'contrato') setContratoArquivo(res.data.contratoArquivo || '')
   }
 
   const uploadDocuments = async (id: number) => {
     await uploadDocument(id, 'rg', rgFile)
     await uploadDocument(id, 'carteira', carteiraFile)
     await uploadDocument(id, 'habilitacao', habilitacaoFile)
+    await uploadDocument(id, 'nr10', nr10File)
+    await uploadDocument(id, 'nr35', nr35File)
+    await uploadDocument(id, 'aso', asoFile)
+    await uploadDocument(id, 'epi', epiFile)
+    await uploadDocument(id, 'ordemServico', ordemServicoFile)
+    await uploadDocument(id, 'contrato', contratoFile)
   }
 
   const saveCurrent = async (): Promise<number> => {
@@ -391,6 +419,12 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
           setRgArquivo(data.rgArquivo || '')
           setCarteiraArquivo(data.carteiraArquivo || '')
           setHabilitacaoArquivo(data.habilitacaoArquivo || '')
+          setNr10Arquivo(data.nr10Arquivo || '')
+          setNr35Arquivo(data.nr35Arquivo || '')
+          setAsoArquivo(data.asoArquivo || '')
+          setEpiArquivo(data.epiArquivo || '')
+          setOrdemServicoArquivo(data.ordemServicoArquivo || '')
+          setContratoArquivo(data.contratoArquivo || '')
 
           setPhone(data.phone || '')
           setWhatsapp(data.whatsapp || '')
@@ -500,9 +534,21 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
     setRgArquivo('')
     setCarteiraArquivo('')
     setHabilitacaoArquivo('')
+    setNr10Arquivo('')
+    setNr35Arquivo('')
+    setAsoArquivo('')
+    setEpiArquivo('')
+    setOrdemServicoArquivo('')
+    setContratoArquivo('')
     setRgFile(null)
     setCarteiraFile(null)
     setHabilitacaoFile(null)
+    setNr10File(null)
+    setNr35File(null)
+    setAsoFile(null)
+    setEpiFile(null)
+    setOrdemServicoFile(null)
+    setContratoFile(null)
     setPhone('')
     setWhatsapp('')
     setContatoEmergenciaNome('')
@@ -786,6 +832,12 @@ export default function FreelancerModal({ open, editId, onClose, onSaved, defaul
           { label: 'RG', arquivo: rgArquivo, file: rgFile, setFile: setRgFile, tipo: 'rg' },
           { label: 'Carteira de Trabalho', arquivo: carteiraArquivo, file: carteiraFile, setFile: setCarteiraFile, tipo: 'carteira' },
           { label: 'Habilitação', arquivo: habilitacaoArquivo, file: habilitacaoFile, setFile: setHabilitacaoFile, tipo: 'habilitacao' },
+          { label: 'NR 10', arquivo: nr10Arquivo, file: nr10File, setFile: setNr10File, tipo: 'nr10' },
+          { label: 'NR 35', arquivo: nr35Arquivo, file: nr35File, setFile: setNr35File, tipo: 'nr35' },
+          { label: 'ASO', arquivo: asoArquivo, file: asoFile, setFile: setAsoFile, tipo: 'aso' },
+          { label: 'Ficha de EPI', arquivo: epiArquivo, file: epiFile, setFile: setEpiFile, tipo: 'epi' },
+          { label: 'Ordem de Serviço', arquivo: ordemServicoArquivo, file: ordemServicoFile, setFile: setOrdemServicoFile, tipo: 'ordemServico' },
+          { label: 'Contrato', arquivo: contratoArquivo, file: contratoFile, setFile: setContratoFile, tipo: 'contrato' },
         ].map((item) => (
           <Grid item xs={12} sm={4} key={item.tipo}>
             <Box sx={{ border: '1px dashed rgba(0,0,0,0.2)', borderRadius: 2, p: 2, textAlign: 'center' }}>

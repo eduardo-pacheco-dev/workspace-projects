@@ -66,7 +66,7 @@ export class CollaboratorsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
   ) {
-    const allowed = ['rg', 'carteira', 'habilitacao'];
+    const allowed = ['rg', 'carteira', 'habilitacao', 'nr10', 'nr35', 'aso', 'epi', 'ordemServico', 'contrato'];
     if (!allowed.includes(tipo)) {
       return { message: 'Tipo de documento inválido' };
     }

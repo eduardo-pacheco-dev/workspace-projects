@@ -432,7 +432,18 @@ function UserDashboard() {
                 const info = taskStatusMap[t.status] || { label: t.status, color: 'info' as const }
                 return (
                   <Box key={t.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        py: 1.5,
+                        cursor: 'pointer',
+                        borderRadius: 1,
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.03)' },
+                      }}
+                      onClick={() => navigate(`/tasks/${t.id}`)}
+                    >
                       <Avatar sx={{ width: 36, height: 36, background: 'linear-gradient(135deg, #1976d2, #42a5f5)' }}>
                         <CheckCircleIcon fontSize="small" />
                       </Avatar>

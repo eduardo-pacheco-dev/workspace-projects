@@ -20,6 +20,7 @@ import {
 import { Delete } from '@mui/icons-material'
 import { z } from 'zod'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import Markdown from '../../components/Markdown'
 import {
   Task,
@@ -69,6 +70,7 @@ const collaboratorName = (c: CollaboratorOption) =>
 
 export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalProps) {
   const isEdit = Boolean(editId)
+  const { showToast } = useToast()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -186,11 +188,13 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
       } else {
         await api.post('/tasks', payload)
       }
+      showToast(isEdit ? 'Tarefa atualizada com sucesso.' : 'Tarefa criada com sucesso.')
       reset()
       onSaved()
       onClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }

@@ -23,6 +23,8 @@ import {
 } from '@mui/material'
 import { Edit, Delete, Add } from '@mui/icons-material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import TaskModal from './TaskModal'
 import {
   Task,
@@ -42,6 +44,7 @@ export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const editParam = searchParams.get('edit')
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [total, setTotal] = useState(0)
@@ -54,6 +57,7 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
 
   useEffect(() => {
     if (editParam) {
@@ -102,12 +106,15 @@ export default function TasksPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return
     try {
       await api.delete(`/tasks/${id}`)
       fetchTasks()
+      showToast('Tarefa excluída com sucesso.')
+      setTaskToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+      setTaskToDelete(null)
     }
   }
 
@@ -238,7 +245,7 @@ export default function TasksPage() {
                   <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: task.id }) }}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(task.id) }}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); setTaskToDelete(task) }}>
                     <Delete />
                   </IconButton>
                 </TableCell>
@@ -271,6 +278,14 @@ export default function TasksPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchTasks()}
+      />
+
+      <ConfirmDialog
+        open={!!taskToDelete}
+        title="Excluir tarefa"
+        message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"?`}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={() => taskToDelete && handleDelete(taskToDelete.id)}
       />
     </Container>
   )

@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import TaskModal from './TaskModal'
 import Markdown from '../../components/Markdown'
 import {
@@ -69,6 +70,8 @@ export default function TaskDetail() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const [subtaskToDelete, setSubtaskToDelete] = useState<Task | null>(null)
+  const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
@@ -123,14 +126,15 @@ export default function TaskDetail() {
   }
 
   const handleDeleteAttachment = async (attId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
     try {
       await api.delete(`/attachments/${attId}`)
       fetchAttachments()
       showToast('Anexo excluído com sucesso.')
+      setAttachmentToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir o anexo.')
       showToast(err.response?.data?.message || 'Não foi possível excluir o anexo.', 'error')
+      setAttachmentToDelete(null)
     }
   }
 
@@ -173,14 +177,15 @@ export default function TaskDetail() {
   }
 
   const deleteSubtask = async (subId: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta subtarefa?')) return
     try {
       await api.delete(`/tasks/${subId}`)
       await reloadSubtasks()
       showToast('Subtarefa excluída com sucesso.')
+      setSubtaskToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir a subtarefa.')
       showToast(err.response?.data?.message || 'Não foi possível excluir a subtarefa.', 'error')
+      setSubtaskToDelete(null)
     }
   }
 
@@ -310,7 +315,7 @@ export default function TaskDetail() {
                     {sub.title}
                   </Typography>
                   <Chip size="small" label={info.label} color={info.color} />
-                  <IconButton size="small" onClick={() => deleteSubtask(sub.id)}>
+                  <IconButton size="small" onClick={() => setSubtaskToDelete(sub)}>
                     <Delete fontSize="small" />
                   </IconButton>
                 </Box>
@@ -371,7 +376,7 @@ export default function TaskDetail() {
                     <IconButton size="small" component="a" href={`/api/attachments/download/${att.id}`} target="_blank">
                       <Download fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                    <IconButton size="small" onClick={() => setAttachmentToDelete(att)}>
                       <Delete fontSize="small" />
                     </IconButton>
                   </ListItemSecondaryAction>
@@ -418,6 +423,22 @@ export default function TaskDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!subtaskToDelete}
+        title="Excluir subtarefa"
+        message={`Tem certeza que deseja excluir a subtarefa "${subtaskToDelete?.title}"?`}
+        onClose={() => setSubtaskToDelete(null)}
+        onConfirm={() => subtaskToDelete && deleteSubtask(subtaskToDelete.id)}
+      />
+
+      <ConfirmDialog
+        open={!!attachmentToDelete}
+        title="Excluir anexo"
+        message={`Tem certeza que deseja excluir o anexo "${attachmentToDelete?.originalName}"?`}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={() => attachmentToDelete && handleDeleteAttachment(attachmentToDelete.id)}
+      />
     </Container>
   )
 }

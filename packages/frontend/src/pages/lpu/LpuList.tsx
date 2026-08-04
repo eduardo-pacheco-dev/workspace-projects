@@ -16,6 +16,7 @@ import {
   TextField,
   MenuItem,
   Chip,
+  Stack,
 } from '@mui/material'
 import { Edit, Delete, Add, FileDownload } from '@mui/icons-material'
 import * as XLSX from 'xlsx'
@@ -47,7 +48,7 @@ export default function LpuList() {
   const [editId, setEditId] = useState<number | null>(null)
 
   useEffect(() => {
-    api.get('/freelancers?limit=100')
+    api.get('/collaborators', { params: { limit: 100, isFreelancer: true } })
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
         setFreelancers(data)
@@ -173,8 +174,10 @@ export default function LpuList() {
                   <Chip label={l.status === 'ativo' ? 'Ativo' : 'Inativo'} color={l.status === 'ativo' ? 'success' : 'default'} size="small" />
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleEdit(l.id)}><Edit /></IconButton>
-                  <IconButton onClick={() => handleDelete(l.id)}><Delete /></IconButton>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <IconButton onClick={() => handleEdit(l.id)}><Edit /></IconButton>
+                    <IconButton onClick={() => handleDelete(l.id)}><Delete /></IconButton>
+                  </Stack>
                 </TableCell>
               </TableRow>
             ))}

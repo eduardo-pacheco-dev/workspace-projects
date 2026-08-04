@@ -17,6 +17,7 @@ import {
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import StationModal from '../stations/StationModal'
 
 interface RadioLinkModalProps {
@@ -35,6 +36,7 @@ interface Station {
 
 export default function RadioLinkModal({ open, editId, onClose, onSaved }: RadioLinkModalProps) {
   const isEdit = Boolean(editId)
+  const { showToast } = useToast()
 
   const [nome, setNome] = useState('')
   const [frequencia, setFrequencia] = useState('')
@@ -96,10 +98,12 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
       } else {
         await api.post('/radio-links', payload)
       }
+      showToast(isEdit ? 'Enlace de rádio atualizado com sucesso.' : 'Enlace de rádio criado com sucesso.')
       onSaved()
       handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }

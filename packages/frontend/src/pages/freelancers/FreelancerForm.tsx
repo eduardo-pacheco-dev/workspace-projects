@@ -31,7 +31,7 @@ export default function FreelancerForm() {
 
   useEffect(() => {
     if (isEdit) {
-      api.get(`/freelancers/${id}`)
+      api.get(`/collaborators/${id}`)
         .then((res) => {
           const data = res.data
           setUserId(String(data.userId))
@@ -59,15 +59,16 @@ export default function FreelancerForm() {
       skills: skills.split(',').map((s) => s.trim()).filter(Boolean),
       experienceLevel,
       availability,
+      isFreelancer: true,
     }
 
     try {
       if (isEdit) {
-        await api.patch(`/freelancers/${id}`, payload)
+        await api.patch(`/collaborators/${id}`, payload)
       } else {
-        await api.post('/freelancers', payload)
+        await api.post('/collaborators', payload)
       }
-      navigate('/freelancers')
+      navigate('/collaborators')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -104,7 +105,7 @@ export default function FreelancerForm() {
               <Button type="submit" variant="contained" disabled={loading}>
                 {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Update' : 'Create')}
               </Button>
-              <Button variant="outlined" onClick={() => navigate('/freelancers')}>Cancel</Button>
+              <Button variant="outlined" onClick={() => navigate('/collaborators')}>Cancel</Button>
             </Box>
           </Box>
         </CardContent>

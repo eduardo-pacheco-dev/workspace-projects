@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtRoleGuard } from './common/guards/jwt-role.guard';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { FreelancersModule } from './freelancers/freelancers.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { ContractsModule } from './contracts/contracts.module';
@@ -15,6 +16,14 @@ import { FinanceModule } from './finance/finance.module';
 import { StationsModule } from './stations/stations.module';
 import { RadioLinksModule } from './radio-links/radio-links.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ClientsModule } from './clients/clients.module';
+import { ScheduleModule } from './schedule/schedule.module';
+import { TasksModule } from './tasks/task.module';
+import { MsProjectModule } from './ms-project/ms-project.module';
+import { SettingsModule } from './settings/settings.module';
+import { CompaniesModule } from './companies/company.module';
+import { CollaboratorsModule } from './collaborators/collaborators.module';
+import { TeamsModule } from './teams/teams.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -45,7 +54,6 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     ),
     AuthModule,
     UsersModule,
-    FreelancersModule,
     JobsModule,
     ProposalsModule,
     ContractsModule,
@@ -58,7 +66,16 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     StationsModule,
     RadioLinksModule,
     ProjectsModule,
-    ...(dbType === 'sqljs' ? [SeedModule] : []),
+    ClientsModule,
+    ScheduleModule,
+    TasksModule,
+    MsProjectModule,
+    SettingsModule,
+    CompaniesModule,
+    CollaboratorsModule,
+    TeamsModule,
+    SeedModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: JwtRoleGuard }],
 })
 export class AppModule {}

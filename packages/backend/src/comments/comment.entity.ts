@@ -11,6 +11,8 @@ import { ServiceOrder } from '../service-orders/service-order.entity';
 import { Station } from '../stations/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Project } from '../projects/project.entity';
+import { Client } from '../clients/client.entity';
+import { Company } from '../companies/company.entity';
 
 @Entity()
 export class Comment {
@@ -51,6 +53,20 @@ export class Comment {
   @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'projectId' })
   project: Project | null;
+
+  @Column({ type: 'integer', nullable: true })
+  clientId: number | null;
+
+  @ManyToOne(() => Client, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'clientId' })
+  client: Client | null;
+
+  @Column({ type: 'integer', nullable: true })
+  companyId: number | null;
+
+  @ManyToOne(() => Company, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'companyId' })
+  company: Company | null;
 
   @Column({ type: 'text' })
   content: string;

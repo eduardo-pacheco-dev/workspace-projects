@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
@@ -6,6 +6,9 @@ interface User {
   id: string
   name: string
   email: string
+  role?: string
+  companyId?: number | null
+  companyName?: string | null
 }
 
 interface AuthContextType {
@@ -23,6 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return stored ? JSON.parse(stored) : null
   })
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user')
+    if (!stored) return
+    const parsed = JSON.parse(stored)
+    if (parsed?.id) {
+      api
+        .get(`/users/${parsed.id}`)
+        .then((res) => {
+          setUser(res.data)
+          localStorage.setItem('user', JSON.stringify(res.data))
+        })
+        .catch(() => {})
+    }
+  }, [])
 
   const login = async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password })

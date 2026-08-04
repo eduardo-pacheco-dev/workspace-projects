@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -92,6 +93,40 @@ export class CommentsController {
   @Get('project/:projectId')
   findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
     return this.commentsService.findByProject(projectId);
+  }
+
+  @Post('client/:clientId')
+  createForClient(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForClient(clientId, dto, author);
+  }
+
+  @Get('client/:clientId')
+  findByClient(@Param('clientId', ParseIntPipe) clientId: number) {
+    return this.commentsService.findByClient(clientId);
+  }
+
+  @Post('company/:companyId')
+  createForCompany(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Body() dto: CreateCommentDto,
+    @Request() req: any,
+  ) {
+    const author = req.user?.email || 'Anônimo';
+    return this.commentsService.createForCompany(companyId, dto, author);
+  }
+
+  @Get('company/:companyId')
+  findByCompany(
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.commentsService.findByCompany(companyId, { page, limit });
   }
 
   @Patch(':id')

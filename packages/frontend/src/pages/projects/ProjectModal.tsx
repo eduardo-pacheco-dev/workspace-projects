@@ -29,6 +29,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [cliente, setCliente] = useState('')
+  const [responsavel, setResponsavel] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [indeterminado, setIndeterminado] = useState(false)
@@ -45,6 +46,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
           setNome(d.nome || '')
           setDescricao(d.descricao || '')
           setCliente(d.cliente || '')
+          setResponsavel(d.responsavel || '')
           setDataInicio(d.dataInicio || '')
           setDataFim(d.dataFim || '')
           setIndeterminado(!d.dataFim)
@@ -60,7 +62,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setError('')
     setLoading(true)
 
-    const payload: any = { nome, descricao, cliente, dataInicio, observacoes, status }
+    const payload: any = { nome, descricao, cliente, responsavel, dataInicio, observacoes, status }
     payload.dataFim = indeterminado ? '' : dataFim
 
     try {
@@ -84,6 +86,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setNome('')
     setDescricao('')
     setCliente('')
+    setResponsavel('')
     setDataInicio('')
     setDataFim('')
     setIndeterminado(false)
@@ -104,6 +107,9 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} margin="normal" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Data de Início" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />

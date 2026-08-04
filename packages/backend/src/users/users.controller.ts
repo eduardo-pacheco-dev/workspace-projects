@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -8,7 +9,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import {
   createUserSchema,
@@ -23,39 +27,55 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput) {
-    const user = await this.usersService.createUser(dto);
+  @UseGuards(AuthGuard('jwt'))
+  async create(
+    @Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput,
+    @Request() req: any,
+  ) {
+    const user = await this.usersService.createUser(dto, req.user);
     return this.usersService.toPublicUser(user);
   }
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('search') search?: string,
+    @Request() req?: any,
   ) {
-    return this.usersService.findAllPaged({ page, limit, sortBy, sortOrder, search });
+    return this.usersService.findAllPaged({ page, limit, sortBy, sortOrder, search }, req?.user);
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.getUserOrFail(id);
+  @UseGuards(AuthGuard('jwt'))
+  async findById(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const user = await this.usersService.getUserVisibleOrFail(id, req.user);
     return this.usersService.toPublicUser(user);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserInput,
+    @Request() req: any,
   ) {
-    const user = await this.usersService.updateUser(id, dto);
+    const user = await this.usersService.updateUser(id, dto, req.user);
     return this.usersService.toPublicUser(user);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  @UseGuards(AuthGuard('jwt'))
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    if (req.user?.id === id) {
+      throw new BadRequestException('Não é possível excluir o próprio usuário.');
+    }
     await this.usersService.deleteUser(id);
     return { message: 'Usuário excluído com sucesso' };
   }

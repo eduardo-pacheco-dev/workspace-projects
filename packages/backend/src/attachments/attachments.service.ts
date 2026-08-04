@@ -12,7 +12,10 @@ export class AttachmentsService {
     private readonly attachmentRepository: Repository<Attachment>,
   ) {}
 
-  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId'>): string {
+  private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId' | 'clientId' | 'companyId' | 'taskId'>): string {
+    if (attachment.taskId) return path.resolve('uploads', `task-${attachment.taskId}`);
+    if (attachment.companyId) return path.resolve('uploads', `company-${attachment.companyId}`);
+    if (attachment.clientId) return path.resolve('uploads', `client-${attachment.clientId}`);
     if (attachment.projectId) return path.resolve('uploads', `project-${attachment.projectId}`);
     if (attachment.radioLinkId) return path.resolve('uploads', `radio-link-${attachment.radioLinkId}`);
     if (attachment.stationId) return path.resolve('uploads', `station-${attachment.stationId}`);
@@ -48,6 +51,21 @@ export class AttachmentsService {
 
     const attachment = this.attachmentRepository.create({
       jobId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
+  async uploadForTask(taskId: number, file: Express.Multer.File): Promise<Attachment> {
+    const dir = path.resolve('uploads', `task-${taskId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      taskId,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,
@@ -129,6 +147,42 @@ export class AttachmentsService {
     return this.attachmentRepository.save(attachment);
   }
 
+  async uploadForClient(
+    clientId: number,
+    file: Express.Multer.File,
+  ): Promise<Attachment> {
+    const dir = path.resolve('uploads', `client-${clientId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      clientId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
+  async uploadForCompany(
+    companyId: number,
+    file: Express.Multer.File,
+  ): Promise<Attachment> {
+    const dir = path.resolve('uploads', `company-${companyId}`);
+    const filename = this.saveFile(dir, file);
+
+    const attachment = this.attachmentRepository.create({
+      companyId,
+      filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    return this.attachmentRepository.save(attachment);
+  }
+
   async findById(id: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({ where: { id } });
     if (!attachment) throw new NotFoundException('Anexo não encontrado');
@@ -138,6 +192,13 @@ export class AttachmentsService {
   async findByJob(jobId: number): Promise<Attachment[]> {
     return this.attachmentRepository.find({
       where: { jobId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByTask(taskId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { taskId },
       order: { createdAt: 'DESC' },
     });
   }
@@ -168,6 +229,38 @@ export class AttachmentsService {
       where: { projectId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findByClient(clientId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { clientId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByCompany(
+    companyId: number,
+    query?: { page?: number; limit?: number; search?: string },
+  ): Promise<{ data: Attachment[]; total: number }> {
+    const { page = 1, limit = 10, search } = query ?? {};
+
+    const qb = this.attachmentRepository.createQueryBuilder('a');
+    qb.where('a.companyId = :companyId', { companyId });
+
+    if (search) {
+      qb.andWhere(
+        'a.originalName LIKE :search OR a.filename LIKE :search',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [data, total] = await qb
+      .orderBy('a.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async delete(id: number): Promise<void> {

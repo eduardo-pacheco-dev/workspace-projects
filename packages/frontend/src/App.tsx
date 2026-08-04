@@ -1,5 +1,7 @@
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
+import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ProjectProvider } from './contexts/ProjectContext'
+import { ToastProvider } from './contexts/ToastContext'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -10,7 +12,7 @@ import UsersPage from './pages/users/UsersPage'
 import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage'
 import ServiceOrderDetail from './pages/service-orders/ServiceOrderDetail'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
-import FreelancerDetail from './pages/freelancers/FreelancerDetail'
+import CollaboratorDetail from './pages/collaborators/CollaboratorDetail'
 import JobDetail from './pages/jobs/JobDetail'
 import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
@@ -25,13 +27,34 @@ import RadioLinksPage from './pages/radio-links/RadioLinksPage'
 import RadioLinkDetailsPage from './pages/radio-links/RadioLinkDetailsPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailsPage from './pages/projects/ProjectDetailsPage'
+import ClientsPage from './pages/clients/ClientsPage'
+import ClientDetailsPage from './pages/clients/ClientDetailsPage'
+import SchedulePage from './pages/schedule/SchedulePage'
+import TasksPage from './pages/tasks/TasksPage'
+import TaskDetail from './pages/tasks/TaskDetail'
+import MsProjectPage from './pages/ms-project/MsProjectPage'
+import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
+import SettingsPage from './pages/settings/SettingsPage'
+import CompaniesPage from './pages/companies/CompaniesPage'
+import CompanyDetailPage from './pages/companies/CompanyDetailPage'
+import ProfilePage from './pages/users/ProfilePage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
+const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients']
+const USER_ALWAYS_ALLOWED = ['/', '/profile']
+
 function ProtectedLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const location = useLocation()
   if (!isAuthenticated) return <Navigate to="/signin" replace />
+  const isMaster = user?.role === 'master'
+  const isAllowed =
+    isMaster ||
+    USER_ALWAYS_ALLOWED.includes(location.pathname) ||
+    USER_MODULES.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
+  if (!isAllowed) return <Navigate to="/" replace />
   return (
     <Layout>
       <Outlet />
@@ -39,10 +62,18 @@ function ProtectedLayout() {
   )
 }
 
+function MasterOnlyRoute({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (user?.role !== 'master') return <Navigate to="/" replace />
+  return children
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <ToastProvider>
+        <ProjectProvider>
+        <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -55,8 +86,8 @@ export default function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/service-orders" element={<ServiceOrdersPage />} />
           <Route path="/service-orders/:id" element={<ServiceOrderDetail />} />
-          <Route path="/freelancers" element={<FreelancersPage />} />
-          <Route path="/freelancers/:id" element={<FreelancerDetail />} />
+          <Route path="/collaborators" element={<FreelancersPage />} />
+          <Route path="/collaborators/:id" element={<CollaboratorDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/proposals/new" element={<ProposalForm />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />
@@ -73,8 +104,21 @@ export default function App() {
           <Route path="/radio-links/:id" element={<RadioLinkDetailsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/:id" element={<ClientDetailsPage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/tasks/:id" element={<TaskDetail />} />
+          <Route path="/ms-project" element={<MsProjectPage />} />
+          <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/companies" element={<MasterOnlyRoute><CompaniesPage /></MasterOnlyRoute>} />
+          <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
-      </Routes>
+        </Routes>
+        </ProjectProvider>
+      </ToastProvider>
     </AuthProvider>
   )
 }

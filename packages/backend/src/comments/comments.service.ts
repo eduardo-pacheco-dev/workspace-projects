@@ -68,6 +68,32 @@ export class CommentsService {
     return this.commentRepository.save(comment);
   }
 
+  async createForClient(
+    clientId: number,
+    dto: CreateCommentDto,
+    author: string,
+  ): Promise<Comment> {
+    const comment = this.commentRepository.create({
+      clientId,
+      content: dto.content,
+      author,
+    });
+    return this.commentRepository.save(comment);
+  }
+
+  async createForCompany(
+    companyId: number,
+    dto: CreateCommentDto,
+    author: string,
+  ): Promise<Comment> {
+    const comment = this.commentRepository.create({
+      companyId,
+      content: dto.content,
+      author,
+    });
+    return this.commentRepository.save(comment);
+  }
+
   async findByJob(jobId: number): Promise<Comment[]> {
     return this.commentRepository.find({
       where: { jobId },
@@ -101,6 +127,30 @@ export class CommentsService {
       where: { projectId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findByClient(clientId: number): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { clientId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByCompany(
+    companyId: number,
+    query?: { page?: number; limit?: number },
+  ): Promise<{ data: Comment[]; total: number }> {
+    const { page = 1, limit = 10 } = query ?? {};
+
+    const [data, total] = await this.commentRepository
+      .createQueryBuilder('c')
+      .where('c.companyId = :companyId', { companyId })
+      .orderBy('c.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(id: number): Promise<Comment> {

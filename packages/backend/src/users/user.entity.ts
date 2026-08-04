@@ -2,9 +2,12 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Company } from '../companies/company.entity';
 
 @Entity()
 export class User {
@@ -31,6 +34,16 @@ export class User {
 
   @Column({ nullable: true, type: 'text' })
   resetToken: string | null;
+
+  @Column({ type: 'text', default: 'user' })
+  role: string;
+
+  @Column({ type: 'integer', nullable: true })
+  companyId: number | null;
+
+  @ManyToOne(() => Company, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'companyId' })
+  company: Company | null;
 
   @CreateDateColumn()
   createdAt: Date;

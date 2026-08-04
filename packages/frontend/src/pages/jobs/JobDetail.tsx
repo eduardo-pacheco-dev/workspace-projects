@@ -210,11 +210,11 @@ export default function JobDetail() {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
-        <IconButton onClick={() => navigate('/freelancers?tab=1')}>
+        <IconButton onClick={() => navigate('/collaborators?tab=3')}>
           <ArrowBack />
         </IconButton>
         <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes do Job</Typography>
-        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/freelancers?tab=1')}>
+        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/collaborators?tab=3')}>
           Editar
         </Button>
       </Box>
@@ -402,7 +402,7 @@ export default function JobDetail() {
       </Paper>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="outlined" onClick={() => navigate('/freelancers?tab=1')}>
+        <Button variant="outlined" onClick={() => navigate('/collaborators?tab=3')}>
           Voltar para a Lista
         </Button>
       </Box>

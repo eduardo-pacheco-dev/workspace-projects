@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -54,6 +55,7 @@ interface Props {
 
 export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props) {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const isFreelancerList = isFreelancer === true
   const entityLabel = isFreelancerList ? 'Freelancer' : 'Colaborador'
   const entityLabelLower = entityLabel.toLowerCase()
@@ -181,7 +183,7 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
           </TableHead>
           <TableBody>
             {collaborators.map((c) => (
-              <TableRow key={c.id} hover>
+              <TableRow key={c.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/collaborators/${c.id}`)}>
                 <TableCell>{c.codigo || '-'}</TableCell>
                 <TableCell>{c.nome}</TableCell>
                 <TableCell>{c.cpf || '-'}</TableCell>
@@ -198,10 +200,10 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
                 {showCompany && <TableCell>{c.company?.nome || '-'}</TableCell>}
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <IconButton onClick={() => onEdit(c.id)}>
+                    <IconButton onClick={(e) => { e.stopPropagation(); onEdit(c.id) }}>
                       <Edit />
                     </IconButton>
-                    <IconButton onClick={() => setDeleteTarget({ id: c.id, nome: c.nome })}>
+                    <IconButton onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: c.id, nome: c.nome }) }}>
                       <Delete />
                     </IconButton>
                   </Box>

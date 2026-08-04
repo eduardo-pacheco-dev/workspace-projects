@@ -12,7 +12,7 @@ import UsersPage from './pages/users/UsersPage'
 import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage'
 import ServiceOrderDetail from './pages/service-orders/ServiceOrderDetail'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
-import FreelancerDetail from './pages/freelancers/FreelancerDetail'
+import CollaboratorDetail from './pages/collaborators/CollaboratorDetail'
 import JobDetail from './pages/jobs/JobDetail'
 import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
@@ -76,7 +76,7 @@ export default function App() {
           <Route path="/service-orders" element={<ServiceOrdersPage />} />
           <Route path="/service-orders/:id" element={<ServiceOrderDetail />} />
           <Route path="/collaborators" element={<FreelancersPage />} />
-          <Route path="/collaborators/:id" element={<FreelancerDetail />} />
+          <Route path="/collaborators/:id" element={<CollaboratorDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/proposals/new" element={<ProposalForm />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />

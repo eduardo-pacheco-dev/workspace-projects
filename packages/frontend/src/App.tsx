@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
+import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ToastProvider } from './contexts/ToastContext'
@@ -41,9 +41,19 @@ import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
+const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects']
+const USER_ALWAYS_ALLOWED = ['/', '/profile']
+
 function ProtectedLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const location = useLocation()
   if (!isAuthenticated) return <Navigate to="/signin" replace />
+  const isMaster = user?.role === 'master'
+  const isAllowed =
+    isMaster ||
+    USER_ALWAYS_ALLOWED.includes(location.pathname) ||
+    USER_MODULES.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
+  if (!isAllowed) return <Navigate to="/" replace />
   return (
     <Layout>
       <Outlet />

@@ -90,7 +90,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ? user.name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     : '?'
 
-  const items = [
+  const masterItems = [
     { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { label: 'Agenda', path: '/schedule', icon: <EventIcon /> },
     { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
@@ -103,11 +103,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
-    ...(user?.role === 'master'
-      ? [{ label: 'Empresas', path: '/companies', icon: <CorporateFareIcon /> }]
-      : []),
+    { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon /> },
     { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
   ]
+
+  const userItems = [
+    { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
+    { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
+    { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon /> },
+    { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
+    { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
+    { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
+  ]
+
+  const items = user?.role === 'master' ? masterItems : userItems
 
   return (
     <>

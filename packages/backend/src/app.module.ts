@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtRoleGuard } from './common/guards/jwt-role.guard';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -74,5 +76,6 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     TeamsModule,
     SeedModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: JwtRoleGuard }],
 })
 export class AppModule {}

@@ -83,11 +83,10 @@ function GlobalDashboard() {
     balance: 0,
   })
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
-  const [error, setError] = useState('')
 
   useEffect(() => {
     const today = new Date()
-    Promise.all([
+    Promise.allSettled([
       api.get('/clients', { params: { limit: 1 } }),
       api.get('/projects', { params: { limit: 1 } }),
       api.get('/stations', { params: { limit: 1 } }),
@@ -97,23 +96,26 @@ function GlobalDashboard() {
       api.get('/finance/reports/summary', {
         params: { month: today.getMonth() + 1, year: today.getFullYear() },
       }),
-    ])
-      .then(([clients, projects, stations, radioLinks, serviceOrders, recent, summary]) => {
-        const totalOf = (res: any) => (Array.isArray(res.data) ? res.data.length : (res.data.total ?? 0))
-        setStats({
-          clients: totalOf(clients),
-          projects: totalOf(projects),
-          stations: totalOf(stations),
-          radioLinks: totalOf(radioLinks),
-          serviceOrders: totalOf(serviceOrders),
-          income: summary.data.income ?? 0,
-          expenses: summary.data.expenses ?? 0,
-          balance: summary.data.balance ?? 0,
-        })
-        const data = Array.isArray(recent.data) ? recent.data : (recent.data.data ?? [])
-        setRecentProjects(data)
+    ]).then(([clients, projects, stations, radioLinks, serviceOrders, recent, summary]) => {
+      const totalOf = (r: PromiseSettledResult<any>) =>
+        r.status === 'fulfilled'
+          ? Array.isArray(r.value.data) ? r.value.data.length : (r.value.data.total ?? 0)
+          : 0
+      setStats({
+        clients: totalOf(clients),
+        projects: totalOf(projects),
+        stations: totalOf(stations),
+        radioLinks: totalOf(radioLinks),
+        serviceOrders: totalOf(serviceOrders),
+        income: summary.status === 'fulfilled' ? (summary.value.data.income ?? 0) : 0,
+        expenses: summary.status === 'fulfilled' ? (summary.value.data.expenses ?? 0) : 0,
+        balance: summary.status === 'fulfilled' ? (summary.value.data.balance ?? 0) : 0,
       })
-      .catch((err: any) => setError(err.response?.data?.message || 'Não foi possível carregar o dashboard.'))
+      const data = recent.status === 'fulfilled'
+        ? (Array.isArray(recent.value.data) ? recent.value.data : (recent.value.data.data ?? []))
+        : []
+      setRecentProjects(data)
+    })
   }, [])
 
   const statsCards: StatCard[] = [
@@ -135,7 +137,6 @@ function GlobalDashboard() {
 
   return (
     <>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {statsCards.map((item) => (
           <Grid item xs={12} sm={6} md={3} key={item.label}>

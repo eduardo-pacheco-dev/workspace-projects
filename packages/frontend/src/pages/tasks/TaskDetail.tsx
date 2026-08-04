@@ -19,6 +19,7 @@ import {
 import { ArrowBack, Edit, Assignment, Add, Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import TaskModal from './TaskModal'
+import Markdown from '../../components/Markdown'
 import {
   Task,
   statusLabels,
@@ -143,9 +144,9 @@ export default function TaskDetail() {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">Descrição</Typography>
-            <Typography variant="body1" gutterBottom sx={{ whiteSpace: 'pre-wrap' }}>
-              {task.description || '-'}
-            </Typography>
+            <Box sx={{ pt: 0.5 }}>
+              <Markdown>{task.description}</Markdown>
+            </Box>
           </Grid>
           <InfoItem label="Status" value={statusLabels[task.status] || task.status} />
           <InfoItem label="Prioridade" value={priorityLabels[task.priority] || task.priority} />

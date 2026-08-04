@@ -244,7 +244,7 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             }}
             margin="normal"
             error={!!fieldErrors.description}
-            helperText={fieldErrors.description}
+            helperText={fieldErrors.description || 'Suporta Markdown'}
           />
           <Grid container spacing={2}>
             <Grid item xs={6}>

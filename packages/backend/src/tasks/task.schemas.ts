@@ -12,6 +12,7 @@ export const createTaskSchema = z.object({
   project: z.string().optional(),
   client: z.string().optional(),
   assignedTo: z.string().optional(),
+  parentId: z.number().int().positive().optional(),
 });
 
 export const updateTaskSchema = z
@@ -24,6 +25,7 @@ export const updateTaskSchema = z
     project: z.string().optional(),
     client: z.string().optional(),
     assignedTo: z.string().optional(),
+    parentId: z.number().int().positive().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Informe ao menos um campo para atualizar.',

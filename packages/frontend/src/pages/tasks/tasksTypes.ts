@@ -8,6 +8,8 @@ export interface Task {
   project: string | null
   client: string | null
   assignedTo: string | null
+  parentId?: number | null
+  subtasks?: Task[]
   createdAt?: string
   updatedAt?: string
 }

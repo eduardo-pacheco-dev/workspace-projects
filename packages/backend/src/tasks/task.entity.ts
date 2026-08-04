@@ -2,6 +2,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -34,6 +37,16 @@ export class Task {
 
   @Column({ type: 'text', nullable: true })
   assignedTo: string | null;
+
+  @Column({ type: 'integer', nullable: true })
+  parentId?: number;
+
+  @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'parentId' })
+  parent?: Task;
+
+  @OneToMany(() => Task, (task) => task.parent)
+  subtasks: Task[];
 
   @CreateDateColumn()
   createdAt: Date;

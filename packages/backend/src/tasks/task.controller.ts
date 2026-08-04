@@ -45,6 +45,11 @@ export class TaskController {
     return this.taskService.findById(id);
   }
 
+  @Get(':id/subtasks')
+  async findSubtasks(@Param('id', ParseIntPipe) id: number) {
+    return this.taskService.findSubtasks(id);
+  }
+
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,

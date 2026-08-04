@@ -75,8 +75,8 @@ export default function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/service-orders" element={<ServiceOrdersPage />} />
           <Route path="/service-orders/:id" element={<ServiceOrderDetail />} />
-          <Route path="/freelancers" element={<FreelancersPage />} />
-          <Route path="/freelancers/:id" element={<FreelancerDetail />} />
+          <Route path="/collaborators" element={<FreelancersPage />} />
+          <Route path="/collaborators/:id" element={<FreelancerDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/proposals/new" element={<ProposalForm />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />

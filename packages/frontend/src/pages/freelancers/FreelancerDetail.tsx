@@ -69,11 +69,11 @@ export default function FreelancerDetail() {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
-        <IconButton onClick={() => navigate('/freelancers')}>
+        <IconButton onClick={() => navigate('/collaborators')}>
           <ArrowBack />
         </IconButton>
         <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes do Freelancer</Typography>
-        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/freelancers')}>
+        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/collaborators')}>
           Editar
         </Button>
       </Box>
@@ -129,7 +129,7 @@ export default function FreelancerDetail() {
       </Paper>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="outlined" onClick={() => navigate('/freelancers')}>
+        <Button variant="outlined" onClick={() => navigate('/collaborators')}>
           Voltar para a Lista
         </Button>
       </Box>

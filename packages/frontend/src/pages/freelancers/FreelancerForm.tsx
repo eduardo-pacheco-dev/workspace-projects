@@ -68,7 +68,7 @@ export default function FreelancerForm() {
       } else {
         await api.post('/collaborators', payload)
       }
-      navigate('/freelancers')
+      navigate('/collaborators')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -105,7 +105,7 @@ export default function FreelancerForm() {
               <Button type="submit" variant="contained" disabled={loading}>
                 {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Update' : 'Create')}
               </Button>
-              <Button variant="outlined" onClick={() => navigate('/freelancers')}>Cancel</Button>
+              <Button variant="outlined" onClick={() => navigate('/collaborators')}>Cancel</Button>
             </Box>
           </Box>
         </CardContent>

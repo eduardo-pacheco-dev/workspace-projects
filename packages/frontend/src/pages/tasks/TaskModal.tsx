@@ -13,10 +13,14 @@ import {
   Grid,
   IconButton,
   Tooltip,
+  Tabs,
+  Tab,
+  Paper,
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
 import { z } from 'zod'
 import api from '../../services/api'
+import Markdown from '../../components/Markdown'
 import {
   Task,
   statusOptions,
@@ -78,6 +82,7 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   const [projects, setProjects] = useState<ProjectOption[]>([])
   const [clients, setClients] = useState<string[]>([])
   const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
+  const [previewMode, setPreviewMode] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -137,6 +142,7 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
     setProject('')
     setClient('')
     setAssignedTo('')
+    setPreviewMode(false)
     setError('')
     setFieldErrors({})
     setDeleting(false)
@@ -232,20 +238,34 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             error={!!fieldErrors.title}
             helperText={fieldErrors.title}
           />
-          <TextField
-            fullWidth
-            label="Descrição"
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value)
-              clearFieldError('description')
-            }}
-            margin="normal"
-            error={!!fieldErrors.description}
-            helperText={fieldErrors.description || 'Suporta Markdown'}
-          />
+          <Tabs
+            value={previewMode ? 1 : 0}
+            onChange={(_, v) => setPreviewMode(v === 1)}
+            sx={{ mt: 1, mb: 0.5, minHeight: 32 }}
+          >
+            <Tab label="Editar" sx={{ minHeight: 32, p: 0.5 }} />
+            <Tab label="Preview" sx={{ minHeight: 32, p: 0.5 }} />
+          </Tabs>
+          {previewMode ? (
+            <Paper variant="outlined" sx={{ p: 2, minHeight: 100, bgcolor: 'background.default' }}>
+              <Markdown>{description}</Markdown>
+            </Paper>
+          ) : (
+            <TextField
+              fullWidth
+              label="Descrição"
+              multiline
+              rows={3}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value)
+                clearFieldError('description')
+              }}
+              margin="normal"
+              error={!!fieldErrors.description}
+              helperText={fieldErrors.description || 'Suporta Markdown'}
+            />
+          )}
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <TextField

@@ -11,10 +11,11 @@ import { AttachmentsModule } from '../attachments/attachments.module';
 import { CommentsModule } from '../comments/comments.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { CollaboratorsModule } from '../collaborators/collaborators.module';
+import { StationsModule } from '../stations/stations.module';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [UsersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule, AttachmentsModule, CommentsModule, ProjectsModule, CollaboratorsModule],
+  imports: [UsersModule, JobsModule, LpuModule, ScheduleModule, TasksModule, MsProjectModule, SettingsModule, CompaniesModule, AttachmentsModule, CommentsModule, ProjectsModule, CollaboratorsModule, StationsModule],
   providers: [SeedService],
 })
 export class SeedModule {}

@@ -16,6 +16,7 @@ import { AttachmentsService } from '../attachments/attachments.service';
 import { CommentsService } from '../comments/comments.service';
 import { ProjectsService } from '../projects/projects.service';
 import { CollaboratorsService } from '../collaborators/collaborators.service';
+import { StationsService } from '../stations/stations.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -34,6 +35,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly commentsService: CommentsService,
     private readonly projectsService: ProjectsService,
     private readonly collaboratorsService: CollaboratorsService,
+    private readonly stationsService: StationsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -53,6 +55,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedCompanyMembers();
     await this.seedCompanyProjects();
     await this.seedCollaborators();
+    await this.seedStations();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1158,5 +1161,63 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${comments.length} comments created for company "${company.nome}"`);
+  }
+
+  private async seedStations() {
+    const { total } = await this.stationsService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    type SeedStation = {
+      siteId: string;
+      endId: string;
+      endereco: string;
+      latitude: number;
+      longitude: number;
+      operadora: 'TIM' | 'CLARO' | 'VIVO' | 'Outras';
+      observacoes?: string;
+      status: 'ativo' | 'inativo';
+    };
+
+    const stations: SeedStation[] = [
+      { siteId: 'SP-0001', endId: 'SP0001', endereco: 'Av. Paulista, 1000 – Centro', latitude: -23.5614, longitude: -46.6559, operadora: 'VIVO', observacoes: 'ERBS urbana com 3 setores', status: 'ativo' },
+      { siteId: 'SP-0002', endId: 'SP0002', endereco: 'Rua Augusta, 2500 – Consolação', latitude: -23.5561, longitude: -46.6604, operadora: 'CLARO', observacoes: 'Micro célula em cobertura rooftop', status: 'ativo' },
+      { siteId: 'SP-0003', endId: 'SP0003', endereco: 'Av. Brigadeiro Faria Lima, 3000 – Itaim', latitude: -23.5862, longitude: -46.6824, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'SP-0004', endId: 'SP0004', endereco: 'Av. das Nações Unidas, 14000 – Brooklin', latitude: -23.6018, longitude: -46.6936, operadora: 'VIVO', observacoes: 'Radio link 11 GHz para site vizinho', status: 'ativo' },
+      { siteId: 'SP-0005', endId: 'SP0005', endereco: 'Rua Oscar Freire, 900 – Jardins', latitude: -23.5661, longitude: -46.6751, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SP-0006', endId: 'SP0006', endereco: 'Av. Ibirapuera, 3100 – Moema', latitude: -23.5874, longitude: -46.6576, operadora: 'TIM', observacoes: 'Antena setorial em poste', status: 'ativo' },
+      { siteId: 'SP-0007', endId: 'SP0007', endereco: 'Av. do Estado, 3500 – Mooca', latitude: -23.5596, longitude: -46.6164, operadora: 'VIVO', status: 'inativo' },
+      { siteId: 'SP-0008', endId: 'SP0008', endereco: 'Rua Tabapuã, 1200 – Itaim', latitude: -23.5828, longitude: -46.6809, operadora: 'CLARO', observacoes: 'Indoor solution (DAS)', status: 'ativo' },
+      { siteId: 'SP-0009', endId: 'SP0009', endereco: 'Av. Luiz Carlos Berrini, 1500 – Berrini', latitude: -23.6105, longitude: -46.6966, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'SP-0010', endId: 'SP0010', endereco: 'Praça da Sé, 1 – Centro', latitude: -23.5505, longitude: -46.6333, operadora: 'VIVO', observacoes: 'Torre em edifício histórico', status: 'ativo' },
+      { siteId: 'SP-0011', endId: 'SP0011', endereco: 'Av. Marginal Tietê, 3000 – Vila Maria', latitude: -23.5156, longitude: -46.5875, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SP-0012', endId: 'SP0012', endereco: 'Rua do Gasômetro, 800 – Brás', latitude: -23.5457, longitude: -46.6134, operadora: 'TIM', status: 'inativo' },
+      { siteId: 'RJ-0001', endId: 'RJ0001', endereco: 'Av. Atlântica, 2000 – Copacabana', latitude: -22.9711, longitude: -43.1822, operadora: 'VIVO', observacoes: 'ERBS próxima ao calçadão', status: 'ativo' },
+      { siteId: 'RJ-0002', endId: 'RJ0002', endereco: 'Av. das Américas, 5000 – Barra da Tijuca', latitude: -23.0063, longitude: -43.3239, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RJ-0003', endId: 'RJ0003', endereco: 'Rua Voluntários da Pátria, 450 – Botafogo', latitude: -22.9519, longitude: -43.1842, operadora: 'TIM', observacoes: 'Site compartilhado (colocation)', status: 'ativo' },
+      { siteId: 'RJ-0004', endId: 'RJ0004', endereco: 'Estrada das Canoas, 1200 – São Conrado', latitude: -22.9931, longitude: -43.2703, operadora: 'VIVO', observacoes: 'Cobertura em morro', status: 'ativo' },
+      { siteId: 'RJ-0005', endId: 'RJ0005', endereco: 'Av. Brasil, 10000 – Maré', latitude: -22.8707, longitude: -43.2719, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RJ-0006', endId: 'RJ0006', endereco: 'Praia de Botafogo, 700 – Botafogo', latitude: -22.9468, longitude: -43.1832, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'RJ-0007', endId: 'RJ0007', endereco: 'Av. Nossa Senhora de Copacabana, 1200 – Copacabana', latitude: -22.9679, longitude: -43.1839, operadora: 'VIVO', status: 'ativo' },
+      { siteId: 'RJ-0008', endId: 'RJ0008', endereco: 'Estrada do Galeão, 1500 – Ilha do Governador', latitude: -22.8116, longitude: -43.2016, operadora: 'CLARO', observacoes: 'Suporte à cobertura do aeroporto', status: 'ativo' },
+      { siteId: 'RJ-0009', endId: 'RJ0009', endereco: 'Rua do Ouvidor, 100 – Centro', latitude: -22.9035, longitude: -43.1796, operadora: 'TIM', status: 'inativo' },
+      { siteId: 'MG-0001', endId: 'MG0001', endereco: 'Av. Afonso Pena, 2500 – Funcionários', latitude: -19.9227, longitude: -43.9451, operadora: 'VIVO', observacoes: 'ERBS com painel solar', status: 'ativo' },
+      { siteId: 'MG-0002', endId: 'MG0002', endereco: 'Av. do Contorno, 6500 – Savassi', latitude: -19.9318, longitude: -43.9359, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'MG-0003', endId: 'MG0003', endereco: 'Av. Antônio Carlos, 4000 – Pampulha', latitude: -19.8466, longitude: -43.9485, operadora: 'TIM', observacoes: 'Site próximo ao campus universitário', status: 'ativo' },
+      { siteId: 'MG-0004', endId: 'MG0004', endereco: 'Av. Cristiano Machado, 3500 – Venda Nova', latitude: -19.8528, longitude: -43.9378, operadora: 'VIVO', status: 'ativo' },
+      { siteId: 'MG-0005', endId: 'MG0005', endereco: 'Rua da Bahia, 1800 – Centro', latitude: -19.9265, longitude: -43.9346, operadora: 'CLARO', status: 'inativo' },
+      { siteId: 'RS-0001', endId: 'RS0001', endereco: 'Av. Ipiranga, 6681 – Partenon', latitude: -30.0553, longitude: -51.1717, operadora: 'VIVO', observacoes: 'Site universitário com alta demanda', status: 'ativo' },
+      { siteId: 'RS-0002', endId: 'RS0002', endereco: 'Av. Borges de Medeiros, 800 – Centro', latitude: -30.0318, longitude: -51.2302, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'RS-0003', endId: 'RS0003', endereco: 'Av. Assis Brasil, 1200 – Passo D´Areia', latitude: -30.0063, longitude: -51.1654, operadora: 'TIM', status: 'ativo' },
+      { siteId: 'PR-0001', endId: 'PR0001', endereco: 'Av. Sete de Setembro, 3000 – Rebouças', latitude: -25.4385, longitude: -49.2781, operadora: 'VIVO', observacoes: 'ERBS em torre de concreto', status: 'ativo' },
+      { siteId: 'PR-0002', endId: 'PR0002', endereco: 'Rua XV de Novembro, 1500 – Centro', latitude: -25.4286, longitude: -49.2715, operadora: 'CLARO', status: 'ativo' },
+      { siteId: 'SC-0001', endId: 'SC0001', endereco: 'Av. Beira-Mar Norte, 1500 – Centro', latitude: -27.5935, longitude: -48.5483, operadora: 'TIM', observacoes: 'Cobertura da orla', status: 'ativo' },
+      { siteId: 'BA-0001', endId: 'BA0001', endereco: 'Av. Oceânica, 2000 – Ondina', latitude: -13.0068, longitude: -38.4954, operadora: 'VIVO', observacoes: 'Site litorâneo em edifício', status: 'ativo' },
+    ];
+
+    for (const station of stations) {
+      await this.stationsService.create(station);
+    }
+
+    console.log(`Seed: ${stations.length} stations created`);
   }
 }

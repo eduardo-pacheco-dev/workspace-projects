@@ -47,6 +47,22 @@ interface TaskModalProps {
   onSaved: () => void
 }
 
+interface ProjectOption {
+  id: number
+  nome: string
+  cliente: string | null
+}
+
+interface CollaboratorOption {
+  id: number
+  nome: string | null
+  firstName?: string | null
+  lastName?: string | null
+}
+
+const collaboratorName = (c: CollaboratorOption) =>
+  c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
+
 export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalProps) {
   const isEdit = Boolean(editId)
 
@@ -59,10 +75,34 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   const [project, setProject] = useState('')
   const [client, setClient] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [clients, setClients] = useState<string[]>([])
+  const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    api
+      .get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setProjects(d)
+        const clientSet = new Set<string>()
+        d.forEach((p: any) => { if (p.cliente) clientSet.add(p.cliente) })
+        setClients(Array.from(clientSet))
+      })
+      .catch(() => {})
+    api
+      .get('/collaborators', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setCollaborators(d)
+      })
+      .catch(() => {})
+  }, [open])
 
   useEffect(() => {
     if (open && editId) {
@@ -270,20 +310,31 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                select
                 label="Projeto"
                 value={project}
                 onChange={(e) => {
                   setProject(e.target.value)
+                  if (!client) {
+                    const selected = projects.find((p) => p.nome === e.target.value)
+                    if (selected?.cliente) setClient(selected.cliente)
+                  }
                   clearFieldError('project')
                 }}
                 margin="normal"
                 error={!!fieldErrors.project}
-                helperText={fieldErrors.project}
-              />
+                helperText={fieldErrors.project || 'Opcional'}
+              >
+                <MenuItem value="">Sem projeto</MenuItem>
+                {projects.map((p) => (
+                  <MenuItem key={p.id} value={p.nome}>{p.nome}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                select
                 label="Cliente"
                 value={client}
                 onChange={(e) => {
@@ -292,12 +343,18 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
                 }}
                 margin="normal"
                 error={!!fieldErrors.client}
-                helperText={fieldErrors.client}
-              />
+                helperText={fieldErrors.client || 'Opcional'}
+              >
+                <MenuItem value="">Sem cliente</MenuItem>
+                {clients.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
           </Grid>
           <TextField
             fullWidth
+            select
             label="Responsável"
             value={assignedTo}
             onChange={(e) => {
@@ -306,8 +363,13 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             }}
             margin="normal"
             error={!!fieldErrors.assignedTo}
-            helperText={fieldErrors.assignedTo}
-          />
+            helperText={fieldErrors.assignedTo || 'Opcional'}
+          >
+            <MenuItem value="">Sem responsável</MenuItem>
+            {collaborators.map((c) => (
+              <MenuItem key={c.id} value={collaboratorName(c)}>{collaboratorName(c)}</MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (

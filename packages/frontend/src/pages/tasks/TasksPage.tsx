@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Container,
   Typography,
@@ -41,6 +41,7 @@ type SortOrder = 'ASC' | 'DESC'
 export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const editParam = searchParams.get('edit')
+  const navigate = useNavigate()
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [total, setTotal] = useState(0)
@@ -213,7 +214,7 @@ export default function TasksPage() {
           </TableHead>
           <TableBody>
             {tasks.map((task) => (
-              <TableRow key={task.id} hover>
+              <TableRow key={task.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/tasks/${task.id}`)}>
                 <TableCell sx={{ fontWeight: 600 }}>{task.title}</TableCell>
                 <TableCell>
                   <Chip
@@ -234,10 +235,10 @@ export default function TasksPage() {
                 <TableCell>{task.client || '-'}</TableCell>
                 <TableCell>{task.assignedTo || '-'}</TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton onClick={() => setModal({ open: true, editId: task.id })}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: task.id }) }}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(task.id)}>
+                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(task.id) }}>
                     <Delete />
                   </IconButton>
                 </TableCell>

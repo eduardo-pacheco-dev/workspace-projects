@@ -8,6 +8,8 @@ export interface Task {
   project: string | null
   client: string | null
   assignedTo: string | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'

@@ -12,9 +12,16 @@ interface StationMapItem {
   longitude: number | null
   endereco: string | null
   status: string
+  operadora: string | null
 }
 
-export default function StationsMapTab() {
+interface StationsMapTabProps {
+  search?: string
+  status?: string
+  operadora?: string
+}
+
+export default function StationsMapTab({ search = '', status = '', operadora = '' }: StationsMapTabProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [stations, setStations] = useState<StationMapItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,8 +30,12 @@ export default function StationsMapTab() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    const params: Record<string, unknown> = { page: 1, limit: 100000 }
+    if (search) params.search = search
+    if (status) params.status = status
+    if (operadora) params.operadora = operadora
     api
-      .get('/stations', { params: { page: 1, limit: 100000 } })
+      .get('/stations', { params })
       .then((res) => {
         if (cancelled) return
         setStations(Array.isArray(res.data) ? res.data : res.data.data ?? [])
@@ -39,7 +50,7 @@ export default function StationsMapTab() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [search, status, operadora])
 
   useEffect(() => {
     if (!mapRef.current || loading) return

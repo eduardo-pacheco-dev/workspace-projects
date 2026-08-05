@@ -146,15 +146,6 @@ export default function StationsPage() {
         </Box>
       </Box>
 
-      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
-        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
-        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
-      </Tabs>
-
-      {tab === 1 ? (
-        <StationsMapTab />
-      ) : (
-        <>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           size="small"
@@ -200,6 +191,15 @@ export default function StationsPage() {
         </TextField>
       </Stack>
 
+      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
+        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
+        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
+      </Tabs>
+
+      {tab === 1 ? (
+        <StationsMapTab search={search} status={statusFilter} operadora={operadoraFilter} />
+      ) : (
+        <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <TableContainer component={Paper}>

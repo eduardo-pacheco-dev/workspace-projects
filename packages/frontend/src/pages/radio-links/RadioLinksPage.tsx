@@ -56,6 +56,7 @@ export default function RadioLinksPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [operadoraFilter, setOperadoraFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
@@ -71,6 +72,7 @@ export default function RadioLinksPage() {
       }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
+      if (operadoraFilter) params.operadora = operadoraFilter
 
       const res = await api.get('/radio-links', { params })
       if (Array.isArray(res.data)) {
@@ -83,7 +85,7 @@ export default function RadioLinksPage() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter])
+  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter, operadoraFilter])
 
   useEffect(() => {
     fetchData()
@@ -167,6 +169,23 @@ export default function RadioLinksPage() {
           <MenuItem value="">Todos</MenuItem>
           <MenuItem value="ativo">Ativo</MenuItem>
           <MenuItem value="inativo">Inativo</MenuItem>
+        </TextField>
+        <TextField
+          size="small"
+          select
+          label="Operadora"
+          value={operadoraFilter}
+          onChange={(e) => {
+            setOperadoraFilter(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 140 }}
+        >
+          <MenuItem value="">Todas</MenuItem>
+          <MenuItem value="TIM">TIM</MenuItem>
+          <MenuItem value="CLARO">CLARO</MenuItem>
+          <MenuItem value="VIVO">VIVO</MenuItem>
+          <MenuItem value="Outras">Outras</MenuItem>
         </TextField>
       </Stack>
 

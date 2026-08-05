@@ -21,8 +21,8 @@ import { useToast } from '../../contexts/ToastContext'
 
 interface ImportResult {
   imported: number
+  updated: number
   skipped: number
-  duplicates: number
   errors: string[]
 }
 
@@ -131,7 +131,9 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
           .post('/stations/import', { stations })
           .then((res) => {
             setResult(res.data)
-            showToast(`${res.data.imported} estação(ões) importada(s).`)
+            showToast(
+              `${res.data.imported} importada(s), ${res.data.updated} atualizada(s), ${res.data.skipped} ignorada(s).`,
+            )
             onImported()
           })
           .catch((err) => {
@@ -172,7 +174,7 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
       <DialogTitle>Importar Estações</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). Estações com o mesmo Site ID e End ID serão ignoradas.
+          Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). Estações que já existem (mesmo Site ID e End ID) serão atualizadas.
         </Typography>
 
         <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate} sx={{ mb: 2 }}>
@@ -229,10 +231,11 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
 
         {result && (
           <Stack spacing={1} sx={{ mt: 2 }}>
-            <Alert severity="success">{result.imported} estação(ões) importada(s)</Alert>
-            <Alert severity="warning">
-              {result.skipped} ignorada(s){result.duplicates ? ` (${result.duplicates} duplicada(s))` : ''}
-            </Alert>
+            {result.imported > 0 && <Alert severity="success">{result.imported} estação(ões) importada(s)</Alert>}
+            {result.updated > 0 && <Alert severity="info">{result.updated} estação(ões) atualizada(s)</Alert>}
+            {result.skipped > 0 && (
+              <Alert severity="warning">{result.skipped} ignorada(s)</Alert>
+            )}
             {!!result.errors.length && (
               <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
                 {result.errors.map((msg, i) => (

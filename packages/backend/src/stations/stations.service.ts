@@ -18,8 +18,8 @@ export interface StationQuery {
 
 export interface ImportResult {
   imported: number;
+  updated: number;
   skipped: number;
-  duplicates: number;
   errors: string[];
 }
 
@@ -36,9 +36,9 @@ export class StationsService {
   }
 
   async importStations(items: ImportStationItem[]): Promise<ImportResult> {
-    const result: ImportResult = { imported: 0, skipped: 0, duplicates: 0, errors: [] };
+    const result: ImportResult = { imported: 0, updated: 0, skipped: 0, errors: [] };
 
-    const toInsert: Partial<Station>[] = [];
+    const parsed: { data: Partial<Station>; row: number }[] = [];
     items.forEach((item, index) => {
       const row = index + 1;
       const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
@@ -70,39 +70,47 @@ export class StationsService {
         return Number.isFinite(num) ? num : undefined;
       };
 
-      toInsert.push({
-        siteId,
-        endId,
-        endereco,
-        latitude: parseCoord(item.latitude),
-        longitude: parseCoord(item.longitude),
-        operadora,
-        observacoes,
-        status,
+      parsed.push({
+        row,
+        data: {
+          siteId,
+          endId,
+          endereco,
+          latitude: parseCoord(item.latitude),
+          longitude: parseCoord(item.longitude),
+          operadora,
+          observacoes,
+          status,
+        },
       });
     });
 
-    if (toInsert.length === 0) return result;
+    if (parsed.length === 0) return result;
 
-    const existing = await this.stationsRepository.find({ select: ['siteId', 'endId'] });
-    const existingKeys = new Set(existing.map((s) => `${s.siteId}::${s.endId}`));
-    const seen = new Set<string>();
+    const existing = await this.stationsRepository.find({ select: ['id', 'siteId', 'endId'] });
+    const existingByKey = new Map(existing.map((s) => [`${s.siteId}::${s.endId}`, s]));
 
-    const fresh: Partial<Station>[] = [];
-    for (const item of toInsert) {
-      const key = `${item.siteId}::${item.endId}`;
-      if (existingKeys.has(key) || seen.has(key)) {
-        result.duplicates++;
-        result.skipped++;
-        continue;
+    const pendingInsert = new Map<string, Partial<Station>>();
+    const toUpdate: { id: number; data: Partial<Station> }[] = [];
+
+    for (const { data } of parsed) {
+      const key = `${data.siteId}::${data.endId}`;
+      const existingStation = existingByKey.get(key);
+      if (existingStation) {
+        toUpdate.push({ id: existingStation.id, data });
+      } else {
+        pendingInsert.set(key, data);
       }
-      seen.add(key);
-      fresh.push(item);
     }
 
-    if (fresh.length > 0) {
-      await this.stationsRepository.insert(fresh);
-      result.imported = fresh.length;
+    if (pendingInsert.size > 0) {
+      await this.stationsRepository.insert([...pendingInsert.values()]);
+      result.imported = pendingInsert.size;
+    }
+
+    for (const { id, data } of toUpdate) {
+      await this.stationsRepository.update(id, data);
+      result.updated++;
     }
 
     return result;

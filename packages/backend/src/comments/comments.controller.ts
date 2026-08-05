@@ -80,8 +80,12 @@ export class CommentsController {
   }
 
   @Get('radio-link/:radioLinkId')
-  findByRadioLink(@Param('radioLinkId', ParseIntPipe) radioLinkId: number) {
-    return this.commentsService.findByRadioLink(radioLinkId);
+  findByRadioLink(
+    @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.commentsService.findByRadioLink(radioLinkId, { page, limit });
   }
 
   @Post('project/:projectId')

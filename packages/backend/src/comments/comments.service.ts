@@ -125,11 +125,21 @@ export class CommentsService {
     return { data, total };
   }
 
-  async findByRadioLink(radioLinkId: number): Promise<Comment[]> {
-    return this.commentRepository.find({
-      where: { radioLinkId },
-      order: { createdAt: 'DESC' },
-    });
+  async findByRadioLink(
+    radioLinkId: number,
+    query?: { page?: number; limit?: number },
+  ): Promise<{ data: Comment[]; total: number }> {
+    const { page = 1, limit = 10 } = query ?? {};
+
+    const [data, total] = await this.commentRepository
+      .createQueryBuilder('c')
+      .where('c.radioLinkId = :radioLinkId', { radioLinkId })
+      .orderBy('c.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findByProject(projectId: number): Promise<Comment[]> {

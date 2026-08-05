@@ -117,8 +117,14 @@ export class AttachmentsController {
   }
 
   @Get('radio-link/:radioLinkId')
-  findByRadioLink(@Param('radioLinkId', ParseIntPipe) radioLinkId: number) {
-    return this.attachmentsService.findByRadioLink(radioLinkId);
+  findByRadioLink(
+    @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.attachmentsService.findByRadioLink(radioLinkId, { page, limit, search, type });
   }
 
   @Get('project/:projectId')

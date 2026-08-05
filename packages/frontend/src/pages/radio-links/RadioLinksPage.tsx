@@ -19,14 +19,17 @@ import {
   Stack,
   Chip,
   MenuItem,
+  Tabs,
+  Tab,
 } from '@mui/material'
-import { Edit, Delete, Add, Upload } from '@mui/icons-material'
+import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import RadioLinkModal from './RadioLinkModal'
 import ImportRadioLinksModal from './ImportRadioLinksModal'
+import RadioLinksMapTab from './RadioLinksMapTab'
 
 interface RadioLink {
   id: number
@@ -61,6 +64,7 @@ export default function RadioLinksPage() {
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [tab, setTab] = useState(0)
 
   const fetchData = useCallback(async () => {
     try {
@@ -189,6 +193,15 @@ export default function RadioLinksPage() {
         </TextField>
       </Stack>
 
+      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
+        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
+        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
+      </Tabs>
+
+      {tab === 1 ? (
+        <RadioLinksMapTab search={search} status={statusFilter} operadora={operadoraFilter} />
+      ) : (
+        <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <TableContainer component={Paper}>
@@ -291,6 +304,8 @@ export default function RadioLinksPage() {
         onClose={() => setLinkToDelete(null)}
         onConfirm={() => linkToDelete && handleDelete(linkToDelete.id)}
       />
+        </>
+      )}
     </Container>
   )
 }

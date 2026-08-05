@@ -12,6 +12,7 @@ import {
 import { RadioLinksService } from './radio-links.service';
 import { CreateRadioLinkDto } from './dto/create-radio-link.dto';
 import { UpdateRadioLinkDto } from './dto/update-radio-link.dto';
+import { ImportRadioLinksDto } from './dto/import-radio-links.dto';
 
 @Controller('radio-links')
 export class RadioLinksController {
@@ -20,6 +21,11 @@ export class RadioLinksController {
   @Post()
   create(@Body() dto: CreateRadioLinkDto) {
     return this.radioLinksService.create(dto);
+  }
+
+  @Post('import')
+  import(@Body() dto: ImportRadioLinksDto) {
+    return this.radioLinksService.importRadioLinks(dto.radioLinks);
   }
 
   @Get()

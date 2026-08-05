@@ -20,13 +20,13 @@ import {
   Chip,
   MenuItem,
 } from '@mui/material'
-import { Edit, Delete, Add, Download } from '@mui/icons-material'
-import * as XLSX from 'xlsx'
+import { Edit, Delete, Add, Upload } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import RadioLinkModal from './RadioLinkModal'
+import ImportRadioLinksModal from './ImportRadioLinksModal'
 
 interface RadioLink {
   id: number
@@ -59,6 +59,7 @@ export default function RadioLinksPage() {
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -119,85 +120,7 @@ export default function RadioLinksPage() {
     setPage(0)
   }
 
-  const handleDownloadTemplate = () => {
-    const rows = [
-      {
-        Nome: 'ENLACE-EXEMPLO',
-        Frequência: '23 GHz',
-        Capacidade: '1 Gbps',
-        'Operadora A': 'TIM',
-        'Site ID A': 'SITE-001',
-        'End ID A': 'END-001',
-        'Endereço A': 'Av. Exemplo, 100',
-        'Latitude A': -23.5505,
-        'Longitude A': -46.6333,
-        'Operadora B': 'CLARO',
-        'Site ID B': 'SITE-002',
-        'End ID B': 'END-002',
-        'Endereço B': 'Rua Exemplo, 200',
-        'Latitude B': -23.555,
-        'Longitude B': -46.64,
-        Observações: 'Exemplo de preenchimento',
-        Status: 'ativo',
-      },
-      {
-        Nome: '',
-        Frequência: '',
-        Capacidade: '',
-        'Operadora A': 'VIVO',
-        'Site ID A': '',
-        'End ID A': '',
-        'Endereço A': '',
-        'Latitude A': '',
-        'Longitude A': '',
-        'Operadora B': 'TIM',
-        'Site ID B': '',
-        'End ID B': '',
-        'Endereço B': '',
-        'Latitude B': '',
-        'Longitude B': '',
-        Observações: '',
-        Status: 'ativo',
-      },
-    ]
-    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false })
-    ws['!cols'] = [
-      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-      { wch: 32 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-      { wch: 32 }, { wch: 12 }, { wch: 12 }, { wch: 40 }, { wch: 10 },
-    ]
-
-    const border = {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
-    }
-    const cellAddresses = XLSX.utils.decode_range(ws['!ref'] || 'A1')
-    for (let r = cellAddresses.s.r; r <= cellAddresses.e.r; r++) {
-      for (let c = cellAddresses.s.c; c <= cellAddresses.e.c; c++) {
-        const addr = XLSX.utils.encode_cell({ r, c })
-        if (!ws[addr]) ws[addr] = { t: 's', v: '' }
-        ws[addr].s = { border }
-        if (r === 0) {
-          ws[addr].s = {
-            ...ws[addr].s,
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '1976D2' } },
-            alignment: { horizontal: 'center' },
-          }
-        }
-      }
-    }
-    ws['!freeze'] = { xSplit: 0, ySplit: 1 }
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Enlaces de Rádio')
-    XLSX.writeFile(wb, 'template-enlaces-de-radio.xlsx')
-  }
-
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
+  const columns: { id: SortBy; label: string }[] = [    { id: 'nome', label: 'Nome' },
     { id: 'frequencia', label: 'Frequência' },
     { id: 'capacidade', label: 'Capacidade' },
     { id: 'siteIdA', label: 'Estação A' },
@@ -210,8 +133,8 @@ export default function RadioLinksPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Enlaces de Rádio</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate}>
-            Baixar Template
+          <Button variant="outlined" startIcon={<Upload />} onClick={() => setImportOpen(true)}>
+            Importar
           </Button>
           <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
             Novo Enlace
@@ -334,6 +257,12 @@ export default function RadioLinksPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ImportRadioLinksModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => fetchData()}
       />
 
       <ConfirmDialog

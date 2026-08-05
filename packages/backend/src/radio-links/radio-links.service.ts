@@ -5,6 +5,7 @@ import { RadioLink } from './radio-link.entity';
 import { Station } from '../stations/station.entity';
 import { CreateRadioLinkDto } from './dto/create-radio-link.dto';
 import { UpdateRadioLinkDto } from './dto/update-radio-link.dto';
+import { ImportRadioLinkItem } from './dto/import-radio-links.dto';
 
 export interface RadioLinkQuery {
   page?: number;
@@ -14,6 +15,13 @@ export interface RadioLinkQuery {
   search?: string;
   status?: string;
   operadora?: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
 }
 
 @Injectable()
@@ -56,6 +64,126 @@ export class RadioLinksService {
     const radioLink = this.radioLinksRepository.create(dto);
     await this.applyStations(radioLink, dto);
     return this.radioLinksRepository.save(radioLink);
+  }
+
+  async importRadioLinks(items: ImportRadioLinkItem[]): Promise<ImportResult> {
+    const result: ImportResult = { imported: 0, updated: 0, skipped: 0, errors: [] };
+
+    const cleanStr = (value: unknown): string | undefined => {
+      return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+    };
+
+    const parseCoord = (value: unknown): number | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : undefined;
+    };
+
+    const parsed: { data: Partial<RadioLink>; row: number }[] = [];
+    items.forEach((item, index) => {
+      const row = index + 1;
+      const nome = typeof item.nome === 'string' ? item.nome.trim() : '';
+      if (!nome) {
+        result.skipped++;
+        result.errors.push(`Linha ${row}: Nome é obrigatório.`);
+        return;
+      }
+
+      parsed.push({
+        row,
+        data: {
+          nome,
+          frequencia: cleanStr(item.frequencia),
+          capacidade: cleanStr(item.capacidade),
+          siteIdA: cleanStr(item.siteIdA),
+          endIdA: cleanStr(item.endIdA),
+          enderecoA: cleanStr(item.enderecoA),
+          latitudeA: parseCoord(item.latitudeA),
+          longitudeA: parseCoord(item.longitudeA),
+          operadoraA: cleanStr(item.operadoraA),
+          siteIdB: cleanStr(item.siteIdB),
+          endIdB: cleanStr(item.endIdB),
+          enderecoB: cleanStr(item.enderecoB),
+          latitudeB: parseCoord(item.latitudeB),
+          longitudeB: parseCoord(item.longitudeB),
+          operadoraB: cleanStr(item.operadoraB),
+          observacoes: cleanStr(item.observacoes),
+          status: item.status === 'inativo' ? 'inativo' : 'ativo',
+        },
+      });
+    });
+
+    if (parsed.length === 0) return result;
+
+    const stations = await this.stationsRepository.find();
+    const bySiteId = new Map<string, Station>();
+    const bySiteAndEnd = new Map<string, Station>();
+    for (const s of stations) {
+      if (s.siteId) bySiteId.set(s.siteId, s);
+      if (s.siteId && s.endId) bySiteAndEnd.set(`${s.siteId}::${s.endId}`, s);
+    }
+
+    const resolveStation = (
+      siteId: string | undefined,
+      endId: string | undefined,
+      operadora: string | undefined,
+    ): Station | null => {
+      if (!siteId) return null;
+      if (operadora === 'TIM' && endId) {
+        return bySiteAndEnd.get(`${siteId}::${endId}`) ?? bySiteId.get(siteId) ?? null;
+      }
+      return bySiteId.get(siteId) ?? null;
+    };
+
+    for (const item of parsed) {
+      const stationA = resolveStation(item.data.siteIdA, item.data.endIdA, item.data.operadoraA);
+      if (stationA) {
+        item.data.stationAId = stationA.id;
+        item.data.siteIdA = stationA.siteId;
+        item.data.endIdA = stationA.endId;
+        item.data.enderecoA = stationA.endereco;
+        item.data.latitudeA = stationA.latitude;
+        item.data.longitudeA = stationA.longitude;
+        item.data.operadoraA = stationA.operadora;
+      }
+      const stationB = resolveStation(item.data.siteIdB, item.data.endIdB, item.data.operadoraB);
+      if (stationB) {
+        item.data.stationBId = stationB.id;
+        item.data.siteIdB = stationB.siteId;
+        item.data.endIdB = stationB.endId;
+        item.data.enderecoB = stationB.endereco;
+        item.data.latitudeB = stationB.latitude;
+        item.data.longitudeB = stationB.longitude;
+        item.data.operadoraB = stationB.operadora;
+      }
+    }
+
+    const existing = await this.radioLinksRepository.find({ select: ['id', 'nome'] });
+    const byNome = new Map(existing.map((r) => [r.nome, r.id]));
+
+    const pendingInsert = new Map<string, Partial<RadioLink>>();
+    const toUpdate: { id: number; data: Partial<RadioLink> }[] = [];
+
+    for (const { data } of parsed) {
+      const existingId = byNome.get(data.nome!);
+      if (existingId) {
+        toUpdate.push({ id: existingId, data });
+      } else {
+        pendingInsert.set(data.nome!, data);
+      }
+    }
+
+    if (pendingInsert.size > 0) {
+      await this.radioLinksRepository.insert([...pendingInsert.values()]);
+      result.imported = pendingInsert.size;
+    }
+
+    for (const { id, data } of toUpdate) {
+      await this.radioLinksRepository.update(id, data);
+      result.updated++;
+    }
+
+    return result;
   }
 
   async findAll(query: RadioLinkQuery): Promise<{ data: RadioLink[]; total: number }> {

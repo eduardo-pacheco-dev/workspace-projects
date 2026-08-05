@@ -60,7 +60,8 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
     setError('')
     setLoading(true)
 
-    const payload: any = { siteId, endId, endereco, operadora, observacoes, status }
+    const isTim = !operadora || operadora === 'TIM'
+    const payload: any = { siteId, endId: isTim ? endId : '', endereco, operadora, observacoes, status }
     if (latitude) payload.latitude = Number(latitude)
     if (longitude) payload.longitude = Number(longitude)
 
@@ -104,9 +105,11 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Site ID" value={siteId} onChange={(e) => setSiteId(e.target.value)} margin="normal" required />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="End ID" value={endId} onChange={(e) => setEndId(e.target.value)} margin="normal" required />
-            </Grid>
+            {(!operadora || operadora === 'TIM') && (
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label="End ID" value={endId} onChange={(e) => setEndId(e.target.value)} margin="normal" required />
+              </Grid>
+            )}
             <Grid item xs={12} sm={6}>
               <TextField fullWidth select label="Operadora" value={operadora} onChange={(e) => setOperadora(e.target.value)} margin="normal">
                 <MenuItem value="">Selecione</MenuItem>

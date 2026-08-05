@@ -108,11 +108,21 @@ export class CommentsService {
     });
   }
 
-  async findByStation(stationId: number): Promise<Comment[]> {
-    return this.commentRepository.find({
-      where: { stationId },
-      order: { createdAt: 'DESC' },
-    });
+  async findByStation(
+    stationId: number,
+    query?: { page?: number; limit?: number },
+  ): Promise<{ data: Comment[]; total: number }> {
+    const { page = 1, limit = 10 } = query ?? {};
+
+    const [data, total] = await this.commentRepository
+      .createQueryBuilder('c')
+      .where('c.stationId = :stationId', { stationId })
+      .orderBy('c.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findByRadioLink(radioLinkId: number): Promise<Comment[]> {

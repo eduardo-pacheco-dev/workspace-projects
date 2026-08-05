@@ -22,6 +22,9 @@ import {
   DialogContent,
   TextField,
   CircularProgress,
+  TablePagination,
+  Stack,
+  MenuItem,
 } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -90,6 +93,11 @@ export default function StationDetailsPage() {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachmentPage, setAttachmentPage] = useState(0)
+  const [attachmentsTotal, setAttachmentsTotal] = useState(0)
+  const [attachmentsPerPage, setAttachmentsPerPage] = useState(5)
+  const [attachmentSearch, setAttachmentSearch] = useState('')
+  const [attachmentType, setAttachmentType] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsError, setCommentsError] = useState('')
   const [newComment, setNewComment] = useState('')
@@ -99,6 +107,9 @@ export default function StationDetailsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null)
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null)
+  const [commentPage, setCommentPage] = useState(0)
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [commentsPerPage, setCommentsPerPage] = useState(5)
 
   const fetchData = useCallback(async () => {
     try {
@@ -114,10 +125,21 @@ export default function StationDetailsPage() {
   }, [fetchData])
 
   const fetchAttachments = useCallback(() => {
-    api.get(`/attachments/station/${stationId}`)
-      .then((res) => setAttachments(res.data))
+    api
+      .get(`/attachments/station/${stationId}`, {
+        params: {
+          page: attachmentPage + 1,
+          limit: attachmentsPerPage,
+          search: attachmentSearch || undefined,
+          type: attachmentType || undefined,
+        },
+      })
+      .then((res) => {
+        setAttachments(res.data.data ?? [])
+        setAttachmentsTotal(res.data.total ?? 0)
+      })
       .catch(() => {})
-  }, [stationId])
+  }, [stationId, attachmentPage, attachmentsPerPage, attachmentSearch, attachmentType])
 
   useEffect(() => {
     fetchAttachments()
@@ -125,14 +147,18 @@ export default function StationDetailsPage() {
 
   const fetchComments = useCallback(() => {
     setCommentsError('')
-    api.get(`/comments/station/${stationId}`)
+    api
+      .get(`/comments/station/${stationId}`, {
+        params: { page: commentPage + 1, limit: commentsPerPage },
+      })
       .then((res) => {
-        setComments(res.data)
+        setComments(res.data.data ?? [])
+        setCommentsTotal(res.data.total ?? 0)
       })
       .catch((err) => {
         setCommentsError(err.response?.data?.message || 'Não foi possível carregar os comentários.')
       })
-  }, [stationId])
+  }, [stationId, commentPage, commentsPerPage])
 
   useEffect(() => {
     fetchComments()
@@ -144,6 +170,7 @@ export default function StationDetailsPage() {
     try {
       await api.post(`/comments/station/${stationId}`, { content: newComment })
       setNewComment('')
+      setCommentPage(0)
       fetchComments()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível enviar o comentário.')
@@ -177,6 +204,7 @@ export default function StationDetailsPage() {
   const handleDeleteComment = async (commentId: number) => {
     try {
       await api.delete(`/comments/${commentId}`)
+      setCommentPage(0)
       fetchComments()
       showToast('Comentário excluído com sucesso.')
       setCommentToDelete(null)
@@ -190,14 +218,22 @@ export default function StationDetailsPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const MAX_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      showToast('O arquivo excede o limite de 50MB.', 'error')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
     setUploading(true)
     try {
       const form = new FormData()
       form.append('file', file)
       await api.post(`/attachments/upload/station/${stationId}`, form)
+      setAttachmentPage(0)
       fetchAttachments()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível enviar o arquivo.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o arquivo.', 'error')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -207,6 +243,7 @@ export default function StationDetailsPage() {
   const handleDeleteAttachment = async (attId: number) => {
     try {
       await api.delete(`/attachments/${attId}`)
+      setAttachmentPage(0)
       fetchAttachments()
       showToast('Anexo excluído com sucesso.')
       setAttachmentToDelete(null)
@@ -261,7 +298,9 @@ export default function StationDetailsPage() {
   const fields = station
     ? [
         { label: 'Site ID', value: station.siteId },
-        { label: 'End ID', value: station.endId },
+        ...(station.operadora === 'TIM'
+          ? [{ label: 'End ID', value: station.endId }]
+          : []),
         { label: 'Endereço', value: station.endereco || '-' },
         {
           label: 'Coordenadas',
@@ -299,9 +338,11 @@ export default function StationDetailsPage() {
                         label={station.operadora || 'Sem operadora'}
                         color={operadoraColors[station.operadora || ''] || 'default'}
                       />
-                      <Typography variant="subtitle1" color="text.secondary">
-                        · {station.endId}
-                      </Typography>
+                      {station.operadora === 'TIM' && (
+                        <Typography variant="subtitle1" color="text.secondary">
+                          · {station.endId}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -370,22 +411,55 @@ export default function StationDetailsPage() {
           </Paper>
 
           <Paper sx={{ p: 3, mt: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="h6">Anexos</Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AttachFileIcon />}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? 'Enviando...' : 'Adicionar Anexo'}
-              </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Máx. 50MB por arquivo
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AttachFileIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? 'Enviando...' : 'Adicionar Anexo'}
+                </Button>
+              </Box>
               <input ref={fileInputRef} type="file" hidden onChange={handleUpload} />
             </Box>
             <Divider sx={{ mb: 2 }} />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+              <TextField
+                size="small"
+                label="Buscar anexo"
+                value={attachmentSearch}
+                onChange={(e) => {
+                  setAttachmentSearch(e.target.value)
+                  setAttachmentPage(0)
+                }}
+                sx={{ minWidth: 220 }}
+              />
+              <TextField
+                size="small"
+                select
+                label="Tipo"
+                value={attachmentType}
+                onChange={(e) => {
+                  setAttachmentType(e.target.value)
+                  setAttachmentPage(0)
+                }}
+                sx={{ minWidth: 150 }}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="image">Imagens</MenuItem>
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="document">Documentos</MenuItem>
+              </TextField>
+            </Stack>
             {attachments.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">Nenhum anexo cadastrado.</Typography>
+              <Typography variant="body2" color="text.secondary">Nenhum anexo encontrado.</Typography>
             ) : (
               <List dense disablePadding>
                 {attachments.map((att) => {
@@ -424,6 +498,22 @@ export default function StationDetailsPage() {
                   )
                 })}
               </List>
+            )}
+            {attachmentsTotal > attachmentsPerPage && (
+              <TablePagination
+                component="div"
+                count={attachmentsTotal}
+                page={attachmentPage}
+                onPageChange={(_, page) => setAttachmentPage(page)}
+                rowsPerPage={attachmentsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setAttachmentsPerPage(parseInt(e.target.value, 10))
+                  setAttachmentPage(0)
+                }}
+                rowsPerPageOptions={[5, 10, 25]}
+                labelRowsPerPage="Por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+              />
             )}
           </Paper>
 
@@ -480,6 +570,22 @@ export default function StationDetailsPage() {
                   )
                 })}
               </List>
+            )}
+            {commentsTotal > commentsPerPage && (
+              <TablePagination
+                component="div"
+                count={commentsTotal}
+                page={commentPage}
+                onPageChange={(_, page) => setCommentPage(page)}
+                rowsPerPage={commentsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setCommentsPerPage(parseInt(e.target.value, 10))
+                  setCommentPage(0)
+                }}
+                rowsPerPageOptions={[5, 10, 25]}
+                labelRowsPerPage="Por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+              />
             )}
             <Box sx={{ display: 'flex', gap: 1 }}>
               <TextField

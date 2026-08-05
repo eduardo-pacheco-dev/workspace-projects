@@ -12,6 +12,7 @@ import {
 import { StationsService } from './stations.service';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
+import { ImportStationsDto } from './dto/import-stations.dto';
 
 @Controller('stations')
 export class StationsController {
@@ -20,6 +21,11 @@ export class StationsController {
   @Post()
   create(@Body() dto: CreateStationDto) {
     return this.stationsService.create(dto);
+  }
+
+  @Post('import')
+  import(@Body() dto: ImportStationsDto) {
+    return this.stationsService.importStations(dto.stations);
   }
 
   @Get()

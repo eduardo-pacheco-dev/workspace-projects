@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Station } from './station.entity';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
+import { ImportStationItem } from './dto/import-stations.dto';
 
 export interface StationQuery {
   page?: number;
@@ -15,6 +16,13 @@ export interface StationQuery {
   operadora?: string;
 }
 
+export interface ImportResult {
+  imported: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}
+
 @Injectable()
 export class StationsService {
   constructor(
@@ -23,8 +31,96 @@ export class StationsService {
   ) {}
 
   async create(dto: CreateStationDto): Promise<Station> {
+    this.applyEndIdRule(dto);
+    dto.endId = dto.endId ?? '';
     const station = this.stationsRepository.create(dto);
     return this.stationsRepository.save(station);
+  }
+
+  async importStations(items: ImportStationItem[]): Promise<ImportResult> {
+    const result: ImportResult = { imported: 0, updated: 0, skipped: 0, errors: [] };
+
+    const parsed: { data: Partial<Station>; row: number }[] = [];
+    items.forEach((item, index) => {
+      const row = index + 1;
+      const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
+      const operadora =
+        typeof item.operadora === 'string' && item.operadora.trim()
+          ? item.operadora.trim()
+          : undefined;
+      const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
+      const needsEndId = !operadora || operadora === 'TIM';
+
+      if (!siteId || (needsEndId && !endId)) {
+        result.skipped++;
+        result.errors.push(
+          needsEndId
+            ? `Linha ${row}: Site ID e End ID são obrigatórios.`
+            : `Linha ${row}: Site ID é obrigatório.`,
+        );
+        return;
+      }
+
+      const status = item.status === 'inativo' ? 'inativo' : 'ativo';
+      const endereco =
+        typeof item.endereco === 'string' && item.endereco.trim()
+          ? item.endereco.trim()
+          : undefined;
+      const observacoes =
+        typeof item.observacoes === 'string' && item.observacoes.trim()
+          ? item.observacoes.trim()
+          : undefined;
+
+      const parseCoord = (value: unknown): number | undefined => {
+        if (value === undefined || value === null || value === '') return undefined;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : undefined;
+      };
+
+      parsed.push({
+        row,
+        data: {
+          siteId,
+          endId: needsEndId ? endId : '',
+          endereco,
+          latitude: parseCoord(item.latitude),
+          longitude: parseCoord(item.longitude),
+          operadora,
+          observacoes,
+          status,
+        },
+      });
+    });
+
+    if (parsed.length === 0) return result;
+
+    const existing = await this.stationsRepository.find({ select: ['id', 'siteId', 'endId'] });
+    const existingByKey = new Map(existing.map((s) => [`${s.siteId}::${s.endId}`, s]));
+
+    const pendingInsert = new Map<string, Partial<Station>>();
+    const toUpdate: { id: number; data: Partial<Station> }[] = [];
+
+    for (const { data } of parsed) {
+      const key = `${data.siteId}::${data.endId}`;
+      const existingStation = existingByKey.get(key);
+      if (existingStation) {
+        toUpdate.push({ id: existingStation.id, data });
+      } else {
+        pendingInsert.set(key, data);
+      }
+    }
+
+    if (pendingInsert.size > 0) {
+      await this.stationsRepository.insert([...pendingInsert.values()]);
+      result.imported = pendingInsert.size;
+    }
+
+    for (const { id, data } of toUpdate) {
+      await this.stationsRepository.update(id, data);
+      result.updated++;
+    }
+
+    return result;
   }
 
   async findAll(query: StationQuery): Promise<{ data: Station[]; total: number }> {
@@ -77,11 +173,18 @@ export class StationsService {
   async update(id: number, dto: UpdateStationDto): Promise<Station> {
     const station = await this.findById(id);
     Object.assign(station, dto);
+    this.applyEndIdRule(station);
     return this.stationsRepository.save(station);
   }
 
   async delete(id: number): Promise<void> {
     const result = await this.stationsRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Estação não encontrada');
+  }
+
+  private applyEndIdRule(data: { endId?: string | null; operadora?: string | null }): void {
+    if (data.operadora && data.operadora.trim() !== '' && data.operadora.trim() !== 'TIM') {
+      data.endId = '';
+    }
   }
 }

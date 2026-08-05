@@ -19,13 +19,17 @@ import {
   Stack,
   Chip,
   MenuItem,
+  Tabs,
+  Tab,
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import StationModal from './StationModal'
+import ImportStationsModal from './ImportStationsModal'
+import StationsMapTab from './StationsMapTab'
 
 interface Station {
   id: number
@@ -53,9 +57,12 @@ export default function StationsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [operadoraFilter, setOperadoraFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [tab, setTab] = useState(0)
 
   const fetchData = useCallback(async () => {
     try {
@@ -67,6 +74,7 @@ export default function StationsPage() {
       }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
+      if (operadoraFilter) params.operadora = operadoraFilter
 
       const res = await api.get('/stations', { params })
       if (Array.isArray(res.data)) {
@@ -79,7 +87,7 @@ export default function StationsPage() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter])
+  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter, operadoraFilter])
 
   useEffect(() => {
     fetchData()
@@ -128,9 +136,14 @@ export default function StationsPage() {
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Estações (ERBS)</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Nova Estação
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" startIcon={<Upload />} onClick={() => setImportOpen(true)}>
+            Importar
+          </Button>
+          <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
+            Nova Estação
+          </Button>
+        </Box>
       </Box>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
@@ -159,8 +172,34 @@ export default function StationsPage() {
           <MenuItem value="ativo">Ativo</MenuItem>
           <MenuItem value="inativo">Inativo</MenuItem>
         </TextField>
+        <TextField
+          size="small"
+          select
+          label="Operadora"
+          value={operadoraFilter}
+          onChange={(e) => {
+            setOperadoraFilter(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 140 }}
+        >
+          <MenuItem value="">Todas</MenuItem>
+          <MenuItem value="TIM">TIM</MenuItem>
+          <MenuItem value="CLARO">CLARO</MenuItem>
+          <MenuItem value="VIVO">VIVO</MenuItem>
+          <MenuItem value="Outras">Outras</MenuItem>
+        </TextField>
       </Stack>
 
+      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
+        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
+        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
+      </Tabs>
+
+      {tab === 1 ? (
+        <StationsMapTab search={search} status={statusFilter} operadora={operadoraFilter} />
+      ) : (
+        <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <TableContainer component={Paper}>
@@ -190,7 +229,7 @@ export default function StationsPage() {
                 sx={{ cursor: 'pointer' }}
               >
                 <TableCell>{s.siteId}</TableCell>
-                <TableCell>{s.endId}</TableCell>
+                <TableCell>{s.operadora === 'TIM' ? s.endId : '-'}</TableCell>
                 <TableCell>{s.operadora || '-'}</TableCell>
                 <TableCell>{s.endereco || '-'}</TableCell>
                 <TableCell>
@@ -256,6 +295,14 @@ export default function StationsPage() {
         onClose={() => setStationToDelete(null)}
         onConfirm={() => stationToDelete && handleDelete(stationToDelete.id)}
       />
+
+      <ImportStationsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => fetchData()}
+      />
+        </>
+      )}
     </Container>
   )
 }

@@ -17,12 +17,14 @@ import { AttachmentsService } from './attachments.service';
 import * as path from 'path';
 import * as fs from 'fs';
 
+const UPLOAD_LIMITS = { fileSize: 50 * 1024 * 1024 };
+
 @Controller('attachments')
 export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
 
   @Post('upload/:jobId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async upload(
     @Param('jobId', ParseIntPipe) jobId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -31,7 +33,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/service-order/:serviceOrderId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForServiceOrder(
     @Param('serviceOrderId', ParseIntPipe) serviceOrderId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -40,7 +42,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/station/:stationId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForStation(
     @Param('stationId', ParseIntPipe) stationId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -49,7 +51,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/radio-link/:radioLinkId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForRadioLink(
     @Param('radioLinkId', ParseIntPipe) radioLinkId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -58,7 +60,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/project/:projectId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForProject(
     @Param('projectId', ParseIntPipe) projectId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -67,7 +69,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/client/:clientId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForClient(
     @Param('clientId', ParseIntPipe) clientId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -76,7 +78,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/company/:companyId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForCompany(
     @Param('companyId', ParseIntPipe) companyId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -85,7 +87,7 @@ export class AttachmentsController {
   }
 
   @Post('upload/task/:taskId')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForTask(
     @Param('taskId', ParseIntPipe) taskId: number,
     @UploadedFile() file: Express.Multer.File,
@@ -104,8 +106,14 @@ export class AttachmentsController {
   }
 
   @Get('station/:stationId')
-  findByStation(@Param('stationId', ParseIntPipe) stationId: number) {
-    return this.attachmentsService.findByStation(stationId);
+  findByStation(
+    @Param('stationId', ParseIntPipe) stationId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.attachmentsService.findByStation(stationId, { page, limit, search, type });
   }
 
   @Get('radio-link/:radioLinkId')

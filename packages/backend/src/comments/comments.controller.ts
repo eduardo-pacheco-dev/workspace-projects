@@ -61,8 +61,12 @@ export class CommentsController {
   }
 
   @Get('station/:stationId')
-  findByStation(@Param('stationId', ParseIntPipe) stationId: number) {
-    return this.commentsService.findByStation(stationId);
+  findByStation(
+    @Param('stationId', ParseIntPipe) stationId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.commentsService.findByStation(stationId, { page, limit });
   }
 
   @Post('radio-link/:radioLinkId')

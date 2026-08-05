@@ -210,11 +210,39 @@ export class AttachmentsService {
     });
   }
 
-  async findByStation(stationId: number): Promise<Attachment[]> {
-    return this.attachmentRepository.find({
-      where: { stationId },
-      order: { createdAt: 'DESC' },
-    });
+  async findByStation(
+    stationId: number,
+    query?: { page?: number; limit?: number; search?: string; type?: string },
+  ): Promise<{ data: Attachment[]; total: number }> {
+    const { page = 1, limit = 10, search, type } = query ?? {};
+
+    const qb = this.attachmentRepository.createQueryBuilder('a');
+    qb.where('a.stationId = :stationId', { stationId });
+
+    if (search) {
+      qb.andWhere('a.originalName LIKE :search OR a.filename LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    if (type === 'image') {
+      qb.andWhere('a.mimetype LIKE :image', { image: 'image/%' });
+    } else if (type === 'pdf') {
+      qb.andWhere('a.mimetype = :pdf', { pdf: 'application/pdf' });
+    } else if (type === 'document') {
+      qb.andWhere('a.mimetype NOT LIKE :image AND a.mimetype <> :pdf', {
+        image: 'image/%',
+        pdf: 'application/pdf',
+      });
+    }
+
+    const [data, total] = await qb
+      .orderBy('a.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findByRadioLink(radioLinkId: number): Promise<Attachment[]> {

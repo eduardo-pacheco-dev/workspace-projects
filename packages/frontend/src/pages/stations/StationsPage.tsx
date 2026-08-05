@@ -19,14 +19,17 @@ import {
   Stack,
   Chip,
   MenuItem,
+  Tabs,
+  Tab,
 } from '@mui/material'
-import { Edit, Delete, Add, Upload } from '@mui/icons-material'
+import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import StationModal from './StationModal'
 import ImportStationsModal from './ImportStationsModal'
+import StationsMapTab from './StationsMapTab'
 
 interface Station {
   id: number
@@ -59,6 +62,7 @@ export default function StationsPage() {
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [tab, setTab] = useState(0)
 
   const fetchData = useCallback(async () => {
     try {
@@ -142,6 +146,15 @@ export default function StationsPage() {
         </Box>
       </Box>
 
+      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
+        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
+        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
+      </Tabs>
+
+      {tab === 1 ? (
+        <StationsMapTab />
+      ) : (
+        <>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           size="small"
@@ -288,6 +301,8 @@ export default function StationsPage() {
         onClose={() => setImportOpen(false)}
         onImported={() => fetchData()}
       />
+        </>
+      )}
     </Container>
   )
 }

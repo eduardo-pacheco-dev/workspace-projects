@@ -174,7 +174,7 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
       <DialogTitle>Importar Estações</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). Estações que já existem (mesmo Site ID e End ID) serão atualizadas.
+          Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). O End ID só é aplicado para a operadora TIM. Estações que já existem (mesmo Site ID e End ID) serão atualizadas.
         </Typography>
 
         <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate} sx={{ mb: 2 }}>

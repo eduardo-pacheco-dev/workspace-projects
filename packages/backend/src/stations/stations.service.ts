@@ -31,6 +31,8 @@ export class StationsService {
   ) {}
 
   async create(dto: CreateStationDto): Promise<Station> {
+    this.applyEndIdRule(dto);
+    dto.endId = dto.endId ?? '';
     const station = this.stationsRepository.create(dto);
     return this.stationsRepository.save(station);
   }
@@ -42,19 +44,24 @@ export class StationsService {
     items.forEach((item, index) => {
       const row = index + 1;
       const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
-      const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
-
-      if (!siteId || !endId) {
-        result.skipped++;
-        result.errors.push(`Linha ${row}: Site ID e End ID são obrigatórios.`);
-        return;
-      }
-
-      const status = item.status === 'inativo' ? 'inativo' : 'ativo';
       const operadora =
         typeof item.operadora === 'string' && item.operadora.trim()
           ? item.operadora.trim()
           : undefined;
+      const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
+      const needsEndId = !operadora || operadora === 'TIM';
+
+      if (!siteId || (needsEndId && !endId)) {
+        result.skipped++;
+        result.errors.push(
+          needsEndId
+            ? `Linha ${row}: Site ID e End ID são obrigatórios.`
+            : `Linha ${row}: Site ID é obrigatório.`,
+        );
+        return;
+      }
+
+      const status = item.status === 'inativo' ? 'inativo' : 'ativo';
       const endereco =
         typeof item.endereco === 'string' && item.endereco.trim()
           ? item.endereco.trim()
@@ -74,7 +81,7 @@ export class StationsService {
         row,
         data: {
           siteId,
-          endId,
+          endId: needsEndId ? endId : '',
           endereco,
           latitude: parseCoord(item.latitude),
           longitude: parseCoord(item.longitude),
@@ -166,11 +173,18 @@ export class StationsService {
   async update(id: number, dto: UpdateStationDto): Promise<Station> {
     const station = await this.findById(id);
     Object.assign(station, dto);
+    this.applyEndIdRule(station);
     return this.stationsRepository.save(station);
   }
 
   async delete(id: number): Promise<void> {
     const result = await this.stationsRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Estação não encontrada');
+  }
+
+  private applyEndIdRule(data: { endId?: string | null; operadora?: string | null }): void {
+    if (data.operadora && data.operadora.trim() !== '' && data.operadora.trim() !== 'TIM') {
+      data.endId = '';
+    }
   }
 }

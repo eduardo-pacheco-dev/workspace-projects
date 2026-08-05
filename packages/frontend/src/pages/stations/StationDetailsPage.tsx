@@ -261,7 +261,9 @@ export default function StationDetailsPage() {
   const fields = station
     ? [
         { label: 'Site ID', value: station.siteId },
-        { label: 'End ID', value: station.endId },
+        ...(station.operadora === 'TIM'
+          ? [{ label: 'End ID', value: station.endId }]
+          : []),
         { label: 'Endereço', value: station.endereco || '-' },
         {
           label: 'Coordenadas',
@@ -299,9 +301,11 @@ export default function StationDetailsPage() {
                         label={station.operadora || 'Sem operadora'}
                         color={operadoraColors[station.operadora || ''] || 'default'}
                       />
-                      <Typography variant="subtitle1" color="text.secondary">
-                        · {station.endId}
-                      </Typography>
+                      {station.operadora === 'TIM' && (
+                        <Typography variant="subtitle1" color="text.secondary">
+                          · {station.endId}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </Box>

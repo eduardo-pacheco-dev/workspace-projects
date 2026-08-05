@@ -229,7 +229,7 @@ export default function StationsPage() {
                 sx={{ cursor: 'pointer' }}
               >
                 <TableCell>{s.siteId}</TableCell>
-                <TableCell>{s.endId}</TableCell>
+                <TableCell>{s.operadora === 'TIM' ? s.endId : '-'}</TableCell>
                 <TableCell>{s.operadora || '-'}</TableCell>
                 <TableCell>{s.endereco || '-'}</TableCell>
                 <TableCell>

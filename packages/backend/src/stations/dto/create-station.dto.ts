@@ -6,8 +6,9 @@ export class CreateStationDto {
   @IsString()
   siteId: string;
 
+  @IsOptional()
   @IsString()
-  endId: string;
+  endId?: string;
 
   @IsOptional()
   @IsString()

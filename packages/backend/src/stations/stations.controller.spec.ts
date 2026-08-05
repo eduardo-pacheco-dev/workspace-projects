@@ -88,8 +88,14 @@ describe('StationsController (integration)', () => {
       await request(app.getHttpServer()).post('/stations').send({ endId: 'END-002' }).expect(400);
     });
 
-    it('should return 400 when endId is missing', async () => {
-      await request(app.getHttpServer()).post('/stations').send({ siteId: 'SITE-002' }).expect(400);
+    it('should create a station without endId (optional field)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations')
+        .send({ siteId: 'SITE-002' })
+        .expect(201);
+
+      expect(res.body.siteId).toBe('SITE-002');
+      expect(res.body.endId).toBe('');
     });
 
     it('should return 400 for an invalid status', async () => {
@@ -104,6 +110,24 @@ describe('StationsController (integration)', () => {
         .post('/stations')
         .send({ siteId: 'SITE-004', endId: 'END-004', operadora: 'OI' })
         .expect(400);
+    });
+
+    it('should clear endId when operadora is not TIM', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations')
+        .send({ siteId: 'SITE-005', endId: 'END-005', operadora: 'CLARO' })
+        .expect(201);
+
+      expect(res.body.endId).toBe('');
+    });
+
+    it('should create a non-TIM station without endId', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations')
+        .send({ siteId: 'SITE-006', operadora: 'VIVO' })
+        .expect(201);
+
+      expect(res.body.endId).toBe('');
     });
   });
 
@@ -132,7 +156,7 @@ describe('StationsController (integration)', () => {
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-200', endId: 'END-200', operadora: 'CLARO', status: 'inativo' },
+            { siteId: 'SITE-200', endId: 'END-200', operadora: 'TIM', status: 'inativo' },
           ],
         })
         .expect(201);
@@ -140,19 +164,37 @@ describe('StationsController (integration)', () => {
       expect(res.body).toEqual({ imported: 0, updated: 1, skipped: 0, errors: [] });
 
       const updated = await stationRepo.findOne({ where: { siteId: 'SITE-200', endId: 'END-200' } });
-      expect(updated?.operadora).toBe('CLARO');
       expect(updated?.status).toBe('inativo');
     });
 
+    it('should update existing non-TIM stations by siteId', async () => {
+      await stationRepo.save({ siteId: 'SITE-210', endId: '', operadora: 'CLARO', status: 'ativo' });
+
+      const res = await request(app.getHttpServer())
+        .post('/stations/import')
+        .send({
+          stations: [
+            { siteId: 'SITE-210', operadora: 'CLARO', status: 'inativo' },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body).toEqual({ imported: 0, updated: 1, skipped: 0, errors: [] });
+
+      const updated = await stationRepo.findOne({ where: { siteId: 'SITE-210' } });
+      expect(updated?.status).toBe('inativo');
+      expect(updated?.endId).toBe('');
+    });
+
     it('should mix inserts and updates', async () => {
-      await stationRepo.save({ siteId: 'SITE-300', endId: 'END-300', operadora: 'VIVO' });
+      await stationRepo.save({ siteId: 'SITE-300', endId: 'END-300', operadora: 'TIM' });
 
       const res = await request(app.getHttpServer())
         .post('/stations/import')
         .send({
           stations: [
             { siteId: 'SITE-300', endId: 'END-300', operadora: 'TIM' },
-            { siteId: 'SITE-301', endId: 'END-301', operadora: 'CLARO' },
+            { siteId: 'SITE-301', endId: 'END-301', operadora: 'TIM' },
           ],
         })
         .expect(201);
@@ -194,6 +236,25 @@ describe('StationsController (integration)', () => {
       expect(res.body.imported).toBe(1);
       const saved = await stationRepo.findOne({ where: { siteId: 'SITE-500', endId: 'END-500' } });
       expect(saved?.status).toBe('ativo');
+    });
+
+    it('should clear endId for non-TIM rows in import', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations/import')
+        .send({
+          stations: [
+            { siteId: 'SITE-600', endId: 'END-600', operadora: 'CLARO' },
+            { siteId: 'SITE-601', operadora: 'VIVO' },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body).toEqual({ imported: 2, updated: 0, skipped: 0, errors: [] });
+
+      const claro = await stationRepo.findOne({ where: { siteId: 'SITE-600' } });
+      const vivo = await stationRepo.findOne({ where: { siteId: 'SITE-601' } });
+      expect(claro?.endId).toBe('');
+      expect(vivo?.endId).toBe('');
     });
   });
 

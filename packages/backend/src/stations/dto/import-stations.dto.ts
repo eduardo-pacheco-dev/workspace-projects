@@ -4,8 +4,8 @@ export interface ImportStationItem {
   siteId?: string;
   endId?: string;
   endereco?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | string;
+  longitude?: number | string;
   operadora?: string;
   observacoes?: string;
   status?: string;

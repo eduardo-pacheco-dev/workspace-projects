@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Station } from './station.entity';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
+import { ImportStationItem } from './dto/import-stations.dto';
 
 export interface StationQuery {
   page?: number;
@@ -13,6 +14,13 @@ export interface StationQuery {
   search?: string;
   status?: string;
   operadora?: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  duplicates: number;
+  errors: string[];
 }
 
 @Injectable()
@@ -25,6 +33,79 @@ export class StationsService {
   async create(dto: CreateStationDto): Promise<Station> {
     const station = this.stationsRepository.create(dto);
     return this.stationsRepository.save(station);
+  }
+
+  async importStations(items: ImportStationItem[]): Promise<ImportResult> {
+    const result: ImportResult = { imported: 0, skipped: 0, duplicates: 0, errors: [] };
+
+    const toInsert: Partial<Station>[] = [];
+    items.forEach((item, index) => {
+      const row = index + 1;
+      const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
+      const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
+
+      if (!siteId || !endId) {
+        result.skipped++;
+        result.errors.push(`Linha ${row}: Site ID e End ID são obrigatórios.`);
+        return;
+      }
+
+      const status = item.status === 'inativo' ? 'inativo' : 'ativo';
+      const operadora =
+        typeof item.operadora === 'string' && item.operadora.trim()
+          ? item.operadora.trim()
+          : undefined;
+      const endereco =
+        typeof item.endereco === 'string' && item.endereco.trim()
+          ? item.endereco.trim()
+          : undefined;
+      const observacoes =
+        typeof item.observacoes === 'string' && item.observacoes.trim()
+          ? item.observacoes.trim()
+          : undefined;
+
+      const parseCoord = (value: unknown): number | undefined => {
+        if (value === undefined || value === null || value === '') return undefined;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : undefined;
+      };
+
+      toInsert.push({
+        siteId,
+        endId,
+        endereco,
+        latitude: parseCoord(item.latitude),
+        longitude: parseCoord(item.longitude),
+        operadora,
+        observacoes,
+        status,
+      });
+    });
+
+    if (toInsert.length === 0) return result;
+
+    const existing = await this.stationsRepository.find({ select: ['siteId', 'endId'] });
+    const existingKeys = new Set(existing.map((s) => `${s.siteId}::${s.endId}`));
+    const seen = new Set<string>();
+
+    const fresh: Partial<Station>[] = [];
+    for (const item of toInsert) {
+      const key = `${item.siteId}::${item.endId}`;
+      if (existingKeys.has(key) || seen.has(key)) {
+        result.duplicates++;
+        result.skipped++;
+        continue;
+      }
+      seen.add(key);
+      fresh.push(item);
+    }
+
+    if (fresh.length > 0) {
+      await this.stationsRepository.insert(fresh);
+      result.imported = fresh.length;
+    }
+
+    return result;
   }
 
   async findAll(query: StationQuery): Promise<{ data: Station[]; total: number }> {

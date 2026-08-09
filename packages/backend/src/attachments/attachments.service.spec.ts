@@ -199,4 +199,54 @@ describe('AttachmentsService', () => {
       await expect(service.delete(99)).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('organizeProject', () => {
+    it('should return early when there are no root files', async () => {
+      repo.find.mockResolvedValue([]);
+
+      const result = await service.organizeProject(1);
+
+      expect(result).toEqual({ organized: 0, folders: [] });
+      expect(repo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should group root files by type into folders', async () => {
+      const img = { id: 1, projectId: 1, folderId: null, isFolder: false, mimetype: 'image/png' };
+      const pdf = { id: 2, projectId: 1, folderId: null, isFolder: false, mimetype: 'application/pdf' };
+      const doc = { id: 3, projectId: 1, folderId: null, isFolder: false, mimetype: 'text/plain' };
+      repo.find.mockResolvedValue([img, pdf, doc]);
+
+      repo.findOne.mockResolvedValue(null);
+      let folderId = 10;
+      repo.create.mockImplementation((data) => ({ ...data }));
+      repo.save.mockImplementation(async (x) => {
+        if (Array.isArray(x)) return x;
+        if (!x.id) x.id = folderId++;
+        return x;
+      });
+
+      const result = await service.organizeProject(1);
+
+      expect(result.organized).toBe(3);
+      expect(result.folders).toEqual(['Imagens', 'PDFs', 'Documentos']);
+      expect(img.folderId).toBe(10);
+      expect(pdf.folderId).toBe(11);
+      expect(doc.folderId).toBe(12);
+    });
+
+    it('should reuse existing root folders of the same name', async () => {
+      const img = { id: 1, projectId: 1, folderId: null, isFolder: false, mimetype: 'image/jpeg' };
+      repo.find.mockResolvedValue([img]);
+      const existing = { id: 20, projectId: 1, isFolder: true, originalName: 'Imagens' };
+      repo.findOne.mockResolvedValue(existing);
+      repo.save.mockImplementation(async (x) => x);
+
+      const result = await service.organizeProject(1);
+
+      expect(result.organized).toBe(1);
+      expect(result.folders).toEqual([]);
+      expect(img.folderId).toBe(20);
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -6,6 +6,7 @@ import {
   Button,
   Grid,
   Breadcrumbs,
+  Divider,
   IconButton,
   Menu,
   MenuItem,
@@ -37,6 +38,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import DownloadIcon from '@mui/icons-material/Download'
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove'
+import FolderCopyIcon from '@mui/icons-material/FolderCopy'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import GridViewIcon from '@mui/icons-material/GridView'
@@ -92,6 +94,7 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
 
   const [deleteTarget, setDeleteTarget] = useState<ExplorerItem | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [organizing, setOrganizing] = useState(false)
 
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const [menuFor, setMenuFor] = useState<ExplorerItem | null>(null)
@@ -195,6 +198,23 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
       showToast(err.response?.data?.message || 'Não foi possível criar a pasta.', 'error')
     } finally {
       setCreatingFolder(false)
+    }
+  }
+
+  const handleOrganize = async () => {
+    setOrganizing(true)
+    try {
+      const res = await api.post(`/attachments/project/${projectId}/organize`)
+      if (res.data.organized > 0) {
+        showToast(`${res.data.organized} arquivo(s) organizados em pastas.`)
+      } else {
+        showToast('Nenhum arquivo para organizar.')
+      }
+      fetchItems(currentFolderId())
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível organizar.', 'error')
+    } finally {
+      setOrganizing(false)
     }
   }
 
@@ -377,6 +397,17 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
               <ViewListIcon fontSize="small" />
             </ToggleButton>
           </ToggleButtonGroup>
+          {currentFolderId() === null && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FolderCopyIcon />}
+              onClick={handleOrganize}
+              disabled={organizing}
+            >
+              {organizing ? 'Organizando...' : 'Organizar em Pastas'}
+            </Button>
+          )}
           <Button
             variant="outlined"
             size="small"
@@ -420,14 +451,48 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
         <Alert severity="info" sx={{ mb: 2 }}>
           Nenhum item nesta pasta. Use "Nova Pasta" ou "Enviar" para adicionar conteúdo.
         </Alert>
-      ) : viewMode === 'grid' ? (
-        <Grid container spacing={1.5}>
-          {items.map(renderItem)}
-        </Grid>
       ) : (
-        <List dense disablePadding>
-          {items.map(renderListRow)}
-        </List>
+        (() => {
+          const folders = items.filter((i) => i.isFolder)
+          const files = items.filter((i) => !i.isFolder)
+          return (
+            <>
+              {folders.length > 0 && (
+                <Box sx={{ mb: files.length > 0 ? 3 : 0 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Pastas ({folders.length})
+                  </Typography>
+                  {viewMode === 'grid' ? (
+                    <Grid container spacing={1.5}>
+                      {folders.map(renderItem)}
+                    </Grid>
+                  ) : (
+                    <List dense disablePadding>
+                      {folders.map(renderListRow)}
+                    </List>
+                  )}
+                </Box>
+              )}
+              {files.length > 0 && (
+                <>
+                  {folders.length > 0 && <Divider sx={{ mb: 3 }} />}
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Arquivos ({files.length})
+                  </Typography>
+                  {viewMode === 'grid' ? (
+                    <Grid container spacing={1.5}>
+                      {files.map(renderItem)}
+                    </Grid>
+                  ) : (
+                    <List dense disablePadding>
+                      {files.map(renderListRow)}
+                    </List>
+                  )}
+                </>
+              )}
+            </>
+          )
+        })()
       )}
 
       <Menu

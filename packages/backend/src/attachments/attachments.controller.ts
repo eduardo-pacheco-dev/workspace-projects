@@ -82,6 +82,11 @@ export class AttachmentsController {
     return this.attachmentsService.createFolder(projectId, dto);
   }
 
+  @Post('project/:projectId/organize')
+  organize(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.attachmentsService.organizeProject(projectId);
+  }
+
   @Post('upload/client/:clientId')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: UPLOAD_LIMITS }))
   async uploadForClient(

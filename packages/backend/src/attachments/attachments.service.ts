@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Attachment } from './attachment.entity';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateAttachmentDto } from './dto/update-attachment.dto';
@@ -181,6 +181,55 @@ export class AttachmentsService {
       attachment.folderId = dto.folderId;
     }
     return this.attachmentRepository.save(attachment);
+  }
+
+  async organizeProject(
+    projectId: number,
+  ): Promise<{ organized: number; folders: string[] }> {
+    const rootFiles = await this.attachmentRepository.find({
+      where: { projectId, folderId: IsNull(), isFolder: false },
+    });
+    if (rootFiles.length === 0) return { organized: 0, folders: [] };
+
+    const groupName = (mimetype: string): string => {
+      if (mimetype.startsWith('image/')) return 'Imagens';
+      if (mimetype === 'application/pdf') return 'PDFs';
+      return 'Documentos';
+    };
+
+    const groups = new Map<string, Attachment[]>();
+    for (const file of rootFiles) {
+      const name = groupName(file.mimetype);
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name)!.push(file);
+    }
+
+    const folders: string[] = [];
+    for (const [name, files] of groups) {
+      let folder = await this.attachmentRepository.findOne({
+        where: { projectId, folderId: IsNull(), isFolder: true, originalName: name },
+      });
+      if (!folder) {
+        folder = await this.attachmentRepository.save(
+          this.attachmentRepository.create({
+            projectId,
+            folderId: null,
+            filename: name,
+            originalName: name,
+            mimetype: 'folder',
+            size: 0,
+            isFolder: true,
+          }),
+        );
+        folders.push(name);
+      }
+      for (const file of files) {
+        file.folderId = folder.id;
+      }
+      await this.attachmentRepository.save(files);
+    }
+
+    return { organized: rootFiles.length, folders };
   }
 
   async uploadForClient(

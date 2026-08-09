@@ -2,8 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './client.entity';
+import { Responsavel } from './responsavel.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { CreateResponsavelDto } from './dto/create-responsavel.dto';
+import { UpdateResponsavelDto } from './dto/update-responsavel.dto';
 
 export interface ClientQuery {
   page?: number;
@@ -19,6 +22,8 @@ export class ClientsService {
   constructor(
     @InjectRepository(Client)
     private readonly clientsRepository: Repository<Client>,
+    @InjectRepository(Responsavel)
+    private readonly responsaveisRepository: Repository<Responsavel>,
   ) {}
 
   async create(dto: CreateClientDto): Promise<Client> {
@@ -77,5 +82,37 @@ export class ClientsService {
   async delete(id: number): Promise<void> {
     const result = await this.clientsRepository.delete(id);
     if (result.affected === 0) throw new NotFoundException('Cliente não encontrado');
+  }
+
+  async findResponsaveisByClient(clientId: number): Promise<Responsavel[]> {
+    await this.findById(clientId);
+    return this.responsaveisRepository.find({
+      where: { clientId },
+      order: { nome: 'ASC' },
+    });
+  }
+
+  async createResponsavel(
+    clientId: number,
+    dto: CreateResponsavelDto,
+  ): Promise<Responsavel> {
+    await this.findById(clientId);
+    const responsavel = this.responsaveisRepository.create({ clientId, ...dto });
+    return this.responsaveisRepository.save(responsavel);
+  }
+
+  async updateResponsavel(
+    id: number,
+    dto: UpdateResponsavelDto,
+  ): Promise<Responsavel> {
+    const responsavel = await this.responsaveisRepository.findOne({ where: { id } });
+    if (!responsavel) throw new NotFoundException('Responsável não encontrado');
+    Object.assign(responsavel, dto);
+    return this.responsaveisRepository.save(responsavel);
+  }
+
+  async deleteResponsavel(id: number): Promise<void> {
+    const result = await this.responsaveisRepository.delete(id);
+    if (result.affected === 0) throw new NotFoundException('Responsável não encontrado');
   }
 }

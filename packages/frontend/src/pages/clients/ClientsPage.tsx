@@ -112,7 +112,7 @@ export default function ClientsPage() {
 
   const columns: { id: SortBy; label: string }[] = [
     { id: 'nome', label: 'Nome' },
-    { id: 'documento', label: 'Documento' },
+    { id: 'documento', label: 'CNPJ' },
     { id: 'email', label: 'Email' },
     { id: 'telefone', label: 'Telefone' },
     { id: 'cidade', label: 'Cidade' },

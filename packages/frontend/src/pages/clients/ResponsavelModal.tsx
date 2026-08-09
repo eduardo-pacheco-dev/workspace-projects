@@ -12,6 +12,7 @@ import {
   Grid,
 } from '@mui/material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 
 export interface Responsavel {
@@ -34,6 +35,7 @@ interface ResponsavelModalProps {
 
 export default function ResponsavelModal({ open, clientId, editData, onClose, onSaved }: ResponsavelModalProps) {
   const isEdit = Boolean(editData)
+  const { showToast } = useToast()
 
   const [nome, setNome] = useState('')
   const [sobrenome, setSobrenome] = useState('')
@@ -66,10 +68,12 @@ export default function ResponsavelModal({ open, clientId, editData, onClose, on
       } else {
         await api.post(`/clients/${clientId}/responsaveis`, payload)
       }
+      showToast(isEdit ? 'Responsável atualizado com sucesso.' : 'Responsável criado com sucesso.')
       onSaved()
       handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }

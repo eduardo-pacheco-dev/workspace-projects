@@ -13,6 +13,7 @@ import {
   Grid,
 } from '@mui/material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 
 interface ClientModalProps {
@@ -24,6 +25,7 @@ interface ClientModalProps {
 
 export default function ClientModal({ open, editId, onClose, onSaved }: ClientModalProps) {
   const isEdit = Boolean(editId)
+  const { showToast } = useToast()
 
   const [nome, setNome] = useState('')
   const [documento, setDocumento] = useState('')
@@ -69,10 +71,12 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
       } else {
         await api.post('/clients', payload)
       }
+      showToast(isEdit ? 'Cliente atualizado com sucesso.' : 'Cliente criado com sucesso.')
       onSaved()
       handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }

@@ -103,7 +103,7 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
               <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <TextField fullWidth label="Documento" value={documento} onChange={(e) => setDocumento(e.target.value)} margin="normal" placeholder="CNPJ/CPF" />
+              <TextField fullWidth label="CNPJ" value={documento} onChange={(e) => setDocumento(e.target.value)} margin="normal" placeholder="CNPJ" />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} margin="normal" />

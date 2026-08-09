@@ -220,7 +220,7 @@ export default function ClientDetailsPage() {
 
   const fields = client
     ? [
-        { label: 'Documento', value: client.documento || '-' },
+        { label: 'CNPJ', value: client.documento || '-' },
         { label: 'Email', value: client.email || '-' },
         { label: 'Telefone', value: client.telefone || '-' },
         { label: 'Endereço', value: client.endereco || '-' },

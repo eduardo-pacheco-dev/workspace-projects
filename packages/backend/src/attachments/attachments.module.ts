@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attachment } from './attachment.entity';
 import { AttachmentsService } from './attachments.service';
 import { AttachmentsController } from './attachments.controller';
+import { ProjectsModule } from '../projects/projects.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attachment])],
+  imports: [TypeOrmModule.forFeature([Attachment]), ProjectsModule],
   providers: [AttachmentsService],
   controllers: [AttachmentsController],
   exports: [AttachmentsService],

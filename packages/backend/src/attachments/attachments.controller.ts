@@ -18,7 +18,6 @@ import { Response } from 'express';
 import { AttachmentsService } from './attachments.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateAttachmentDto } from './dto/update-attachment.dto';
-import * as path from 'path';
 import * as fs from 'fs';
 
 const UPLOAD_LIMITS = { fileSize: 50 * 1024 * 1024 };
@@ -188,25 +187,7 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const filePath = path.join(
-      path.resolve('uploads'),
-      attachment.taskId
-        ? `task-${attachment.taskId}`
-        : attachment.companyId
-          ? `company-${attachment.companyId}`
-          : attachment.clientId
-            ? `client-${attachment.clientId}`
-            : attachment.projectId
-              ? `project-${attachment.projectId}`
-              : attachment.radioLinkId
-                ? `radio-link-${attachment.radioLinkId}`
-                : attachment.stationId
-                  ? `station-${attachment.stationId}`
-                  : attachment.serviceOrderId
-                    ? `service-order-${attachment.serviceOrderId}`
-                    : `job-${attachment.jobId}`,
-      attachment.filename,
-    );
+    const filePath = await this.attachmentsService.resolvePhysicalPath(attachment);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }
@@ -221,23 +202,7 @@ export class AttachmentsController {
     @Res() res: Response,
   ) {
     const attachment = await this.attachmentsService.findById(id);
-    const filePath = path.join(
-      path.resolve('uploads'),
-      attachment.companyId
-        ? `company-${attachment.companyId}`
-        : attachment.clientId
-          ? `client-${attachment.clientId}`
-          : attachment.projectId
-            ? `project-${attachment.projectId}`
-            : attachment.radioLinkId
-              ? `radio-link-${attachment.radioLinkId}`
-              : attachment.stationId
-                ? `station-${attachment.stationId}`
-                : attachment.serviceOrderId
-                  ? `service-order-${attachment.serviceOrderId}`
-                  : `job-${attachment.jobId}`,
-      attachment.filename,
-    );
+    const filePath = await this.attachmentsService.resolvePhysicalPath(attachment);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }

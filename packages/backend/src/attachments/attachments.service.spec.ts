@@ -3,6 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { AttachmentsService } from './attachments.service';
 import { Attachment } from './attachment.entity';
+import { ProjectsService } from '../projects/projects.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('AttachmentsService', () => {
   let service: AttachmentsService;
@@ -15,12 +18,20 @@ describe('AttachmentsService', () => {
     delete: jest.fn(),
   };
 
+  const projectsService = {
+    findById: jest.fn(),
+    findCompanies: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    projectsService.findById.mockResolvedValue({ id: 1, cliente: 'Cliente Teste' });
+    projectsService.findCompanies.mockResolvedValue([{ id: 3, nome: 'Empresa Teste' }]);
     const moduleRef = await Test.createTestingModule({
       providers: [
         AttachmentsService,
         { provide: getRepositoryToken(Attachment), useValue: repo },
+        { provide: ProjectsService, useValue: projectsService },
       ],
     }).compile();
 
@@ -248,5 +259,47 @@ describe('AttachmentsService', () => {
       expect(img.folderId).toBe(20);
       expect(repo.create).not.toHaveBeenCalled();
     });
+  });
+
+  describe('resolvePhysicalPath', () => {
+    it('should resolve the hierarchical path for a project attachment', async () => {
+      const attachment = { id: 1, projectId: 1, filename: 'relatorio.pdf' } as Attachment;
+      const dir = path.resolve(
+        'uploads',
+        'empresa-3-empresa-teste',
+        'cliente-cliente-teste',
+        'projeto-1',
+      );
+      fs.mkdirSync(dir, { recursive: true });
+      const file = path.join(dir, 'relatorio.pdf');
+      fs.writeFileSync(file, 'x');
+
+      const result = await service.resolvePhysicalPath(attachment);
+
+      expect(result).toBe(file);
+    });
+
+    it('should fall back to the legacy path when the hierarchical file does not exist', async () => {
+      const attachment = { id: 2, projectId: 1, filename: 'ausente.pdf' } as Attachment;
+
+      const result = await service.resolvePhysicalPath(attachment);
+
+      expect(result).toBe(path.resolve('uploads', 'project-1', 'ausente.pdf'));
+    });
+
+    it('should use the legacy path for non-project attachments', async () => {
+      const attachment = { id: 3, taskId: 9, filename: 'doc.txt' } as Attachment;
+
+      const result = await service.resolvePhysicalPath(attachment);
+
+      expect(result).toBe(path.resolve('uploads', 'task-9', 'doc.txt'));
+    });
+  });
+
+  afterAll(() => {
+    const dir = path.resolve('uploads');
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

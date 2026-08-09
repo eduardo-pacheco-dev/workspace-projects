@@ -4,6 +4,7 @@ import { Repository, IsNull } from 'typeorm';
 import { Attachment } from './attachment.entity';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateAttachmentDto } from './dto/update-attachment.dto';
+import { ProjectsService } from '../projects/projects.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -12,7 +13,46 @@ export class AttachmentsService {
   constructor(
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
+    private readonly projectsService: ProjectsService,
   ) {}
+
+  private slugify(value: string): string {
+    return (
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'sem-nome'
+    );
+  }
+
+  private async resolveProjectStorageDir(projectId: number): Promise<string> {
+    const [project, companies] = await Promise.all([
+      this.projectsService.findById(projectId),
+      this.projectsService.findCompanies(projectId),
+    ]);
+    const company = companies[0];
+    const companyFolder = company
+      ? `empresa-${company.id}-${this.slugify(company.nome)}`
+      : 'empresa-sem-vinculo';
+    const clientFolder = `cliente-${this.slugify(project.cliente || 'sem-cliente')}`;
+    return path.resolve('uploads', companyFolder, clientFolder, `projeto-${projectId}`);
+  }
+
+  async resolvePhysicalPath(attachment: Attachment): Promise<string> {
+    if (attachment.projectId) {
+      const hierarchical = path.join(
+        await this.resolveProjectStorageDir(attachment.projectId),
+        attachment.filename,
+      );
+      if (fs.existsSync(hierarchical)) {
+        return hierarchical;
+      }
+      return path.join(this.getStorageDir(attachment), attachment.filename);
+    }
+    return path.join(this.getStorageDir(attachment), attachment.filename);
+  }
 
   private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId' | 'clientId' | 'companyId' | 'taskId'>): string {
     if (attachment.taskId) return path.resolve('uploads', `task-${attachment.taskId}`);
@@ -136,7 +176,7 @@ export class AttachmentsService {
     file: Express.Multer.File,
     folderId?: number | null,
   ): Promise<Attachment> {
-    const dir = path.resolve('uploads', `project-${projectId}`);
+    const dir = await this.resolveProjectStorageDir(projectId);
     const filename = this.saveFile(dir, file);
 
     const attachment = this.attachmentRepository.create({
@@ -430,7 +470,7 @@ export class AttachmentsService {
         await this.delete(child.id);
       }
     } else {
-      const filePath = path.join(this.getStorageDir(attachment), attachment.filename);
+      const filePath = await this.resolvePhysicalPath(attachment);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

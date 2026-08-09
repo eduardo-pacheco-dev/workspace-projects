@@ -39,7 +39,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import DownloadIcon from '@mui/icons-material/Download'
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove'
-import FolderCopyIcon from '@mui/icons-material/FolderCopy'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import GridViewIcon from '@mui/icons-material/GridView'
@@ -95,7 +94,6 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
 
   const [deleteTarget, setDeleteTarget] = useState<ExplorerItem | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [organizing, setOrganizing] = useState(false)
 
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const [menuFor, setMenuFor] = useState<ExplorerItem | null>(null)
@@ -234,23 +232,6 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
       showToast(err.response?.data?.message || 'Não foi possível criar a pasta.', 'error')
     } finally {
       setCreatingFolder(false)
-    }
-  }
-
-  const handleOrganize = async () => {
-    setOrganizing(true)
-    try {
-      const res = await api.post(`/attachments/project/${projectId}/organize`)
-      if (res.data.organized > 0) {
-        showToast(`${res.data.organized} arquivo(s) organizados em pastas.`)
-      } else {
-        showToast('Nenhum arquivo para organizar.')
-      }
-      fetchItems(currentFolderId())
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Não foi possível organizar.', 'error')
-    } finally {
-      setOrganizing(false)
     }
   }
 
@@ -470,17 +451,6 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
               <ViewListIcon fontSize="small" />
             </ToggleButton>
           </ToggleButtonGroup>
-          {currentFolderId() === null && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<FolderCopyIcon />}
-              onClick={handleOrganize}
-              disabled={organizing}
-            >
-              {organizing ? 'Organizando...' : 'Organizar em Pastas'}
-            </Button>
-          )}
           <Button
             variant="outlined"
             size="small"

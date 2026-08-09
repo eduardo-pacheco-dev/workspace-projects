@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment } from './attachment.entity';
+import { CreateFolderDto } from './dto/create-folder.dto';
+import { UpdateAttachmentDto } from './dto/update-attachment.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -132,18 +134,52 @@ export class AttachmentsService {
   async uploadForProject(
     projectId: number,
     file: Express.Multer.File,
+    folderId?: number | null,
   ): Promise<Attachment> {
     const dir = path.resolve('uploads', `project-${projectId}`);
     const filename = this.saveFile(dir, file);
 
     const attachment = this.attachmentRepository.create({
       projectId,
+      folderId: folderId ?? null,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
+      isFolder: false,
     });
 
+    return this.attachmentRepository.save(attachment);
+  }
+
+  async createFolder(
+    projectId: number,
+    dto: CreateFolderDto,
+  ): Promise<Attachment> {
+    const folder = this.attachmentRepository.create({
+      projectId,
+      folderId: dto.folderId ?? null,
+      filename: dto.nome,
+      originalName: dto.nome,
+      mimetype: 'folder',
+      size: 0,
+      isFolder: true,
+    });
+
+    return this.attachmentRepository.save(folder);
+  }
+
+  async update(id: number, dto: UpdateAttachmentDto): Promise<Attachment> {
+    const attachment = await this.findById(id);
+    if (dto.originalName != null) {
+      attachment.originalName = dto.originalName;
+      if (attachment.isFolder) {
+        attachment.filename = dto.originalName;
+      }
+    }
+    if (dto.folderId !== undefined) {
+      attachment.folderId = dto.folderId;
+    }
     return this.attachmentRepository.save(attachment);
   }
 
@@ -280,11 +316,26 @@ export class AttachmentsService {
     return { data, total };
   }
 
-  async findByProject(projectId: number): Promise<Attachment[]> {
-    return this.attachmentRepository.find({
-      where: { projectId },
-      order: { createdAt: 'DESC' },
+  async findByProject(
+    projectId: number,
+    query?: { folderId?: number | 'root' | null },
+  ): Promise<Attachment[]> {
+    const { folderId } = query ?? {};
+
+    const where: any = { projectId };
+
+    if (folderId === 'root' || folderId === null) {
+      where.folderId = null;
+    } else if (folderId !== undefined) {
+      where.folderId = folderId;
+    }
+
+    const items = await this.attachmentRepository.find({
+      where,
+      order: { isFolder: 'DESC', originalName: 'ASC' },
     });
+
+    return items;
   }
 
   async findByClient(clientId: number): Promise<Attachment[]> {
@@ -322,9 +373,18 @@ export class AttachmentsService {
   async delete(id: number): Promise<void> {
     const attachment = await this.findById(id);
 
-    const filePath = path.join(this.getStorageDir(attachment), attachment.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (attachment.isFolder) {
+      const children = await this.attachmentRepository.find({
+        where: { folderId: id },
+      });
+      for (const child of children) {
+        await this.delete(child.id);
+      }
+    } else {
+      const filePath = path.join(this.getStorageDir(attachment), attachment.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     await this.attachmentRepository.delete(id);

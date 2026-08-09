@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
+  Body,
   Param,
   ParseIntPipe,
   Query,
@@ -14,6 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { AttachmentsService } from './attachments.service';
+import { CreateFolderDto } from './dto/create-folder.dto';
+import { UpdateAttachmentDto } from './dto/update-attachment.dto';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -64,8 +68,18 @@ export class AttachmentsController {
   async uploadForProject(
     @Param('projectId', ParseIntPipe) projectId: number,
     @UploadedFile() file: Express.Multer.File,
+    @Query('folderId') folderId?: string,
   ) {
-    return this.attachmentsService.uploadForProject(projectId, file);
+    const folder = folderId && folderId !== 'root' ? Number(folderId) : null;
+    return this.attachmentsService.uploadForProject(projectId, file, folder);
+  }
+
+  @Post('project/:projectId/folder')
+  createFolder(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Body() dto: CreateFolderDto,
+  ) {
+    return this.attachmentsService.createFolder(projectId, dto);
   }
 
   @Post('upload/client/:clientId')
@@ -128,8 +142,19 @@ export class AttachmentsController {
   }
 
   @Get('project/:projectId')
-  findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
-    return this.attachmentsService.findByProject(projectId);
+  findByProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Query('folderId') folderId?: string,
+  ) {
+    let parsed: number | 'root' | null | undefined;
+    if (folderId === undefined) {
+      parsed = undefined;
+    } else if (folderId === 'root' || folderId === '') {
+      parsed = 'root';
+    } else {
+      parsed = Number(folderId);
+    }
+    return this.attachmentsService.findByProject(projectId, { folderId: parsed });
   }
 
   @Get('client/:clientId')
@@ -212,6 +237,14 @@ export class AttachmentsController {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
     }
     res.download(filePath, attachment.originalName);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAttachmentDto,
+  ) {
+    return this.attachmentsService.update(id, dto);
   }
 
   @Delete(':id')

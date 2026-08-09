@@ -8,10 +8,10 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ message: string; severity: AlertColor } | null>(null)
+  const [toast, setToast] = useState<{ id: number; message: string; severity: AlertColor } | null>(null)
 
   const showToast = useCallback((message: string, severity: AlertColor = 'success') => {
-    setToast({ message, severity })
+    setToast({ id: Date.now(), message, severity })
   }, [])
 
   const handleClose = (_?: unknown, reason?: string) => {
@@ -23,6 +23,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <Snackbar
+        key={toast?.id ?? undefined}
         open={!!toast}
         autoHideDuration={4000}
         onClose={handleClose}

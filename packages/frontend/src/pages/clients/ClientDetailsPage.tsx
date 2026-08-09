@@ -29,14 +29,22 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BusinessIcon from '@mui/icons-material/Business'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import PersonIcon from '@mui/icons-material/Person'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import DownloadIcon from '@mui/icons-material/Download'
 import SendIcon from '@mui/icons-material/Send'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { formatDateTime } from '../../utils/format'
+import { formatPhone } from '../../utils/phone'
 import ClientModal from './ClientModal'
+import ResponsavelModal, { Responsavel } from './ResponsavelModal'
 
 interface Client {
   id: number
@@ -72,6 +80,7 @@ export default function ClientDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const clientId = Number(id)
   const [client, setClient] = useState<Client | null>(null)
   const [error, setError] = useState('')
@@ -86,6 +95,13 @@ export default function ClientDetailsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [responsavelModalOpen, setResponsavelModalOpen] = useState(false)
+  const [editingResponsavel, setEditingResponsavel] = useState<Responsavel | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null)
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null)
+  const [responsavelToDelete, setResponsavelToDelete] = useState<Responsavel | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -119,8 +135,10 @@ export default function ClientDetailsPage() {
       form.append('file', file)
       await api.post(`/attachments/upload/client/${clientId}`, form)
       fetchAttachments()
+      showToast('Anexo enviado com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível enviar o arquivo.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o arquivo.', 'error')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -128,12 +146,15 @@ export default function ClientDetailsPage() {
   }
 
   const handleDeleteAttachment = async (attId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este anexo?')) return
     try {
       await api.delete(`/attachments/${attId}`)
       fetchAttachments()
+      showToast('Anexo excluído com sucesso.')
+      setAttachmentToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir o anexo.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o anexo.', 'error')
+      setAttachmentToDelete(null)
     }
   }
 
@@ -169,8 +190,10 @@ export default function ClientDetailsPage() {
       await api.post(`/comments/client/${clientId}`, { content: newComment })
       setNewComment('')
       fetchComments()
+      showToast('Comentário adicionado com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível enviar o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível enviar o comentário.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -193,36 +216,93 @@ export default function ClientDetailsPage() {
       setEditingId(null)
       setEditContent('')
       fetchComments()
+      showToast('Comentário atualizado com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível editar o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível editar o comentário.', 'error')
     }
   }
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm('Tem certeza que deseja excluir este comentário?')) return
     try {
       await api.delete(`/comments/${commentId}`)
       fetchComments()
+      showToast('Comentário excluído com sucesso.')
+      setCommentToDelete(null)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir o comentário.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o comentário.', 'error')
+      setCommentToDelete(null)
     }
   }
 
+  const fetchResponsaveis = useCallback(() => {
+    api.get(`/clients/${clientId}/responsaveis`)
+      .then((res) => setResponsaveis(res.data))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os responsáveis.'))
+  }, [clientId])
+
+  useEffect(() => {
+    fetchResponsaveis()
+  }, [fetchResponsaveis])
+
+  const handleAddResponsavel = () => {
+    setEditingResponsavel(null)
+    setResponsavelModalOpen(true)
+  }
+
+  const handleEditResponsavel = (r: Responsavel) => {
+    setEditingResponsavel(r)
+    setResponsavelModalOpen(true)
+  }
+
+  const handleDeleteResponsavel = async (r: Responsavel) => {
+    try {
+      await api.delete(`/clients/responsaveis/${r.id}`)
+      fetchResponsaveis()
+      showToast('Responsável excluído com sucesso.')
+      setResponsavelToDelete(null)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível excluir o responsável.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir o responsável.', 'error')
+      setResponsavelToDelete(null)
+    }
+  }
+
+  const handleExportExcel = () => {
+    if (responsaveis.length === 0) return
+    const rows = responsaveis.map((r) => ({
+      Nome: r.nome,
+      Sobrenome: r.sobrenome,
+      Email: r.email || '',
+      Telefone: r.telefone || '',
+      Função: r.funcao || '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 16 }, { wch: 24 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Responsáveis')
+    const clientName = (client?.nome || 'cliente').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+    XLSX.writeFile(wb, `responsaveis-${clientName}.xlsx`)
+  }
+
   const handleDelete = async () => {
-    if (!confirm(`Tem certeza que deseja excluir o cliente "${client?.nome}"?`)) return
     try {
       await api.delete(`/clients/${clientId}`)
+      showToast('Cliente excluído com sucesso.')
       navigate('/clients')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+      setConfirmDelete(false)
     }
   }
 
   const fields = client
     ? [
-        { label: 'Documento', value: client.documento || '-' },
+        { label: 'CNPJ', value: client.documento || '-' },
         { label: 'Email', value: client.email || '-' },
-        { label: 'Telefone', value: client.telefone || '-' },
+        { label: 'Telefone', value: client.telefone ? formatPhone(client.telefone) : '-' },
         { label: 'Endereço', value: client.endereco || '-' },
         {
           label: 'Cidade / UF',
@@ -261,7 +341,7 @@ export default function ClientDetailsPage() {
                   <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ mr: 1 }}>
                     Editar
                   </Button>
-                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleDelete}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setConfirmDelete(true)}>
                     Excluir
                   </Button>
                 </Box>
@@ -289,6 +369,57 @@ export default function ClientDetailsPage() {
                 </Grid>
               ))}
             </Grid>
+          </Paper>
+
+          <Paper sx={{ p: 3, mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6">Responsáveis</Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PersonAddIcon />}
+                  onClick={handleAddResponsavel}
+                >
+                  Adicionar Responsável
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={handleExportExcel}
+                  disabled={responsaveis.length === 0}
+                >
+                  Exportar Excel
+                </Button>
+              </Box>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {responsaveis.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">Nenhum responsável cadastrado.</Typography>
+            ) : (
+              <List dense disablePadding>
+                {responsaveis.map((r) => (
+                  <ListItem key={r.id} sx={{ px: 0 }}>
+                    <ListItemIcon sx={{ minWidth: 44 }}>
+                      <PersonIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${r.nome} ${r.sobrenome}`}
+                      secondary={[r.funcao, r.email, r.telefone ? formatPhone(r.telefone) : ''].filter(Boolean).join(' • ')}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton size="small" onClick={() => handleEditResponsavel(r)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => setResponsavelToDelete(r)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Paper>
 
           <Paper sx={{ p: 3, mt: 3 }}>
@@ -338,7 +469,7 @@ export default function ClientDetailsPage() {
                         <IconButton size="small" component="a" href={`/api/attachments/download/${att.id}`} target="_blank">
                           <DownloadIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDeleteAttachment(att.id)}>
+                        <IconButton size="small" onClick={() => setAttachmentToDelete(att)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </ListItemSecondaryAction>
@@ -372,7 +503,7 @@ export default function ClientDetailsPage() {
                               <IconButton size="small" onClick={() => handleEditComment(c)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteComment(c.id)}>
+                              <IconButton size="small" onClick={() => setCommentToDelete(c.id)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </>
@@ -428,6 +559,17 @@ export default function ClientDetailsPage() {
               fetchData()
             }}
           />
+
+          <ResponsavelModal
+            open={responsavelModalOpen}
+            clientId={clientId}
+            editData={editingResponsavel}
+            onClose={() => setResponsavelModalOpen(false)}
+            onSaved={() => {
+              setResponsavelModalOpen(false)
+              fetchResponsaveis()
+            }}
+          />
         </>
       )}
 
@@ -454,6 +596,38 @@ export default function ClientDetailsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir cliente"
+        message={`Tem certeza que deseja excluir o cliente "${client?.nome}"?`}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={!!attachmentToDelete}
+        title="Excluir anexo"
+        message={`Tem certeza que deseja excluir o anexo "${attachmentToDelete?.originalName}"?`}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={() => attachmentToDelete && handleDeleteAttachment(attachmentToDelete.id)}
+      />
+
+      <ConfirmDialog
+        open={commentToDelete != null}
+        title="Excluir comentário"
+        message="Tem certeza que deseja excluir este comentário?"
+        onClose={() => setCommentToDelete(null)}
+        onConfirm={() => commentToDelete != null && handleDeleteComment(commentToDelete)}
+      />
+
+      <ConfirmDialog
+        open={!!responsavelToDelete}
+        title="Excluir responsável"
+        message={`Tem certeza que deseja excluir o responsável "${responsavelToDelete ? `${responsavelToDelete.nome} ${responsavelToDelete.sobrenome}` : ''}"?`}
+        onClose={() => setResponsavelToDelete(null)}
+        onConfirm={() => responsavelToDelete && handleDeleteResponsavel(responsavelToDelete)}
+      />
     </Container>
   )
 }

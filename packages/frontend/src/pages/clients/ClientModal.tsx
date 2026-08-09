@@ -13,6 +13,8 @@ import {
   Grid,
 } from '@mui/material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { formatPhone } from '../../utils/phone'
 
 interface ClientModalProps {
   open: boolean
@@ -23,6 +25,7 @@ interface ClientModalProps {
 
 export default function ClientModal({ open, editId, onClose, onSaved }: ClientModalProps) {
   const isEdit = Boolean(editId)
+  const { showToast } = useToast()
 
   const [nome, setNome] = useState('')
   const [documento, setDocumento] = useState('')
@@ -44,7 +47,7 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
           setNome(d.nome || '')
           setDocumento(d.documento || '')
           setEmail(d.email || '')
-          setTelefone(d.telefone || '')
+          setTelefone(d.telefone ? formatPhone(d.telefone) : '')
           setEndereco(d.endereco || '')
           setCidade(d.cidade || '')
           setUf(d.uf || '')
@@ -68,10 +71,12 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
       } else {
         await api.post('/clients', payload)
       }
+      showToast(isEdit ? 'Cliente atualizado com sucesso.' : 'Cliente criado com sucesso.')
       onSaved()
       handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
+      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }
@@ -103,13 +108,21 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
               <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <TextField fullWidth label="Documento" value={documento} onChange={(e) => setDocumento(e.target.value)} margin="normal" placeholder="CNPJ/CPF" />
+              <TextField fullWidth label="CNPJ" value={documento} onChange={(e) => setDocumento(e.target.value)} margin="normal" placeholder="CNPJ" />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} margin="normal" />
+              <TextField
+                fullWidth
+                label="Telefone"
+                value={telefone}
+                onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                margin="normal"
+                placeholder="(00) 00000-0000"
+                inputProps={{ maxLength: 15 }}
+              />
             </Grid>
             <Grid item xs={12}>
               <TextField fullWidth label="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} margin="normal" />

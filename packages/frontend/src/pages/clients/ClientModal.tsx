@@ -13,6 +13,7 @@ import {
   Grid,
 } from '@mui/material'
 import api from '../../services/api'
+import { formatPhone } from '../../utils/phone'
 
 interface ClientModalProps {
   open: boolean
@@ -44,7 +45,7 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
           setNome(d.nome || '')
           setDocumento(d.documento || '')
           setEmail(d.email || '')
-          setTelefone(d.telefone || '')
+          setTelefone(d.telefone ? formatPhone(d.telefone) : '')
           setEndereco(d.endereco || '')
           setCidade(d.cidade || '')
           setUf(d.uf || '')
@@ -109,7 +110,15 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
               <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} margin="normal" />
+              <TextField
+                fullWidth
+                label="Telefone"
+                value={telefone}
+                onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                margin="normal"
+                placeholder="(00) 00000-0000"
+                inputProps={{ maxLength: 15 }}
+              />
             </Grid>
             <Grid item xs={12}>
               <TextField fullWidth label="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} margin="normal" />

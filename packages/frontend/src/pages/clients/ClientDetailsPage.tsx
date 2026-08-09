@@ -29,14 +29,20 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import BusinessIcon from '@mui/icons-material/Business'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import PersonIcon from '@mui/icons-material/Person'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import DownloadIcon from '@mui/icons-material/Download'
 import SendIcon from '@mui/icons-material/Send'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDateTime } from '../../utils/format'
+import { formatPhone } from '../../utils/phone'
 import ClientModal from './ClientModal'
+import ResponsavelModal, { Responsavel } from './ResponsavelModal'
 
 interface Client {
   id: number
@@ -86,6 +92,9 @@ export default function ClientDetailsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [responsavelModalOpen, setResponsavelModalOpen] = useState(false)
+  const [editingResponsavel, setEditingResponsavel] = useState<Responsavel | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -208,6 +217,53 @@ export default function ClientDetailsPage() {
     }
   }
 
+  const fetchResponsaveis = useCallback(() => {
+    api.get(`/clients/${clientId}/responsaveis`)
+      .then((res) => setResponsaveis(res.data))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os responsáveis.'))
+  }, [clientId])
+
+  useEffect(() => {
+    fetchResponsaveis()
+  }, [fetchResponsaveis])
+
+  const handleAddResponsavel = () => {
+    setEditingResponsavel(null)
+    setResponsavelModalOpen(true)
+  }
+
+  const handleEditResponsavel = (r: Responsavel) => {
+    setEditingResponsavel(r)
+    setResponsavelModalOpen(true)
+  }
+
+  const handleDeleteResponsavel = async (r: Responsavel) => {
+    if (!confirm(`Tem certeza que deseja excluir o responsável "${r.nome} ${r.sobrenome}"?`)) return
+    try {
+      await api.delete(`/clients/responsaveis/${r.id}`)
+      fetchResponsaveis()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível excluir o responsável.')
+    }
+  }
+
+  const handleExportExcel = () => {
+    if (responsaveis.length === 0) return
+    const rows = responsaveis.map((r) => ({
+      Nome: r.nome,
+      Sobrenome: r.sobrenome,
+      Email: r.email || '',
+      Telefone: r.telefone || '',
+      Função: r.funcao || '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 16 }, { wch: 24 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Responsáveis')
+    const clientName = (client?.nome || 'cliente').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+    XLSX.writeFile(wb, `responsaveis-${clientName}.xlsx`)
+  }
+
   const handleDelete = async () => {
     if (!confirm(`Tem certeza que deseja excluir o cliente "${client?.nome}"?`)) return
     try {
@@ -222,7 +278,7 @@ export default function ClientDetailsPage() {
     ? [
         { label: 'CNPJ', value: client.documento || '-' },
         { label: 'Email', value: client.email || '-' },
-        { label: 'Telefone', value: client.telefone || '-' },
+        { label: 'Telefone', value: client.telefone ? formatPhone(client.telefone) : '-' },
         { label: 'Endereço', value: client.endereco || '-' },
         {
           label: 'Cidade / UF',
@@ -289,6 +345,57 @@ export default function ClientDetailsPage() {
                 </Grid>
               ))}
             </Grid>
+          </Paper>
+
+          <Paper sx={{ p: 3, mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6">Responsáveis</Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PersonAddIcon />}
+                  onClick={handleAddResponsavel}
+                >
+                  Adicionar Responsável
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={handleExportExcel}
+                  disabled={responsaveis.length === 0}
+                >
+                  Exportar Excel
+                </Button>
+              </Box>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            {responsaveis.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">Nenhum responsável cadastrado.</Typography>
+            ) : (
+              <List dense disablePadding>
+                {responsaveis.map((r) => (
+                  <ListItem key={r.id} sx={{ px: 0 }}>
+                    <ListItemIcon sx={{ minWidth: 44 }}>
+                      <PersonIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${r.nome} ${r.sobrenome}`}
+                      secondary={[r.funcao, r.email, r.telefone ? formatPhone(r.telefone) : ''].filter(Boolean).join(' • ')}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton size="small" onClick={() => handleEditResponsavel(r)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => handleDeleteResponsavel(r)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Paper>
 
           <Paper sx={{ p: 3, mt: 3 }}>
@@ -426,6 +533,17 @@ export default function ClientDetailsPage() {
             onSaved={() => {
               setEditOpen(false)
               fetchData()
+            }}
+          />
+
+          <ResponsavelModal
+            open={responsavelModalOpen}
+            clientId={clientId}
+            editData={editingResponsavel}
+            onClose={() => setResponsavelModalOpen(false)}
+            onSaved={() => {
+              setResponsavelModalOpen(false)
+              fetchResponsaveis()
             }}
           />
         </>

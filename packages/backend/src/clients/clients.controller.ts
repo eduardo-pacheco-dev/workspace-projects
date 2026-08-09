@@ -12,6 +12,8 @@ import {
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { CreateResponsavelDto } from './dto/create-responsavel.dto';
+import { UpdateResponsavelDto } from './dto/update-responsavel.dto';
 
 @Controller('clients')
 export class ClientsController {
@@ -32,6 +34,32 @@ export class ClientsController {
     @Query('status') status?: string,
   ) {
     return this.clientsService.findAll({ page, limit, sortBy, sortOrder, search, status });
+  }
+
+  @Get(':clientId/responsaveis')
+  findResponsaveis(@Param('clientId', ParseIntPipe) clientId: number) {
+    return this.clientsService.findResponsaveisByClient(clientId);
+  }
+
+  @Post(':clientId/responsaveis')
+  createResponsavel(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @Body() dto: CreateResponsavelDto,
+  ) {
+    return this.clientsService.createResponsavel(clientId, dto);
+  }
+
+  @Patch('responsaveis/:id')
+  updateResponsavel(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateResponsavelDto,
+  ) {
+    return this.clientsService.updateResponsavel(id, dto);
+  }
+
+  @Delete('responsaveis/:id')
+  deleteResponsavel(@Param('id', ParseIntPipe) id: number) {
+    return this.clientsService.deleteResponsavel(id);
   }
 
   @Get(':id')

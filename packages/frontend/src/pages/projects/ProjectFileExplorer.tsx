@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import {
   Paper,
   Box,
@@ -6,12 +6,12 @@ import {
   Button,
   Grid,
   Breadcrumbs,
-  Divider,
   IconButton,
   Menu,
   MenuItem,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
@@ -36,6 +36,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import DownloadIcon from '@mui/icons-material/Download'
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove'
 import FolderCopyIcon from '@mui/icons-material/FolderCopy'
@@ -100,10 +101,18 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
   const [menuFor, setMenuFor] = useState<ExplorerItem | null>(null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   function currentFolderId(): number | null {
     return path[path.length - 1]?.id ?? null
   }
+
+  const fetchFolders = useCallback(() => {
+    api
+      .get(`/attachments/project/${projectId}`)
+      .then((res) => setAllFolders((res.data ?? []).filter((a: ExplorerItem) => a.isFolder)))
+      .catch(() => {})
+  }, [projectId])
 
   const fetchItems = useCallback(
     async (folderId: number | null) => {
@@ -113,13 +122,14 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
           params: { folderId: folderId ?? 'root' },
         })
         setItems(res.data ?? [])
+        fetchFolders()
       } catch (err: any) {
         showToast(err.response?.data?.message || 'Não foi possível carregar os anexos.', 'error')
       } finally {
         setLoading(false)
       }
     },
-    [projectId, showToast],
+    [projectId, showToast, fetchFolders],
   )
 
   useEffect(() => {
@@ -128,11 +138,8 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
   }, [path, fetchItems])
 
   useEffect(() => {
-    api
-      .get(`/attachments/project/${projectId}`)
-      .then((res) => setAllFolders((res.data ?? []).filter((a: ExplorerItem) => a.isFolder)))
-      .catch(() => {})
-  }, [projectId])
+    fetchFolders()
+  }, [fetchFolders])
 
   const navigateTo = (folder: PathEntry) => {
     const index = path.findIndex((p) => p.id === folder.id)
@@ -141,6 +148,35 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
     } else {
       setPath([...path, folder])
     }
+  }
+
+  const navigateToFolder = (folderId: number | null) => {
+    const chain: PathEntry[] = []
+    let current: ExplorerItem | undefined =
+      folderId != null ? allFolders.find((f) => f.id === folderId) : undefined
+    while (current) {
+      chain.unshift({ id: current.id, nome: current.originalName })
+      const parentId = current.folderId
+      current = parentId != null ? allFolders.find((f) => f.id === parentId) : undefined
+    }
+    setPath([{ id: null, nome: 'Anexos' }, ...chain])
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      chain.forEach((p) => p.id != null && next.add(p.id))
+      return next
+    })
+  }
+
+  const toggleExpand = (folderId: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(folderId)) {
+        next.delete(folderId)
+      } else {
+        next.add(folderId)
+      }
+      return next
+    })
   }
 
   const handleOpenFolder = (item: ExplorerItem) => {
@@ -379,6 +415,43 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
     )
   }
 
+  const renderTree = (parentId: number | null, depth: number) => {
+    const children = allFolders.filter((f) => (f.folderId ?? null) === parentId)
+    return children.map((folder) => {
+      const hasChildren = allFolders.some((f) => (f.folderId ?? null) === folder.id)
+      const isExpanded = expanded.has(folder.id)
+      const isSelected = currentFolderId() === folder.id
+      return (
+        <Fragment key={folder.id}>
+          <ListItemButton
+            dense
+            sx={{ pl: 2 + depth * 2 }}
+            selected={isSelected}
+            onClick={() => navigateToFolder(folder.id)}
+          >
+            {hasChildren ? (
+              <IconButton
+                size="small"
+                edge="start"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleExpand(folder.id)
+                }}
+              >
+                {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+              </IconButton>
+            ) : (
+              <Box sx={{ width: 32 }} />
+            )}
+            <FolderIcon fontSize="small" color="warning" sx={{ mr: 1 }} />
+            <ListItemText primary={folder.originalName} primaryTypographyProps={{ noWrap: true }} />
+          </ListItemButton>
+          {isExpanded && renderTree(folder.id, depth + 1)}
+        </Fragment>
+      )
+    })
+  }
+
   return (
     <Paper sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
@@ -429,71 +502,67 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
         </Box>
       </Box>
 
-      <Breadcrumbs separator={<ChevronRightIcon fontSize="small" />} sx={{ mb: 2 }}>
-        {path.map((p) => (
-          <Button
-            key={p.id ?? 'root'}
-            size="small"
-            variant={p.id === currentFolderId() ? 'contained' : 'text'}
-            onClick={() => navigateTo(p)}
-            startIcon={p.id === null ? <FolderIcon fontSize="small" /> : undefined}
-          >
-            {p.nome}
-          </Button>
-        ))}
-      </Breadcrumbs>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress />
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            width: { xs: '100%', md: 240 },
+            flexShrink: 0,
+            borderRight: { md: '1px solid' },
+            borderColor: { md: 'divider' },
+            pr: { md: 2 },
+            mb: { xs: 2, md: 0 },
+          }}
+        >
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Pastas
+          </Typography>
+          <List dense disablePadding>
+            <ListItemButton
+              dense
+              selected={currentFolderId() === null}
+              onClick={() => navigateToFolder(null)}
+            >
+              <FolderIcon fontSize="small" color="warning" sx={{ mr: 1 }} />
+              <ListItemText primary="Anexos" primaryTypographyProps={{ noWrap: true }} />
+            </ListItemButton>
+            {renderTree(null, 0)}
+          </List>
         </Box>
-      ) : items.length === 0 ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Nenhum item nesta pasta. Use "Nova Pasta" ou "Enviar" para adicionar conteúdo.
-        </Alert>
-      ) : (
-        (() => {
-          const folders = items.filter((i) => i.isFolder)
-          const files = items.filter((i) => !i.isFolder)
-          return (
-            <>
-              {folders.length > 0 && (
-                <Box sx={{ mb: files.length > 0 ? 3 : 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                    Pastas ({folders.length})
-                  </Typography>
-                  {viewMode === 'grid' ? (
-                    <Grid container spacing={1.5}>
-                      {folders.map(renderItem)}
-                    </Grid>
-                  ) : (
-                    <List dense disablePadding>
-                      {folders.map(renderListRow)}
-                    </List>
-                  )}
-                </Box>
-              )}
-              {files.length > 0 && (
-                <>
-                  {folders.length > 0 && <Divider sx={{ mb: 3 }} />}
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                    Arquivos ({files.length})
-                  </Typography>
-                  {viewMode === 'grid' ? (
-                    <Grid container spacing={1.5}>
-                      {files.map(renderItem)}
-                    </Grid>
-                  ) : (
-                    <List dense disablePadding>
-                      {files.map(renderListRow)}
-                    </List>
-                  )}
-                </>
-              )}
-            </>
-          )
-        })()
-      )}
+
+        <Box sx={{ flexGrow: 1, minWidth: 0, width: '100%' }}>
+          <Breadcrumbs separator={<ChevronRightIcon fontSize="small" />} sx={{ mb: 2 }}>
+            {path.map((p) => (
+              <Button
+                key={p.id ?? 'root'}
+                size="small"
+                variant={p.id === currentFolderId() ? 'contained' : 'text'}
+                onClick={() => navigateTo(p)}
+                startIcon={p.id === null ? <FolderIcon fontSize="small" /> : undefined}
+              >
+                {p.nome}
+              </Button>
+            ))}
+          </Breadcrumbs>
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress />
+            </Box>
+          ) : items.length === 0 ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Nenhum item nesta pasta. Use "Nova Pasta" ou "Enviar" para adicionar conteúdo.
+            </Alert>
+          ) : viewMode === 'grid' ? (
+            <Grid container spacing={1.5}>
+              {items.map(renderItem)}
+            </Grid>
+          ) : (
+            <List dense disablePadding>
+              {items.map(renderListRow)}
+            </List>
+          )}
+        </Box>
+      </Box>
 
       <Menu
         anchorEl={anchorEl}

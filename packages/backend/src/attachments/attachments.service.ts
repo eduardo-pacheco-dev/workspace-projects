@@ -374,7 +374,7 @@ export class AttachmentsService {
     const where: any = { projectId };
 
     if (folderId === 'root' || folderId === null) {
-      where.folderId = null;
+      where.folderId = IsNull();
     } else if (folderId !== undefined) {
       where.folderId = folderId;
     }

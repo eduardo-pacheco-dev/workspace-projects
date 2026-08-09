@@ -106,9 +106,9 @@ describe('AttachmentsService', () => {
 
       await service.findByProject(1, { folderId: 'root' });
 
-      expect(repo.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { projectId: 1, folderId: null } }),
-      );
+      const where = repo.find.mock.calls[0][0].where;
+      expect(where.projectId).toBe(1);
+      expect(where.folderId?._type).toBe('isNull');
     });
 
     it('should filter by a specific folder', async () => {

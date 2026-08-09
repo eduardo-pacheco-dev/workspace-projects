@@ -9,8 +9,11 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  List,
+  ListItem,
   ListItemIcon,
   ListItemText,
+  ListItemSecondaryAction,
   TextField,
   Dialog,
   DialogTitle,
@@ -22,6 +25,8 @@ import {
   InputLabel,
   FormControl,
   Alert,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material'
 import FolderIcon from '@mui/icons-material/Folder'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
@@ -34,6 +39,8 @@ import DownloadIcon from '@mui/icons-material/Download'
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
+import GridViewIcon from '@mui/icons-material/GridView'
+import ViewListIcon from '@mui/icons-material/ViewList'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 
@@ -89,6 +96,7 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
   const [menuFor, setMenuFor] = useState<ExplorerItem | null>(null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   function currentFolderId(): number | null {
     return path[path.length - 1]?.id ?? null
@@ -300,11 +308,75 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
     )
   }
 
+  const renderListRow = (item: ExplorerItem) => {
+    const isImage = item.mimetype.startsWith('image/')
+    const isPdf = item.mimetype === 'application/pdf'
+    const isPreviewable = isImage || isPdf
+
+    return (
+      <ListItem
+        key={item.id}
+        sx={{
+          px: 1,
+          borderRadius: 1,
+          cursor: 'pointer',
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+        onDoubleClick={() => (item.isFolder ? handleOpenFolder(item) : isPreviewable && handlePreview(item))}
+      >
+        <ListItemIcon sx={{ minWidth: 44 }}>
+          {item.isFolder ? (
+            <FolderIcon color="warning" />
+          ) : isImage ? (
+            <Box
+              component="img"
+              src={`/api/attachments/file/${item.id}`}
+              sx={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 1 }}
+            />
+          ) : isPdf ? (
+            <PictureAsPdfIcon color="error" />
+          ) : (
+            <InsertDriveFileIcon color="action" />
+          )}
+        </ListItemIcon>
+        <ListItemText
+          primary={item.originalName}
+          secondary={item.isFolder ? 'Pasta' : formatSize(item.size)}
+          primaryTypographyProps={{ noWrap: true }}
+          secondaryTypographyProps={{ noWrap: true }}
+        />
+        <Box sx={{ display: { xs: 'none', sm: 'block' }, width: 180, textAlign: 'right', mr: 2 }}>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {item.isFolder ? '—' : new Date(item.createdAt).toLocaleDateString('pt-BR')}
+          </Typography>
+        </Box>
+        <ListItemSecondaryAction>
+          <IconButton size="small" onClick={(e) => handleOpenMenu(e, item)}>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </ListItemSecondaryAction>
+      </ListItem>
+    )
+  }
+
   return (
     <Paper sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h6">Anexos</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={viewMode}
+            onChange={(_, v) => v && setViewMode(v)}
+          >
+            <ToggleButton value="grid" aria-label="Visualizar em grade">
+              <GridViewIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="list" aria-label="Visualizar em lista">
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
           <Button
             variant="outlined"
             size="small"
@@ -348,10 +420,14 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
         <Alert severity="info" sx={{ mb: 2 }}>
           Nenhum item nesta pasta. Use "Nova Pasta" ou "Enviar" para adicionar conteúdo.
         </Alert>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <Grid container spacing={1.5}>
           {items.map(renderItem)}
         </Grid>
+      ) : (
+        <List dense disablePadding>
+          {items.map(renderListRow)}
+        </List>
       )}
 
       <Menu

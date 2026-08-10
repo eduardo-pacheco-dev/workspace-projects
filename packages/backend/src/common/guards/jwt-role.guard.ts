@@ -16,6 +16,7 @@ const USER_ALLOWED_PREFIXES = [
   '/radio-links',
   '/projects',
   '/clients',
+  '/users',
   '/attachments',
   '/comments',
   '/lpus',

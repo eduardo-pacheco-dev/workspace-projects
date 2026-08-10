@@ -58,6 +58,12 @@ describe('AttachmentsService', () => {
       const saved = { id: 1, projectId: 1, folderId: 5, isFolder: false };
       repo.create.mockReturnValue(saved);
       repo.save.mockResolvedValue(saved);
+      repo.findOne.mockResolvedValue({
+        id: 5,
+        folderId: null,
+        originalName: 'Contratos',
+        isFolder: true,
+      });
 
       const result = await service.uploadForProject(1, file, 5);
 
@@ -184,14 +190,17 @@ describe('AttachmentsService', () => {
     });
 
     it('should recursively delete a folder and all descendants', async () => {
-      const folder = { id: 10, projectId: 1, isFolder: true, filename: 'Contratos' };
-      const childFile = { id: 11, projectId: 1, folderId: 10, isFolder: false, filename: 'a.pdf' };
-      const childFolder = { id: 12, projectId: 1, folderId: 10, isFolder: true, filename: 'Sub' };
+      const folder = { id: 10, projectId: 1, folderId: null, isFolder: true, originalName: 'Contratos', filename: 'Contratos' };
+      const childFile = { id: 11, projectId: 1, folderId: 10, isFolder: false, originalName: 'a.pdf', filename: 'a.pdf' };
+      const childFolder = { id: 12, projectId: 1, folderId: 10, isFolder: true, originalName: 'Sub', filename: 'Sub' };
 
-      repo.findOne
-        .mockResolvedValueOnce(folder)
-        .mockResolvedValueOnce(childFile)
-        .mockResolvedValueOnce(childFolder);
+      repo.findOne.mockImplementation(async ({ where }: any) => {
+        const id = where?.id
+        if (id === 10) return folder
+        if (id === 11) return childFile
+        if (id === 12) return childFolder
+        return null
+      })
       repo.find
         .mockResolvedValueOnce([childFile, childFolder])
         .mockResolvedValueOnce([]);
@@ -279,12 +288,20 @@ describe('AttachmentsService', () => {
       expect(result).toBe(file);
     });
 
-    it('should fall back to the legacy path when the hierarchical file does not exist', async () => {
+    it('should prefer the hierarchical flat path when no folder and no file exists', async () => {
       const attachment = { id: 2, projectId: 1, filename: 'ausente.pdf' } as Attachment;
 
       const result = await service.resolvePhysicalPath(attachment);
 
-      expect(result).toBe(path.resolve('uploads', 'project-1', 'ausente.pdf'));
+      expect(result).toBe(
+        path.resolve(
+          'uploads',
+          'empresa-3-empresa-teste',
+          'cliente-cliente-teste',
+          'projeto-1',
+          'ausente.pdf',
+        ),
+      );
     });
 
     it('should use the legacy path for non-project attachments', async () => {

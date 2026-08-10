@@ -40,16 +40,49 @@ export class AttachmentsService {
     return path.resolve('uploads', companyFolder, clientFolder, `projeto-${projectId}`);
   }
 
+  private async resolveFolderDir(
+    projectId: number,
+    folderId: number | null,
+  ): Promise<string> {
+    const base = await this.resolveProjectStorageDir(projectId);
+    if (folderId == null) return base;
+
+    const chain: string[] = [];
+    let currentId: number | null = folderId;
+    while (currentId != null) {
+      const folder = await this.attachmentRepository.findOne({
+        where: { id: currentId, isFolder: true },
+      });
+      if (!folder) throw new NotFoundException('Pasta não encontrada');
+      chain.unshift(folder.originalName);
+      currentId = folder.folderId;
+    }
+    return path.join(base, ...chain);
+  }
+
   async resolvePhysicalPath(attachment: Attachment): Promise<string> {
     if (attachment.projectId) {
-      const hierarchical = path.join(
-        await this.resolveProjectStorageDir(attachment.projectId),
-        attachment.filename,
-      );
-      if (fs.existsSync(hierarchical)) {
-        return hierarchical;
+      const base = await this.resolveProjectStorageDir(attachment.projectId);
+      if (attachment.isFolder) {
+        return this.resolveFolderDir(attachment.projectId, attachment.id);
       }
-      return path.join(this.getStorageDir(attachment), attachment.filename);
+      const candidates: string[] = [];
+      if (attachment.folderId) {
+        candidates.push(
+          path.join(
+            await this.resolveFolderDir(attachment.projectId, attachment.folderId),
+            attachment.filename,
+          ),
+        );
+      }
+      candidates.push(path.join(base, attachment.filename));
+      candidates.push(path.join(this.getStorageDir(attachment), attachment.filename));
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+      return candidates[0];
     }
     return path.join(this.getStorageDir(attachment), attachment.filename);
   }
@@ -176,7 +209,9 @@ export class AttachmentsService {
     file: Express.Multer.File,
     folderId?: number | null,
   ): Promise<Attachment> {
-    const dir = await this.resolveProjectStorageDir(projectId);
+    const dir = folderId
+      ? await this.resolveFolderDir(projectId, folderId)
+      : await this.resolveProjectStorageDir(projectId);
     const filename = this.saveFile(dir, file);
 
     const attachment = this.attachmentRepository.create({
@@ -206,11 +241,41 @@ export class AttachmentsService {
       isFolder: true,
     });
 
-    return this.attachmentRepository.save(folder);
+    const saved = await this.attachmentRepository.save(folder);
+    try {
+      const dir = await this.resolveFolderDir(projectId, saved.id);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch {
+      // best effort: a pasta virtual continua válida mesmo sem diretório físico
+    }
+    return saved;
   }
 
   async update(id: number, dto: UpdateAttachmentDto): Promise<Attachment> {
     const attachment = await this.findById(id);
+
+    if (!attachment.projectId) {
+      if (dto.originalName != null) {
+        attachment.originalName = dto.originalName;
+        if (attachment.isFolder) {
+          attachment.filename = dto.originalName;
+        }
+      }
+      if (dto.folderId !== undefined) {
+        attachment.folderId = dto.folderId;
+      }
+      return this.attachmentRepository.save(attachment);
+    }
+
+    const oldPath = attachment.isFolder
+      ? await this.resolveFolderDir(attachment.projectId, attachment.id)
+      : path.join(
+          await this.resolveFolderDir(attachment.projectId, attachment.folderId),
+          attachment.filename,
+        );
+
     if (dto.originalName != null) {
       attachment.originalName = dto.originalName;
       if (attachment.isFolder) {
@@ -220,7 +285,25 @@ export class AttachmentsService {
     if (dto.folderId !== undefined) {
       attachment.folderId = dto.folderId;
     }
-    return this.attachmentRepository.save(attachment);
+    const saved = await this.attachmentRepository.save(attachment);
+
+    const newPath = saved.isFolder
+      ? await this.resolveFolderDir(saved.projectId!, saved.id)
+      : path.join(
+          await this.resolveFolderDir(saved.projectId!, saved.folderId),
+          saved.filename,
+        );
+
+    if (oldPath !== newPath && fs.existsSync(oldPath)) {
+      try {
+        fs.mkdirSync(path.dirname(newPath), { recursive: true });
+        fs.renameSync(oldPath, newPath);
+      } catch {
+        // best effort: mantém o registro no banco mesmo se o arquivo físico não puder ser movido
+      }
+    }
+
+    return saved;
   }
 
   async organizeProject(
@@ -468,6 +551,16 @@ export class AttachmentsService {
       });
       for (const child of children) {
         await this.delete(child.id);
+      }
+      if (attachment.projectId) {
+        try {
+          const dir = await this.resolveFolderDir(attachment.projectId, attachment.id);
+          if (fs.existsSync(dir)) {
+            fs.rmSync(dir, { recursive: true, force: true });
+          }
+        } catch {
+          // best effort
+        }
       }
     } else {
       const filePath = await this.resolvePhysicalPath(attachment);

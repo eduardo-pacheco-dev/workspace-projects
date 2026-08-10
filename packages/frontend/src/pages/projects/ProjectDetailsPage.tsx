@@ -40,6 +40,7 @@ import { formatDateTime } from '../../utils/format'
 import ProjectModal from './ProjectModal'
 import ProjectDocumentModal from './ProjectDocumentModal'
 import ProjectFileExplorer from './ProjectFileExplorer'
+import PdcaPage from '../pdca/PdcaPage'
 
 interface Project {
   id: number
@@ -369,6 +370,7 @@ export default function ProjectDetailsPage() {
               <Tab label="Enlaces de Rádio" />
               <Tab label="Documentos" />
               <Tab label="Anexos" />
+              <Tab label="PDCA" />
               <Tab label="Comentários" />
             </Tabs>
           </Paper>
@@ -558,6 +560,12 @@ export default function ProjectDetailsPage() {
           {tab === 4 && <ProjectFileExplorer projectId={projectId} />}
 
           {tab === 5 && (
+            <Paper sx={{ p: 3 }}>
+              <PdcaPage projectId={projectId} embedded />
+            </Paper>
+          )}
+
+          {tab === 6 && (
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
               <Divider sx={{ mb: 2 }} />

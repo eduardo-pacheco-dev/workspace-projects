@@ -13,8 +13,10 @@ import {
   Grid,
   Checkbox,
   FormControlLabel,
+  Autocomplete,
 } from '@mui/material'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface ProjectModalProps {
   open: boolean
@@ -25,10 +27,12 @@ interface ProjectModalProps {
 
 export default function ProjectModal({ open, editId, onClose, onSaved }: ProjectModalProps) {
   const isEdit = Boolean(editId)
+  const { user } = useAuth()
 
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [cliente, setCliente] = useState('')
+  const [operadora, setOperadora] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
@@ -37,6 +41,31 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
   const [status, setStatus] = useState('ativo')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [clientOptions, setClientOptions] = useState<string[]>([])
+  const [userOptions, setUserOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!open) return
+    api.get('/clients', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        setClientOptions(data.map((c: any) => c.nome).filter(Boolean))
+      })
+      .catch(() => {})
+    api.get('/users', { params: { limit: 1000, sortBy: 'name', sortOrder: 'ASC' } })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+        const options = data
+          .map((u: any) => [u.name, u.lastName].filter(Boolean).join(' '))
+          .filter(Boolean)
+        const currentName = user?.name?.trim()
+        if (currentName && !options.includes(currentName)) {
+          options.push(currentName)
+        }
+        setUserOptions(options)
+      })
+      .catch(() => {})
+  }, [open, user])
 
   useEffect(() => {
     if (open && editId) {
@@ -46,6 +75,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
           setNome(d.nome || '')
           setDescricao(d.descricao || '')
           setCliente(d.cliente || '')
+          setOperadora(d.operadora || '')
           setResponsavel(d.responsavel || '')
           setDataInicio(d.dataInicio || '')
           setDataFim(d.dataFim || '')
@@ -62,7 +92,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setError('')
     setLoading(true)
 
-    const payload: any = { nome, descricao, cliente, responsavel, dataInicio, observacoes, status }
+    const payload: any = { nome, descricao, cliente, operadora, responsavel, dataInicio, observacoes, status }
     payload.dataFim = indeterminado ? '' : dataFim
 
     try {
@@ -86,6 +116,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setNome('')
     setDescricao('')
     setCliente('')
+    setOperadora('')
     setResponsavel('')
     setDataInicio('')
     setDataFim('')
@@ -106,10 +137,46 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
               <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} margin="normal" />
+              <Autocomplete
+                fullWidth
+                freeSolo
+                options={clientOptions}
+                value={cliente}
+                onChange={(_, v) => setCliente(v ?? '')}
+                onInputChange={(_, v) => setCliente(v)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Cliente" margin="normal" placeholder="Selecione ou digite um cliente" />
+                )}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} margin="normal" />
+              <Autocomplete
+                fullWidth
+                freeSolo
+                options={userOptions}
+                value={responsavel}
+                onChange={(_, v) => setResponsavel(v ?? '')}
+                onInputChange={(_, v) => setResponsavel(v)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Responsável" margin="normal" placeholder="Selecione um usuário da empresa" />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Operadora"
+                value={operadora}
+                onChange={(e) => setOperadora(e.target.value)}
+                margin="normal"
+              >
+                <MenuItem value="">Selecione</MenuItem>
+                <MenuItem value="TIM">TIM</MenuItem>
+                <MenuItem value="CLARO">CLARO</MenuItem>
+                <MenuItem value="VIVO">VIVO</MenuItem>
+                <MenuItem value="Outras">Outras</MenuItem>
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Data de Início" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />

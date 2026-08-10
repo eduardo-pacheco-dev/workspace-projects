@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Attachment } from './attachment.entity';
+import { CreateFolderDto } from './dto/create-folder.dto';
+import { UpdateAttachmentDto } from './dto/update-attachment.dto';
+import { ProjectsService } from '../projects/projects.service';
+import AdmZip from 'adm-zip';
+import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -10,7 +15,79 @@ export class AttachmentsService {
   constructor(
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
+    private readonly projectsService: ProjectsService,
   ) {}
+
+  private slugify(value: string): string {
+    return (
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'sem-nome'
+    );
+  }
+
+  private async resolveProjectStorageDir(projectId: number): Promise<string> {
+    const [project, companies] = await Promise.all([
+      this.projectsService.findById(projectId),
+      this.projectsService.findCompanies(projectId),
+    ]);
+    const company = companies[0];
+    const companyFolder = company
+      ? `empresa-${company.id}-${this.slugify(company.nome)}`
+      : 'empresa-sem-vinculo';
+    const clientFolder = `cliente-${this.slugify(project.cliente || 'sem-cliente')}`;
+    return path.resolve('uploads', companyFolder, clientFolder, `projeto-${projectId}`);
+  }
+
+  private async resolveFolderDir(
+    projectId: number,
+    folderId: number | null,
+  ): Promise<string> {
+    const base = await this.resolveProjectStorageDir(projectId);
+    if (folderId == null) return base;
+
+    const chain: string[] = [];
+    let currentId: number | null = folderId;
+    while (currentId != null) {
+      const folder = await this.attachmentRepository.findOne({
+        where: { id: currentId, isFolder: true },
+      });
+      if (!folder) throw new NotFoundException('Pasta não encontrada');
+      chain.unshift(folder.originalName);
+      currentId = folder.folderId;
+    }
+    return path.join(base, ...chain);
+  }
+
+  async resolvePhysicalPath(attachment: Attachment): Promise<string> {
+    if (attachment.projectId) {
+      const base = await this.resolveProjectStorageDir(attachment.projectId);
+      if (attachment.isFolder) {
+        return this.resolveFolderDir(attachment.projectId, attachment.id);
+      }
+      const candidates: string[] = [];
+      if (attachment.folderId) {
+        candidates.push(
+          path.join(
+            await this.resolveFolderDir(attachment.projectId, attachment.folderId),
+            attachment.filename,
+          ),
+        );
+      }
+      candidates.push(path.join(base, attachment.filename));
+      candidates.push(path.join(this.getStorageDir(attachment), attachment.filename));
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+      return candidates[0];
+    }
+    return path.join(this.getStorageDir(attachment), attachment.filename);
+  }
 
   private getStorageDir(attachment: Pick<Attachment, 'jobId' | 'serviceOrderId' | 'stationId' | 'radioLinkId' | 'projectId' | 'clientId' | 'companyId' | 'taskId'>): string {
     if (attachment.taskId) return path.resolve('uploads', `task-${attachment.taskId}`);
@@ -132,19 +209,152 @@ export class AttachmentsService {
   async uploadForProject(
     projectId: number,
     file: Express.Multer.File,
+    folderId?: number | null,
   ): Promise<Attachment> {
-    const dir = path.resolve('uploads', `project-${projectId}`);
+    const dir = folderId
+      ? await this.resolveFolderDir(projectId, folderId)
+      : await this.resolveProjectStorageDir(projectId);
     const filename = this.saveFile(dir, file);
 
     const attachment = this.attachmentRepository.create({
       projectId,
+      folderId: folderId ?? null,
       filename,
       originalName: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
+      isFolder: false,
     });
 
     return this.attachmentRepository.save(attachment);
+  }
+
+  async createFolder(
+    projectId: number,
+    dto: CreateFolderDto,
+  ): Promise<Attachment> {
+    const folder = this.attachmentRepository.create({
+      projectId,
+      folderId: dto.folderId ?? null,
+      filename: dto.nome,
+      originalName: dto.nome,
+      mimetype: 'folder',
+      size: 0,
+      isFolder: true,
+    });
+
+    const saved = await this.attachmentRepository.save(folder);
+    try {
+      const dir = await this.resolveFolderDir(projectId, saved.id);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch {
+      // best effort: a pasta virtual continua válida mesmo sem diretório físico
+    }
+    return saved;
+  }
+
+  async update(id: number, dto: UpdateAttachmentDto): Promise<Attachment> {
+    const attachment = await this.findById(id);
+
+    if (!attachment.projectId) {
+      if (dto.originalName != null) {
+        attachment.originalName = dto.originalName;
+        if (attachment.isFolder) {
+          attachment.filename = dto.originalName;
+        }
+      }
+      if (dto.folderId !== undefined) {
+        attachment.folderId = dto.folderId;
+      }
+      return this.attachmentRepository.save(attachment);
+    }
+
+    const oldPath = attachment.isFolder
+      ? await this.resolveFolderDir(attachment.projectId, attachment.id)
+      : path.join(
+          await this.resolveFolderDir(attachment.projectId, attachment.folderId),
+          attachment.filename,
+        );
+
+    if (dto.originalName != null) {
+      attachment.originalName = dto.originalName;
+      if (attachment.isFolder) {
+        attachment.filename = dto.originalName;
+      }
+    }
+    if (dto.folderId !== undefined) {
+      attachment.folderId = dto.folderId;
+    }
+    const saved = await this.attachmentRepository.save(attachment);
+
+    const newPath = saved.isFolder
+      ? await this.resolveFolderDir(saved.projectId!, saved.id)
+      : path.join(
+          await this.resolveFolderDir(saved.projectId!, saved.folderId),
+          saved.filename,
+        );
+
+    if (oldPath !== newPath && fs.existsSync(oldPath)) {
+      try {
+        fs.mkdirSync(path.dirname(newPath), { recursive: true });
+        fs.renameSync(oldPath, newPath);
+      } catch {
+        // best effort: mantém o registro no banco mesmo se o arquivo físico não puder ser movido
+      }
+    }
+
+    return saved;
+  }
+
+  async organizeProject(
+    projectId: number,
+  ): Promise<{ organized: number; folders: string[] }> {
+    const rootFiles = await this.attachmentRepository.find({
+      where: { projectId, folderId: IsNull(), isFolder: false },
+    });
+    if (rootFiles.length === 0) return { organized: 0, folders: [] };
+
+    const groupName = (mimetype: string): string => {
+      if (mimetype.startsWith('image/')) return 'Imagens';
+      if (mimetype === 'application/pdf') return 'PDFs';
+      return 'Documentos';
+    };
+
+    const groups = new Map<string, Attachment[]>();
+    for (const file of rootFiles) {
+      const name = groupName(file.mimetype);
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name)!.push(file);
+    }
+
+    const folders: string[] = [];
+    for (const [name, files] of groups) {
+      let folder = await this.attachmentRepository.findOne({
+        where: { projectId, folderId: IsNull(), isFolder: true, originalName: name },
+      });
+      if (!folder) {
+        folder = await this.attachmentRepository.save(
+          this.attachmentRepository.create({
+            projectId,
+            folderId: null,
+            filename: name,
+            originalName: name,
+            mimetype: 'folder',
+            size: 0,
+            isFolder: true,
+          }),
+        );
+        folders.push(name);
+      }
+      for (const file of files) {
+        file.folderId = folder.id;
+      }
+      await this.attachmentRepository.save(files);
+    }
+
+    return { organized: rootFiles.length, folders };
   }
 
   async uploadForClient(
@@ -280,11 +490,26 @@ export class AttachmentsService {
     return { data, total };
   }
 
-  async findByProject(projectId: number): Promise<Attachment[]> {
-    return this.attachmentRepository.find({
-      where: { projectId },
-      order: { createdAt: 'DESC' },
+  async findByProject(
+    projectId: number,
+    query?: { folderId?: number | 'root' | null },
+  ): Promise<Attachment[]> {
+    const { folderId } = query ?? {};
+
+    const where: any = { projectId };
+
+    if (folderId === 'root' || folderId === null) {
+      where.folderId = IsNull();
+    } else if (folderId !== undefined) {
+      where.folderId = folderId;
+    }
+
+    const items = await this.attachmentRepository.find({
+      where,
+      order: { isFolder: 'DESC', originalName: 'ASC' },
     });
+
+    return items;
   }
 
   async findByClient(clientId: number): Promise<Attachment[]> {
@@ -322,11 +547,94 @@ export class AttachmentsService {
   async delete(id: number): Promise<void> {
     const attachment = await this.findById(id);
 
-    const filePath = path.join(this.getStorageDir(attachment), attachment.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (attachment.isFolder) {
+      const children = await this.attachmentRepository.find({
+        where: { folderId: id },
+      });
+      for (const child of children) {
+        await this.delete(child.id);
+      }
+      if (attachment.projectId) {
+        try {
+          const dir = await this.resolveFolderDir(attachment.projectId, attachment.id);
+          if (fs.existsSync(dir)) {
+            fs.rmSync(dir, { recursive: true, force: true });
+          }
+        } catch {
+          // best effort
+        }
+      }
+    } else {
+      const filePath = await this.resolvePhysicalPath(attachment);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     await this.attachmentRepository.delete(id);
+  }
+
+  private async collectFilesRecursive(folderId: number): Promise<Attachment[]> {
+    const result: Attachment[] = [];
+    const children = await this.attachmentRepository.find({ where: { folderId } });
+    for (const child of children) {
+      if (child.isFolder) {
+        result.push(...(await this.collectFilesRecursive(child.id)));
+      } else {
+        result.push(child);
+      }
+    }
+    return result;
+  }
+
+  private async relativeZipPath(
+    rootFolderId: number,
+    file: Attachment,
+  ): Promise<string> {
+    const chain: string[] = [file.originalName];
+    let currentId = file.folderId;
+    while (currentId != null && currentId !== rootFolderId) {
+      const folder = await this.attachmentRepository.findOne({
+        where: { id: currentId, isFolder: true },
+      });
+      if (!folder) break;
+      chain.unshift(folder.originalName);
+      currentId = folder.folderId;
+    }
+    const root = await this.findById(rootFolderId);
+    chain.unshift(root.originalName);
+    return chain.join('/');
+  }
+
+  async streamFolderZip(folderId: number, res: Response): Promise<void> {
+    const folder = await this.findById(folderId);
+    if (!folder.isFolder) {
+      throw new BadRequestException('O item selecionado não é uma pasta');
+    }
+
+    const files = await this.collectFilesRecursive(folderId);
+    if (files.length === 0) {
+      throw new NotFoundException('A pasta está vazia');
+    }
+
+    const zip = new AdmZip();
+    for (const file of files) {
+      try {
+        const physical = await this.resolvePhysicalPath(file);
+        if (!fs.existsSync(physical)) continue;
+        const name = await this.relativeZipPath(folderId, file);
+        zip.addLocalFile(physical, path.dirname(name), path.basename(name));
+      } catch {
+        // ignora arquivos que não puderem ser empacotados
+      }
+    }
+
+    const buffer = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="pasta-${folder.originalName}.zip"`,
+    );
+    res.send(buffer);
   }
 }

@@ -11,6 +11,7 @@
     "start:dev": "ts-node src/main.ts",
     "start:prod": "node dist/main",
     "create-user": "ts-node scripts/create-user.ts",
+    "seed": "ts-node --transpile-only scripts/seed.ts",
     "typeorm": "ts-node --transpile-only ../../node_modules/typeorm/cli",
     "migration:generate": "ts-node --transpile-only ../../node_modules/typeorm/cli migration:generate -d src/data-source.ts",
     "migration:run": "ts-node --transpile-only ../../node_modules/typeorm/cli migration:run -d src/data-source.ts",
@@ -41,6 +42,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/typeorm": "^10.0.1",
+    "adm-zip": "^0.6.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
@@ -56,6 +58,7 @@
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.22",
+    "@types/adm-zip": "^0.5.8",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.14",

@@ -181,6 +181,14 @@ export class AttachmentsController {
     return this.attachmentsService.findByTask(taskId);
   }
 
+  @Get('folder/:folderId/download')
+  downloadFolder(
+    @Param('folderId', ParseIntPipe) folderId: number,
+    @Res() res: Response,
+  ) {
+    return this.attachmentsService.streamFolderZip(folderId, res);
+  }
+
   @Get('file/:id')
   async getFile(
     @Param('id', ParseIntPipe) id: number,

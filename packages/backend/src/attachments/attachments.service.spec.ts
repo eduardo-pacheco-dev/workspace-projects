@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AttachmentsService } from './attachments.service';
 import { Attachment } from './attachment.entity';
 import { ProjectsService } from '../projects/projects.service';
@@ -310,6 +310,42 @@ describe('AttachmentsService', () => {
       const result = await service.resolvePhysicalPath(attachment);
 
       expect(result).toBe(path.resolve('uploads', 'task-9', 'doc.txt'));
+    });
+  });
+
+  describe('streamFolderZip', () => {
+    const folder = { id: 5, projectId: 1, folderId: null, isFolder: true, originalName: 'Contratos', filename: 'Contratos' };
+    const file1 = { id: 21, projectId: 1, folderId: 5, isFolder: false, originalName: 'a.pdf', filename: 'a.pdf' };
+    const res = { setHeader: jest.fn(), send: jest.fn() };
+
+    it('should throw BadRequestException when the item is not a folder', async () => {
+      repo.findOne.mockResolvedValue({ id: 6, isFolder: false });
+
+      await expect(service.streamFolderZip(6, res as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when the folder is empty', async () => {
+      repo.findOne.mockResolvedValue(folder);
+      repo.find.mockResolvedValue([]);
+
+      await expect(service.streamFolderZip(5, res as any)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should build a zip with the folder contents and send it', async () => {
+      repo.findOne.mockImplementation(async ({ where }: any) => {
+        const id = where?.id
+        return id === 5 ? folder : null
+      })
+      repo.find.mockResolvedValue([file1]);
+
+      await service.streamFolderZip(5, res as any);
+
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/zip');
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        'attachment; filename="pasta-Contratos.zip"',
+      );
+      expect(res.send).toHaveBeenCalledWith(expect.any(Buffer));
     });
   });
 

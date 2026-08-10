@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Attachment } from './attachment.entity';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateAttachmentDto } from './dto/update-attachment.dto';
 import { ProjectsService } from '../projects/projects.service';
+import AdmZip from 'adm-zip';
+import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -570,5 +572,69 @@ export class AttachmentsService {
     }
 
     await this.attachmentRepository.delete(id);
+  }
+
+  private async collectFilesRecursive(folderId: number): Promise<Attachment[]> {
+    const result: Attachment[] = [];
+    const children = await this.attachmentRepository.find({ where: { folderId } });
+    for (const child of children) {
+      if (child.isFolder) {
+        result.push(...(await this.collectFilesRecursive(child.id)));
+      } else {
+        result.push(child);
+      }
+    }
+    return result;
+  }
+
+  private async relativeZipPath(
+    rootFolderId: number,
+    file: Attachment,
+  ): Promise<string> {
+    const chain: string[] = [file.originalName];
+    let currentId = file.folderId;
+    while (currentId != null && currentId !== rootFolderId) {
+      const folder = await this.attachmentRepository.findOne({
+        where: { id: currentId, isFolder: true },
+      });
+      if (!folder) break;
+      chain.unshift(folder.originalName);
+      currentId = folder.folderId;
+    }
+    const root = await this.findById(rootFolderId);
+    chain.unshift(root.originalName);
+    return chain.join('/');
+  }
+
+  async streamFolderZip(folderId: number, res: Response): Promise<void> {
+    const folder = await this.findById(folderId);
+    if (!folder.isFolder) {
+      throw new BadRequestException('O item selecionado não é uma pasta');
+    }
+
+    const files = await this.collectFilesRecursive(folderId);
+    if (files.length === 0) {
+      throw new NotFoundException('A pasta está vazia');
+    }
+
+    const zip = new AdmZip();
+    for (const file of files) {
+      try {
+        const physical = await this.resolvePhysicalPath(file);
+        if (!fs.existsSync(physical)) continue;
+        const name = await this.relativeZipPath(folderId, file);
+        zip.addLocalFile(physical, path.dirname(name), path.basename(name));
+      } catch {
+        // ignora arquivos que não puderem ser empacotados
+      }
+    }
+
+    const buffer = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="pasta-${folder.originalName}.zip"`,
+    );
+    res.send(buffer);
   }
 }

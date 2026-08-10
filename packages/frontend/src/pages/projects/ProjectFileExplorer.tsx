@@ -259,6 +259,24 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
     }
   }
 
+  const handleDownloadFolder = async (item: ExplorerItem) => {
+    setMenuFor(null)
+    try {
+      const res = await api.get(`/attachments/folder/${item.id}/download`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `pasta-${item.originalName}.zip`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      showToast('Download da pasta iniciado.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível baixar a pasta.', 'error')
+    }
+  }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleting(true)
@@ -551,6 +569,12 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
           <MenuItem component="a" href={`/api/attachments/download/${menuFor.id}`} target="_blank">
             <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Baixar</ListItemText>
+          </MenuItem>
+        )}
+        {menuFor && menuFor.isFolder && (
+          <MenuItem onClick={() => handleDownloadFolder(menuFor)}>
+            <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Baixar Pasta (ZIP)</ListItemText>
           </MenuItem>
         )}
         {menuFor && (

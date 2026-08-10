@@ -16,6 +16,7 @@ import {
   Autocomplete,
 } from '@mui/material'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface ProjectModalProps {
   open: boolean
@@ -26,6 +27,7 @@ interface ProjectModalProps {
 
 export default function ProjectModal({ open, editId, onClose, onSaved }: ProjectModalProps) {
   const isEdit = Boolean(editId)
+  const { user } = useAuth()
 
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -52,14 +54,17 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     api.get('/users', { params: { limit: 1000, sortBy: 'name', sortOrder: 'ASC' } })
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setUserOptions(
-          data
-            .map((u: any) => [u.name, u.lastName].filter(Boolean).join(' '))
-            .filter(Boolean),
-        )
+        const options = data
+          .map((u: any) => [u.name, u.lastName].filter(Boolean).join(' '))
+          .filter(Boolean)
+        const currentName = user?.name?.trim()
+        if (currentName && !options.includes(currentName)) {
+          options.push(currentName)
+        }
+        setUserOptions(options)
       })
       .catch(() => {})
-  }, [open])
+  }, [open, user])
 
   useEffect(() => {
     if (open && editId) {

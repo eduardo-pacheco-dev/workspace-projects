@@ -12,7 +12,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   Stepper,
   Step,
   StepLabel,
@@ -299,20 +298,21 @@ export default function PdcaDetail() {
                     </>
                   }
                 />
-                <Chip
-                  size="small"
-                  sx={{ mr: 1 }}
-                  label={statusAcaoLabels[a.status] || a.status}
-                  color={statusAcaoColors[a.status] || 'default'}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton size="small" onClick={() => setActionModal({ open: true, editData: a })}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => setToDeleteAction(a)}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </ListItemSecondaryAction>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                  <Chip
+                    size="small"
+                    label={statusAcaoLabels[a.status] || a.status}
+                    color={statusAcaoColors[a.status] || 'default'}
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <IconButton size="small" onClick={() => setActionModal({ open: true, editData: a })}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => setToDeleteAction(a)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
               </ListItem>
             ))}
           </List>

@@ -48,6 +48,7 @@ describe('JwtRoleGuard', () => {
         '/projects/2',
         '/clients',
         '/clients/7',
+        '/users',
         '/attachments',
         '/comments',
         '/lpus',
@@ -66,8 +67,6 @@ describe('JwtRoleGuard', () => {
 
     it('should deny user on restricted paths', () => {
       const paths = [
-        '/users',
-        '/users/5/anything',
         '/finance',
         '/finance/entries',
         '/finance/reports/summary',

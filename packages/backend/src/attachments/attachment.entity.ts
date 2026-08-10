@@ -76,6 +76,16 @@ export class Attachment {
   @JoinColumn({ name: 'taskId' })
   task: Task | null;
 
+  @Column({ type: 'integer', nullable: true })
+  folderId: number | null;
+
+  @ManyToOne(() => Attachment, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'folderId' })
+  folder: Attachment | null;
+
+  @Column({ type: 'boolean', default: false })
+  isFolder: boolean;
+
   @Column({ type: 'text' })
   filename: string;
 

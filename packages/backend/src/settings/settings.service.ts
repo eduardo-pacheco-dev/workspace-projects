@@ -3,10 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemSetting } from './settings.entity';
 import { UpdateSettingsInput } from './settings.schemas';
-import {
-  DEFAULT_USER_ALLOWED_PREFIXES,
-  roleModulesKey,
-} from '../common/guards/role-modules';
+import { DEFAULT_ROLE_MODULES, roleModulesKey } from '../common/guards/role-modules';
 
 export type SettingsRecord = Record<string, string>;
 
@@ -40,7 +37,7 @@ export class SettingsService {
         // valor inválido -> usa o padrão
       }
     }
-    return role === 'user' ? [...DEFAULT_USER_ALLOWED_PREFIXES] : [];
+    return [...(DEFAULT_ROLE_MODULES[role] ?? [])];
   }
 
   async upsert(patch: UpdateSettingsInput): Promise<SettingsRecord> {

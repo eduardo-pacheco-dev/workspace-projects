@@ -21,7 +21,11 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import GroupIcon from '@mui/icons-material/Group'
 import api from '../../services/api'
 import { settingsFields, emptySettings, Settings, SettingsField } from './settingsTypes'
-import { ALL_ROLE_MODULES, DEFAULT_USER_MODULES } from './roleModules'
+import {
+  ALL_ROLE_MODULES,
+  DEFAULT_ROLE_MODULES,
+  roleLabels,
+} from './roleModules'
 
 const companyKeys: (keyof Settings)[] = [
   'companyName',
@@ -33,10 +37,13 @@ const companyKeys: (keyof Settings)[] = [
 
 const systemKeys: (keyof Settings)[] = ['timezone', 'language', 'currency']
 
+const configurableRoles = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
+
 export default function SettingsPage() {
   const [tab, setTab] = useState(0)
   const [form, setForm] = useState<Settings>(emptySettings)
-  const [userModules, setUserModules] = useState<string[]>(DEFAULT_USER_MODULES)
+  const [selectedRole, setSelectedRole] = useState('user')
+  const [roleModules, setRoleModules] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -49,17 +56,19 @@ export default function SettingsPage() {
         if (!active) return
         const data = res.data ?? {}
         setForm({ ...emptySettings, ...data })
-        const rawModules = data.role_modules_user
-        if (rawModules) {
-          try {
-            const parsed = JSON.parse(rawModules)
-            if (Array.isArray(parsed)) setUserModules(parsed)
-          } catch {
-            setUserModules(DEFAULT_USER_MODULES)
+        const map: Record<string, string[]> = {}
+        for (const role of configurableRoles) {
+          const raw = data[`role_modules_${role}`]
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed)) map[role] = parsed
+            } catch {
+              map[role] = [...(DEFAULT_ROLE_MODULES[role] ?? [])]
+            }
           }
-        } else {
-          setUserModules(DEFAULT_USER_MODULES)
         }
+        setRoleModules(map)
       })
       .catch(() => {
         if (active) setMessage({ type: 'error', text: 'Não foi possível carregar as configurações.' })
@@ -96,10 +105,13 @@ export default function SettingsPage() {
     }
   }
 
+  const currentRoleModules = roleModules[selectedRole] ?? [...(DEFAULT_ROLE_MODULES[selectedRole] ?? [])]
+
   const toggleModule = (value: string) => {
-    setUserModules((prev) =>
-      prev.includes(value) ? prev.filter((m) => m !== value) : [...prev, value],
-    )
+    const next = currentRoleModules.includes(value)
+      ? currentRoleModules.filter((m) => m !== value)
+      : [...currentRoleModules, value]
+    setRoleModules((prev) => ({ ...prev, [selectedRole]: next }))
     setMessage(null)
   }
 
@@ -107,7 +119,9 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage(null)
     try {
-      await api.put('/settings', { role_modules_user: JSON.stringify(userModules) })
+      await api.put('/settings', {
+        [`role_modules_${selectedRole}`]: JSON.stringify(currentRoleModules),
+      })
       setMessage({ type: 'success', text: 'Perfis de acesso salvos com sucesso.' })
     } catch (err: any) {
       const msg = err.response?.data?.message
@@ -183,13 +197,28 @@ export default function SettingsPage() {
 
       {tab === 2 ? (
         <Paper sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <GroupIcon color="primary" />
-            <Typography variant="h6">Perfil de Usuário (não-master)</Typography>
+            <Typography variant="h6">Perfis de Acesso</Typography>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Selecione quais módulos o perfil de usuário comum pode acessar. O perfil master tem acesso total.
+            Selecione o perfil e marque quais módulos ele pode acessar. O perfil master tem acesso total e não é configurável.
           </Typography>
+          <TextField
+            select
+            fullWidth
+            size="small"
+            label="Perfil"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            sx={{ mb: 3, maxWidth: 280 }}
+          >
+            {configurableRoles.map((role) => (
+              <MenuItem key={role} value={role}>
+                {roleLabels[role] || role}
+              </MenuItem>
+            ))}
+          </TextField>
           <Divider sx={{ mb: 3 }} />
           <Grid container spacing={1}>
             {ALL_ROLE_MODULES.map((module) => (
@@ -197,7 +226,7 @@ export default function SettingsPage() {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      checked={userModules.includes(module.value)}
+                      checked={currentRoleModules.includes(module.value)}
                       onChange={() => toggleModule(module.value)}
                     />
                   }

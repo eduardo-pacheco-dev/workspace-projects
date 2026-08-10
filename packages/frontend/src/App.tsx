@@ -59,7 +59,8 @@ function ProtectedLayout() {
     api
       .get('/settings')
       .then((res) => {
-        const raw = res.data?.role_modules_user
+        const role = user?.role || 'user'
+        const raw = res.data?.[`role_modules_${role}`]
         if (raw) {
           try {
             const parsed = JSON.parse(raw)
@@ -70,7 +71,7 @@ function ProtectedLayout() {
         }
       })
       .catch(() => {})
-  }, [isAuthenticated])
+  }, [isAuthenticated, user])
 
   if (!isAuthenticated) return <Navigate to="/signin" replace />
   const isMaster = user?.role === 'master'

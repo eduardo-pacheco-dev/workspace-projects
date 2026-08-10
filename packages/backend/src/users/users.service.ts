@@ -93,7 +93,10 @@ export class UsersService {
       }
     }
 
-    if (role === 'user' && companyId == null) {
+    if (role === 'master' && companyId != null) {
+      throw new BadRequestException('Usuário master não deve estar vinculado a uma empresa.');
+    }
+    if (role !== 'master' && companyId == null) {
       throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
     }
     if (companyId != null) {
@@ -211,7 +214,10 @@ export class UsersService {
     }
     if (dto.companyId !== undefined) user.companyId = dto.companyId;
 
-    if (user.role === 'user' && user.companyId == null) {
+    if (user.role === 'master' && user.companyId != null) {
+      throw new BadRequestException('Usuário master não deve estar vinculado a uma empresa.');
+    }
+    if (user.role !== 'master' && user.companyId == null) {
       throw new BadRequestException('Usuário não-master deve estar vinculado a uma empresa.');
     }
     if (user.companyId != null) {

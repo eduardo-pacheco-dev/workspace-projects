@@ -20,6 +20,7 @@ import { StationsService } from '../stations/stations.service';
 import { RadioLinksService } from '../radio-links/radio-links.service';
 import { ServiceOrdersService } from '../service-orders/service-orders.service';
 import { ClientsService } from '../clients/clients.service';
+import { PdcaService } from '../pdca/pdca.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -42,6 +43,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly radioLinksService: RadioLinksService,
     private readonly serviceOrdersService: ServiceOrdersService,
     private readonly clientsService: ClientsService,
+    private readonly pdcaService: PdcaService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -65,6 +67,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedRadiolinks();
     await this.seedServiceOrders();
     await this.seedClients();
+    await this.seedPdca();
     await this.seedAttachments();
     await this.seedComments();
   }
@@ -1434,5 +1437,132 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     console.log(`Seed: ${clients.length} clients created`);
+  }
+
+  private async seedPdca() {
+    const { total } = await this.pdcaService.findAll({ limit: 1 });
+    if (total > 0) return;
+
+    const { data: projects } = await this.projectsService.findAll({ limit: 100 });
+    const projectId = (index: number) => projects[index]?.id ?? null;
+
+    const ciclos = [
+      {
+        projectId: projectId(0),
+        titulo: 'Reduzir indisponibilidade do enlace Norte',
+        problema: 'Enlace do site Norte apresenta indisponibilidade recorrente em horário comercial.',
+        impacto: 'Cliente sem conectividade em horário de pico.',
+        areaSetor: 'Operações / Rede',
+        responsavelCiclo: 'Diego Nunes',
+        tecnicaAnalise: '5-porques',
+        causaRaiz: 'Falta de manutenção preventiva nos rádios do enlace.',
+        meta: 'Reduzir indisponibilidade para menos de 1% no mês.',
+        fase: 'plan',
+        statusCiclo: 'aberto',
+        observacoes: 'Ciclo inicial de melhoria contínua.',
+      },
+      {
+        projectId: projectId(1),
+        titulo: 'Otimizar comissionamento 11 GHz',
+        problema: 'Comissionamento do enlace de 11 GHz está levando mais tempo que o planejado.',
+        impacto: 'Atraso na entrega para o cliente.',
+        areaSetor: 'Implantação',
+        responsavelCiclo: 'Bruno Martins',
+        tecnicaAnalise: 'ishikawa',
+        causaRaiz: 'Falta de checklist padronizado de comissionamento.',
+        meta: 'Reduzir tempo médio de comissionamento em 30%.',
+        fase: 'do',
+        statusCiclo: 'em_execucao',
+      },
+      {
+        projectId: projectId(2),
+        titulo: 'Melhorar qualidade da rede LTE',
+        problema: 'Indicadores de drop rate acima da meta em área urbana.',
+        impacto: 'Reclamações de clientes.',
+        areaSetor: 'Qualidade de Rede',
+        responsavelCiclo: 'Adriana Costa',
+        tecnicaAnalise: 'livre',
+        causaRaiz: 'Parâmetros de handover desajustados.',
+        meta: 'Reduzir drop rate para abaixo de 2%.',
+        fase: 'check',
+        statusCiclo: 'em_verificacao',
+        resultadoCheck: 'Drop rate reduzido de 4,1% para 2,3%.',
+        kpi: 'Drop rate (%)',
+        resultadoMedicao: 'Medição por drive test em 15 dias.',
+        statusValidacao: 'sucesso_parcial',
+        dataVerificacao: '2026-07-20',
+        responsavelValidacao: 'Adriana Costa',
+      },
+      {
+        projectId: projectId(0),
+        titulo: 'Padronizar manutenção preventiva',
+        problema: 'Manutenções preventivas executadas de forma não padronizada entre equipes.',
+        impacto: 'Variação na qualidade dos enlaces.',
+        areaSetor: 'Operações / Rede',
+        responsavelCiclo: 'Diego Nunes',
+        tecnicaAnalise: '5-porques',
+        causaRaiz: 'Ausência de procedimento operacional padrão.',
+        meta: 'Documentar e aplicar POP de manutenção preventiva.',
+        fase: 'act',
+        statusCiclo: 'concluido',
+        resultadoCheck: 'POP aplicado em 100% das estações da região.',
+        statusValidacao: 'sucesso',
+        dataVerificacao: '2026-06-10',
+        responsavelValidacao: 'Diego Nunes',
+        decisoesAct: 'Padronizar POP de manutenção preventiva em todas as unidades.',
+        pop: 'POP-MAN-001: Manutenção preventiva mensal de rádios.',
+        licaoAprendida: 'Checklist padronizado reduziu tempo e erros de execução.',
+        dataConclusao: '2026-06-15',
+      },
+    ];
+
+    const created: number[] = [];
+    for (const ciclo of ciclos) {
+      const saved = await this.pdcaService.create(ciclo);
+      created.push(saved.id);
+    }
+
+    console.log(`Seed: ${ciclos.length} PDCA cycles created`);
+
+    const acoesPorCiclo: Record<
+      number,
+      {
+        what: string;
+        why?: string;
+        ondeAplicacao?: string;
+        whenInicio?: string;
+        whenPrazo?: string;
+        who?: string;
+        how?: string;
+        howMuch?: number;
+        status?: string;
+        progresso?: number;
+        observacoes?: string;
+      }[]
+    > = {
+      [created[1]]: [
+        { what: 'Criar checklist de comissionamento', why: 'Padronizar a execução', ondeAplicacao: 'Campo', whenInicio: '2026-05-01', whenPrazo: '2026-05-10', who: 'Bruno Martins', how: 'Elaborar checklist com base nas boas práticas', status: 'concluido', progresso: 100 },
+        { what: 'Capacitar equipe no novo checklist', why: 'Garantir aderência da equipe', ondeAplicacao: 'Implantação', whenInicio: '2026-05-15', whenPrazo: '2026-05-25', who: 'Bruno Martins', how: 'Treinamento prático em campo', status: 'em_andamento', progresso: 60 },
+        { what: 'Medir tempo médio de comissionamento', why: 'Avaliar resultado da melhoria', ondeAplicacao: 'Backoffice', whenInicio: '2026-06-01', whenPrazo: '2026-06-15', who: 'Camila Rocha', how: 'Levantamento a partir das ordens de serviço', status: 'pendente', progresso: 0 },
+      ],
+      [created[2]]: [
+        { what: 'Ajustar parâmetros de handover', why: 'Corrigir drop rate', ondeAplicacao: 'Rede LTE', whenInicio: '2026-06-01', whenPrazo: '2026-06-20', who: 'Adriana Costa', how: 'Reconfiguração remota via sistema', status: 'concluido', progresso: 100 },
+        { what: 'Realizar drive test de validação', why: 'Validar melhoria', ondeAplicacao: 'Área urbana', whenInicio: '2026-07-01', whenPrazo: '2026-07-10', who: 'Adriana Costa', status: 'concluido', progresso: 100 },
+      ],
+      [created[3]]: [
+        { what: 'Elaborar POP de manutenção preventiva', why: 'Padronizar procedimento', ondeAplicacao: 'Operações', whenInicio: '2026-05-01', whenPrazo: '2026-05-20', who: 'Diego Nunes', how: 'Documentar procedimento em conjunto com a equipe', status: 'concluido', progresso: 100 },
+        { what: 'Divulgar POP para todas as equipes', why: 'Aplicar padronização', ondeAplicacao: 'Todas as unidades', whenInicio: '2026-05-25', whenPrazo: '2026-06-05', who: 'Diego Nunes', status: 'concluido', progresso: 100 },
+      ],
+    };
+
+    let totalAcoes = 0;
+    for (const [pdcaId, acoes] of Object.entries(acoesPorCiclo)) {
+      for (const acao of acoes) {
+        await this.pdcaService.createAction(Number(pdcaId), acao);
+        totalAcoes++;
+      }
+    }
+
+    console.log(`Seed: ${totalAcoes} PDCA actions created`);
   }
 }

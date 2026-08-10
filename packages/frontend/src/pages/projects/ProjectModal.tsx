@@ -32,6 +32,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [cliente, setCliente] = useState('')
+  const [operadora, setOperadora] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
@@ -74,6 +75,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
           setNome(d.nome || '')
           setDescricao(d.descricao || '')
           setCliente(d.cliente || '')
+          setOperadora(d.operadora || '')
           setResponsavel(d.responsavel || '')
           setDataInicio(d.dataInicio || '')
           setDataFim(d.dataFim || '')
@@ -90,7 +92,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setError('')
     setLoading(true)
 
-    const payload: any = { nome, descricao, cliente, responsavel, dataInicio, observacoes, status }
+    const payload: any = { nome, descricao, cliente, operadora, responsavel, dataInicio, observacoes, status }
     payload.dataFim = indeterminado ? '' : dataFim
 
     try {
@@ -114,6 +116,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
     setNome('')
     setDescricao('')
     setCliente('')
+    setOperadora('')
     setResponsavel('')
     setDataInicio('')
     setDataFim('')
@@ -158,6 +161,22 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
                   <TextField {...params} label="Responsável" margin="normal" placeholder="Selecione um usuário da empresa" />
                 )}
               />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Operadora"
+                value={operadora}
+                onChange={(e) => setOperadora(e.target.value)}
+                margin="normal"
+              >
+                <MenuItem value="">Selecione</MenuItem>
+                <MenuItem value="TIM">TIM</MenuItem>
+                <MenuItem value="CLARO">CLARO</MenuItem>
+                <MenuItem value="VIVO">VIVO</MenuItem>
+                <MenuItem value="Outras">Outras</MenuItem>
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Data de Início" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />

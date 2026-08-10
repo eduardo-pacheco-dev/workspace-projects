@@ -1,8 +1,14 @@
 import { ForbiddenException } from '@nestjs/common';
 import { JwtRoleGuard } from './jwt-role.guard';
+import { SettingsService } from '../../settings/settings.service';
+import { DEFAULT_USER_ALLOWED_PREFIXES } from './role-modules';
 
 describe('JwtRoleGuard', () => {
   let guard: JwtRoleGuard;
+
+  const settingsService = {
+    getRoleModules: jest.fn().mockResolvedValue(DEFAULT_USER_ALLOWED_PREFIXES),
+  };
 
   const makeContext = (path: string) =>
     ({
@@ -12,14 +18,15 @@ describe('JwtRoleGuard', () => {
     }) as any;
 
   beforeEach(() => {
-    guard = new JwtRoleGuard();
+    jest.clearAllMocks();
+    guard = new JwtRoleGuard(settingsService as unknown as SettingsService);
   });
 
   describe('canActivate', () => {
-    it('should bypass authentication for public auth paths', () => {
-      expect(guard.canActivate(makeContext('/auth/login'))).toBe(true);
-      expect(guard.canActivate(makeContext('/auth/register'))).toBe(true);
-      expect(guard.canActivate(makeContext('/auth/forgot-password'))).toBe(true);
+    it('should bypass authentication for public auth paths', async () => {
+      await expect(guard.canActivate(makeContext('/auth/login'))).resolves.toBe(true);
+      await expect(guard.canActivate(makeContext('/auth/register'))).resolves.toBe(true);
+      await expect(guard.canActivate(makeContext('/auth/forgot-password'))).resolves.toBe(true);
     });
   });
 

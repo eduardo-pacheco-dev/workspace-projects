@@ -9,6 +9,7 @@ export const knownSettingKeys = [
   'timezone',
   'language',
   'currency',
+  'role_modules_user',
 ] as const;
 
 export type KnownSettingKey = (typeof knownSettingKeys)[number];
@@ -22,6 +23,7 @@ export const systemSettingsSchema = z.object({
   timezone: z.string().optional(),
   language: z.string().optional(),
   currency: z.string().optional(),
+  role_modules_user: z.string().optional(),
 });
 
 export const updateSettingsSchema = systemSettingsSchema.refine(

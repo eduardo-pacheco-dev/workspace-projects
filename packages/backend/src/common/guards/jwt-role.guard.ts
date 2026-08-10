@@ -5,34 +5,48 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
+import { SettingsService } from '../../settings/settings.service';
+import { DEFAULT_USER_ALLOWED_PREFIXES } from './role-modules';
 
 const PUBLIC_PREFIXES = ['/auth'];
-
-const USER_ALLOWED_PREFIXES = [
-  '/tasks',
-  '/service-orders',
-  '/collaborators',
-  '/stations',
-  '/radio-links',
-  '/projects',
-  '/clients',
-  '/users',
-  '/attachments',
-  '/comments',
-  '/lpus',
-  '/teams',
-  '/pdca',
-];
 
 const OWN_PROFILE_REGEX = /^\/users\/\d+$/;
 
 @Injectable()
 export class JwtRoleGuard extends AuthGuard('jwt') {
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  private allowedPrefixesCache: string[] | null = null;
+  private cacheTime = 0;
+  private readonly CACHE_TTL = 30_000;
+
+  constructor(private readonly settingsService: SettingsService) {
+    super();
+  }
+
+  private async getAllowedPrefixes(): Promise<string[]> {
+    if (
+      this.allowedPrefixesCache &&
+      Date.now() - this.cacheTime < this.CACHE_TTL
+    ) {
+      return this.allowedPrefixesCache;
+    }
+    try {
+      const modules = await this.settingsService.getRoleModules('user');
+      this.allowedPrefixesCache = modules;
+      this.cacheTime = Date.now();
+      return modules;
+    } catch {
+      this.allowedPrefixesCache = [...DEFAULT_USER_ALLOWED_PREFIXES];
+      this.cacheTime = Date.now();
+      return this.allowedPrefixesCache;
+    }
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const path: string = req?.path ?? '';
     if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return true;
-    return super.canActivate(context);
+    await this.getAllowedPrefixes();
+    return super.canActivate(context) as any;
   }
 
   handleRequest(
@@ -46,9 +60,10 @@ export class JwtRoleGuard extends AuthGuard('jwt') {
     const req = context.switchToHttp().getRequest();
     const path: string = req?.path ?? '';
     if (user && user.role !== 'master') {
+      const allowedPrefixes = this.allowedPrefixesCache ?? DEFAULT_USER_ALLOWED_PREFIXES;
       const allowed =
         OWN_PROFILE_REGEX.test(path) ||
-        USER_ALLOWED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+        allowedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
       if (!allowed) {
         throw new ForbiddenException('Acesso negado: perfil sem permissão.');
       }

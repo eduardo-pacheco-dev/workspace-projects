@@ -20,6 +20,7 @@ const USER_ALLOWED_PREFIXES = [
   '/comments',
   '/lpus',
   '/teams',
+  '/pdca',
 ];
 
 const OWN_PROFILE_REGEX = /^\/users\/\d+$/;

@@ -31,6 +31,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications'
 import CorporateFareIcon from '@mui/icons-material/CorporateFare'
+import LoopIcon from '@mui/icons-material/Loop'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
@@ -102,6 +103,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
+    { label: 'PDCA', path: '/pdca', icon: <LoopIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
     { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon /> },
     { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
@@ -115,6 +117,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
     { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
+    { label: 'PDCA', path: '/pdca', icon: <LoopIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
   ]
 

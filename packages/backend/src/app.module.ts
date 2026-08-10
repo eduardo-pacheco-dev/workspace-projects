@@ -24,6 +24,7 @@ import { SettingsModule } from './settings/settings.module';
 import { CompaniesModule } from './companies/company.module';
 import { CollaboratorsModule } from './collaborators/collaborators.module';
 import { TeamsModule } from './teams/teams.module';
+import { PdcaModule } from './pdca/pdca.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -74,6 +75,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     CompaniesModule,
     CollaboratorsModule,
     TeamsModule,
+    PdcaModule,
     SeedModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtRoleGuard }],

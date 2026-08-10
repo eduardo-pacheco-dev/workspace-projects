@@ -32,6 +32,8 @@ import ClientDetailsPage from './pages/clients/ClientDetailsPage'
 import SchedulePage from './pages/schedule/SchedulePage'
 import TasksPage from './pages/tasks/TasksPage'
 import TaskDetail from './pages/tasks/TaskDetail'
+import PdcaPage from './pages/pdca/PdcaPage'
+import PdcaDetail from './pages/pdca/PdcaDetail'
 import MsProjectPage from './pages/ms-project/MsProjectPage'
 import MsProjectDetailPage from './pages/ms-project/MsProjectDetail'
 import SettingsPage from './pages/settings/SettingsPage'
@@ -42,7 +44,7 @@ import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
-const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients']
+const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients', '/pdca']
 const USER_ALWAYS_ALLOWED = ['/', '/profile']
 
 function ProtectedLayout() {
@@ -109,6 +111,8 @@ export default function App() {
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/tasks/:id" element={<TaskDetail />} />
+          <Route path="/pdca" element={<PdcaPage />} />
+          <Route path="/pdca/:id" element={<PdcaDetail />} />
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />

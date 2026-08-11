@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 
 @Entity()
 export class RadioLink {
@@ -26,9 +26,9 @@ export class RadioLink {
   @Column({ type: 'integer', nullable: true })
   stationAId: number | null;
 
-  @ManyToOne(() => Station, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => StationEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'stationAId' })
-  stationA: Station | null;
+  stationA: StationEntity | null;
 
   @Column({ type: 'text', nullable: true })
   siteIdA?: string;
@@ -51,9 +51,9 @@ export class RadioLink {
   @Column({ type: 'integer', nullable: true })
   stationBId: number | null;
 
-  @ManyToOne(() => Station, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => StationEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'stationBId' })
-  stationB: Station | null;
+  stationB: StationEntity | null;
 
   @Column({ type: 'text', nullable: true })
   siteIdB?: string;

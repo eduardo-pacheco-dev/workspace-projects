@@ -4,7 +4,9 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { Station } from './station.entity';
+import { StationEntity } from './infrastructure/station.entity';
+import { TypeOrmStationRepository } from './infrastructure/typeorm-station.repository';
+import { STATION_REPOSITORY } from './domain/station.repository';
 import { StationsController } from './stations.controller';
 import { StationsService } from './stations.service';
 
@@ -33,7 +35,7 @@ describe('StationsController (integration)', () => {
     },
   };
 
-  let stationRepo: Repository<Station>;
+  let stationRepo: Repository<StationEntity>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -42,13 +44,16 @@ describe('StationsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Station],
+          entities: [StationEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Station]),
+        TypeOrmModule.forFeature([StationEntity]),
       ],
       controllers: [StationsController],
-      providers: [StationsService],
+      providers: [
+        StationsService,
+        { provide: STATION_REPOSITORY, useClass: TypeOrmStationRepository },
+      ],
     })
       .overrideGuard(AuthGuard('jwt'))
       .useValue(mockAuthGuard)
@@ -58,7 +63,7 @@ describe('StationsController (integration)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
 
-    stationRepo = moduleRef.get<Repository<Station>>(getRepositoryToken(Station));
+    stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
   });
 
   afterAll(async () => {

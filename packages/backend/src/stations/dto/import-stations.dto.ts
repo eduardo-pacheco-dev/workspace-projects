@@ -1,15 +1,7 @@
 import { IsArray, ArrayNotEmpty } from 'class-validator';
+import { StationImportItem } from '../domain/station-rules';
 
-export interface ImportStationItem {
-  siteId?: string;
-  endId?: string;
-  endereco?: string;
-  latitude?: number | string;
-  longitude?: number | string;
-  operadora?: string;
-  observacoes?: string;
-  status?: string;
-}
+export type ImportStationItem = StationImportItem;
 
 export class ImportStationsDto {
   @IsArray()

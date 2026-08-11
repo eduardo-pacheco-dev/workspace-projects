@@ -1368,7 +1368,7 @@ export class SeedService implements OnApplicationBootstrap {
         siteId: station?.siteId,
         endId: station?.endId,
         operadora: (so.operadora ?? station?.operadora ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
-        endereco: station?.endereco,
+        endereco: station?.endereco ?? undefined,
         dataInicio: so.dataInicio,
         dataFim: so.dataFim,
         status: so.status,

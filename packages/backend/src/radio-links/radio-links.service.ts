@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RadioLink } from './radio-link.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { CreateRadioLinkDto } from './dto/create-radio-link.dto';
 import { UpdateRadioLinkDto } from './dto/update-radio-link.dto';
 import { ImportRadioLinkItem } from './dto/import-radio-links.dto';
@@ -29,8 +29,8 @@ export class RadioLinksService {
   constructor(
     @InjectRepository(RadioLink)
     private readonly radioLinksRepository: Repository<RadioLink>,
-    @InjectRepository(Station)
-    private readonly stationsRepository: Repository<Station>,
+    @InjectRepository(StationEntity)
+    private readonly stationsRepository: Repository<StationEntity>,
   ) {}
 
   private async applyStations(radioLink: RadioLink, dto: CreateRadioLinkDto | UpdateRadioLinkDto): Promise<void> {
@@ -116,8 +116,8 @@ export class RadioLinksService {
     if (parsed.length === 0) return result;
 
     const stations = await this.stationsRepository.find();
-    const bySiteId = new Map<string, Station>();
-    const bySiteAndEnd = new Map<string, Station>();
+    const bySiteId = new Map<string, StationEntity>();
+    const bySiteAndEnd = new Map<string, StationEntity>();
     for (const s of stations) {
       if (s.siteId) bySiteId.set(s.siteId, s);
       if (s.siteId && s.endId) bySiteAndEnd.set(`${s.siteId}::${s.endId}`, s);
@@ -127,7 +127,7 @@ export class RadioLinksService {
       siteId: string | undefined,
       endId: string | undefined,
       operadora: string | undefined,
-    ): Station | null => {
+    ): StationEntity | null => {
       if (!siteId) return null;
       if (operadora === 'TIM' && endId) {
         return bySiteAndEnd.get(`${siteId}::${endId}`) ?? bySiteId.get(siteId) ?? null;

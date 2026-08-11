@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { RadioLinksService } from './radio-links.service';
 import { RadioLink } from './radio-link.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 
 describe('RadioLinksService', () => {
   let service: RadioLinksService;
@@ -43,7 +43,7 @@ describe('RadioLinksService', () => {
       providers: [
         RadioLinksService,
         { provide: getRepositoryToken(RadioLink), useValue: repo },
-        { provide: getRepositoryToken(Station), useValue: stationRepo },
+        { provide: getRepositoryToken(StationEntity), useValue: stationRepo },
       ],
     }).compile();
 

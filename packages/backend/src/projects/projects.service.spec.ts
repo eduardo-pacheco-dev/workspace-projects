@@ -4,7 +4,7 @@ import { NotFoundException } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { Project } from './project.entity';
 import { ProjectDocument } from './project-document.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
 
@@ -50,7 +50,7 @@ describe('ProjectsService', () => {
       providers: [
         ProjectsService,
         { provide: getRepositoryToken(Project), useValue: projectsRepo },
-        { provide: getRepositoryToken(Station), useValue: stationsRepo },
+        { provide: getRepositoryToken(StationEntity), useValue: stationsRepo },
         { provide: getRepositoryToken(RadioLink), useValue: radioLinksRepo },
         { provide: getRepositoryToken(ProjectDocument), useValue: documentsRepo },
         { provide: getRepositoryToken(Company), useValue: companiesRepo },

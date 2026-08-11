@@ -1,6 +1,7 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
+import { STATION_OPERADORAS } from '../domain/station.entity';
 
-export const stationOperadoras = ['TIM', 'CLARO', 'VIVO', 'Outras'] as const;
+export const stationOperadoras = STATION_OPERADORAS;
 
 export class CreateStationDto {
   @IsString()

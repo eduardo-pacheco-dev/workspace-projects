@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
+import { isActiveUser } from '../users/domain/user-rules';
 import {
   RegisterInput,
   LoginInput,
@@ -16,6 +17,28 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
+
+  private buildTokenResponse(user: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    companyId?: number | null;
+    company?: { nome: string } | null;
+  }) {
+    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
+        companyName: user.company?.nome ?? null,
+      },
+    };
+  }
 
   async register(dto: RegisterInput) {
     const existing = await this.usersService.findByEmail(dto.email);
@@ -32,25 +55,15 @@ export class AuthService {
       password: hashedPassword,
       role: 'user',
       companyId: null,
+      status: 'active',
     });
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return {
-      access_token: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId,
-        companyName: user.company?.nome ?? null,
-      },
-    };
+    return this.buildTokenResponse(user);
   }
 
   async login(dto: LoginInput) {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
+    if (!user || !isActiveUser(user)) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -59,18 +72,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return {
-      access_token: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId,
-        companyName: user.company?.nome ?? null,
-      },
-    };
+    return this.buildTokenResponse(user);
   }
 
   async forgotPassword(dto: ForgotPasswordInput) {

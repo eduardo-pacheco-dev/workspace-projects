@@ -22,6 +22,7 @@ export async function createUser(
     password: hashedPassword,
     role: 'master',
     companyId: null,
+    status: 'active',
   });
   return userRepository.save(user);
 }

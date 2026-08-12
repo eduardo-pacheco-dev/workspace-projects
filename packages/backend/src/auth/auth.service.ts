@@ -1,9 +1,12 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { isActiveUser } from '../users/domain/user-rules';
+import {
+  buildResetToken,
+  parseResetToken,
+} from './reset-token';
 import {
   RegisterInput,
   LoginInput,
@@ -42,23 +45,20 @@ export class AuthService {
 
   async register(dto: RegisterInput) {
     const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) {
-      throw new BadRequestException('Email already in use');
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      await this.usersService.create({
+        name: dto.name,
+        lastName: dto.lastName || null,
+        phone: dto.phone || null,
+        email: dto.email,
+        password: hashedPassword,
+        role: 'user',
+        companyId: null,
+        status: 'active',
+      });
     }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.usersService.create({
-      name: dto.name,
-      lastName: dto.lastName || null,
-      phone: dto.phone || null,
-      email: dto.email,
-      password: hashedPassword,
-      role: 'user',
-      companyId: null,
-      status: 'active',
-    });
-
-    return this.buildTokenResponse(user);
+    return { message: 'Registration successful. Please sign in.' };
   }
 
   async login(dto: LoginInput) {
@@ -77,17 +77,20 @@ export class AuthService {
 
   async forgotPassword(dto: ForgotPasswordInput) {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      return { message: 'If the email exists, a reset link has been sent.' };
+    if (user) {
+      const { digest } = buildResetToken();
+      await this.usersService.update(user.id, { resetToken: digest });
     }
-
-    const resetToken = crypto.randomUUID();
-    await this.usersService.update(user.id, { resetToken });
     return { message: 'If the email exists, a reset link has been sent.' };
   }
 
   async resetPassword(dto: ResetPasswordInput) {
-    const user = await this.usersService.findByResetToken(dto.token);
+    const parsed = parseResetToken(dto.token);
+    if (!parsed || parsed.expiresAt < Date.now()) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const user = await this.usersService.findByResetToken(parsed.digest);
     if (!user) {
       throw new BadRequestException('Invalid or expired reset token');
     }

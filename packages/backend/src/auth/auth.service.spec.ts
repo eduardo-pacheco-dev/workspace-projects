@@ -3,6 +3,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { buildResetToken } from './reset-token';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/domain/user.entity';
 
@@ -37,11 +38,8 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create an active user and return a token', async () => {
+    it('should create an active user and return a generic message', async () => {
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(
-        new User({ id: 1, name: 'Maria', email: 'maria@email.com', role: 'user', companyId: null }),
-      );
 
       const result = await service.register({
         name: 'Maria',
@@ -52,16 +50,20 @@ describe('AuthService', () => {
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ email: 'maria@email.com', role: 'user', status: 'active' }),
       );
-      expect(result.access_token).toBe('signed-token');
-      expect(result.user.email).toBe('maria@email.com');
+      expect(result.message).toContain('Registration');
     });
 
-    it('should reject a duplicate email', async () => {
+    it('should not reveal whether the email is already registered', async () => {
       usersService.findByEmail.mockResolvedValue(new User({ id: 1, email: 'dup@email.com' }));
 
-      await expect(
-        service.register({ name: 'X', email: 'dup@email.com', password: '123456' }),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.register({
+        name: 'X',
+        email: 'dup@email.com',
+        password: '123456',
+      });
+
+      expect(usersService.create).not.toHaveBeenCalled();
+      expect(result.message).toContain('Registration');
     });
   });
 
@@ -130,10 +132,12 @@ describe('AuthService', () => {
 
   describe('resetPassword', () => {
     it('should reset the password and clear the token', async () => {
+      const { presentation, digest } = buildResetToken();
       usersService.findByResetToken.mockResolvedValue(new User({ id: 1, email: 'user@email.com' }));
 
-      const result = await service.resetPassword({ token: 'token-abc', password: 'nova123' });
+      const result = await service.resetPassword({ token: presentation, password: 'nova123' });
 
+      expect(usersService.findByResetToken).toHaveBeenCalledWith(digest);
       expect(usersService.update).toHaveBeenCalledWith(1, {
         password: 'hashed-password',
         resetToken: null,
@@ -142,11 +146,29 @@ describe('AuthService', () => {
     });
 
     it('should reject an invalid token', async () => {
-      usersService.findByResetToken.mockResolvedValue(null);
-
       await expect(
         service.resetPassword({ token: 'invalido', password: 'nova123' }),
       ).rejects.toThrow(BadRequestException);
+      expect(usersService.findByResetToken).not.toHaveBeenCalled();
+    });
+
+    it('should reject an expired token', async () => {
+      const expiredToken = `abc.${Date.now() - 1000}`;
+
+      await expect(
+        service.resetPassword({ token: expiredToken, password: 'nova123' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService.findByResetToken).not.toHaveBeenCalled();
+    });
+
+    it('should reject a well-formed token with no matching user', async () => {
+      const { presentation } = buildResetToken();
+      usersService.findByResetToken.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword({ token: presentation, password: 'nova123' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService.update).not.toHaveBeenCalled();
     });
   });
 });

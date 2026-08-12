@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity('task')
-export class Task {
+export class TaskEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -41,12 +41,12 @@ export class Task {
   @Column({ type: 'integer', nullable: true })
   parentId?: number;
 
-  @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => TaskEntity, (task) => task.subtasks, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'parentId' })
-  parent?: Task;
+  parent?: TaskEntity;
 
-  @OneToMany(() => Task, (task) => task.parent)
-  subtasks: Task[];
+  @OneToMany(() => TaskEntity, (task) => task.parent)
+  subtasks: TaskEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

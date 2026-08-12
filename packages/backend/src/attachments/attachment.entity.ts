@@ -13,7 +13,7 @@ import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity
 import { ProjectEntity } from '../projects/infrastructure/project.entity';
 import { ClientEntity } from '../clients/infrastructure/client.entity';
 import { Company } from '../companies/company.entity';
-import { Task } from '../tasks/task.entity';
+import { TaskEntity } from '../tasks/infrastructure/task.entity';
 
 @Entity()
 export class Attachment {
@@ -72,9 +72,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   taskId: number | null;
 
-  @ManyToOne(() => Task, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => TaskEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'taskId' })
-  task: Task | null;
+  task: TaskEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   folderId: number | null;

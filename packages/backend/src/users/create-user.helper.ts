@@ -1,15 +1,15 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './infrastructure/user.entity';
 
 export class UserAlreadyExistsError extends Error {}
 
 export async function createUser(
-  userRepository: Repository<User>,
+  userRepository: Repository<UserEntity>,
   name: string,
   email: string,
   password: string,
-): Promise<User> {
+): Promise<UserEntity> {
   const existing = await userRepository.findOne({ where: { email } });
   if (existing) {
     throw new UserAlreadyExistsError('Já existe um usuário com este email.');

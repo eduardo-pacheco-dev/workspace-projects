@@ -20,6 +20,7 @@ const SCALAR_FIELDS = [
   'password',
   'resetToken',
   'role',
+  'tokenVersion',
   'companyId',
   'createdAt',
   'updatedAt',

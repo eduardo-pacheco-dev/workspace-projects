@@ -65,7 +65,7 @@ describe('AuthController (integration)', () => {
   });
 
   describe('POST /auth/register', () => {
-    it('should register an active user and return a generic message', async () => {
+    it('should register an inactive user awaiting activation and return a generic message', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
         .send({ name: 'Maria', lastName: 'Souza', email: 'maria@email.com', password: 'Senha123' })
@@ -74,7 +74,7 @@ describe('AuthController (integration)', () => {
       expect(res.body.message).toContain('Registration');
 
       const saved = await userRepo.findOne({ where: { email: 'maria@email.com' } });
-      expect(saved?.status).toBe('active');
+      expect(saved?.status).toBe('inactive');
       expect(saved?.role).toBe('user');
     });
 
@@ -134,6 +134,7 @@ describe('AuthController (integration)', () => {
         Buffer.from(res.body.access_token.split('.')[1], 'base64url').toString(),
       );
       expect(payload).toHaveProperty('sub', adminId);
+      expect(payload).toHaveProperty('tokenVersion', 0);
       expect(payload.email).toBeUndefined();
     });
 

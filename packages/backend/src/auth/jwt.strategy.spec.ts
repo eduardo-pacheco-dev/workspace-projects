@@ -58,4 +58,22 @@ describe('JwtStrategy', () => {
       UnauthorizedException,
     );
   });
+
+  it('should reject a token issued before the password changed', async () => {
+    usersService.findById.mockResolvedValue(
+      new User({ id: 1, name: 'Admin', email: 'admin@admin.com', role: 'user', status: 'active', tokenVersion: 2 }),
+    );
+
+    await expect(strategy.validate({ sub: 1, tokenVersion: 0 })).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('should accept a token matching the current version', async () => {
+    usersService.findById.mockResolvedValue(
+      new User({ id: 1, name: 'Admin', email: 'admin@admin.com', role: 'user', status: 'active', tokenVersion: 2 }),
+    );
+
+    await expect(strategy.validate({ sub: 1, tokenVersion: 2 })).resolves.toBeDefined();
+  });
 });

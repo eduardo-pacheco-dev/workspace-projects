@@ -38,7 +38,7 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create an active user and return a generic message', async () => {
+    it('should create an inactive user awaiting activation and return a generic message', async () => {
       usersService.findByEmail.mockResolvedValue(null);
 
       const result = await service.register({
@@ -48,7 +48,7 @@ describe('AuthService', () => {
       });
 
       expect(usersService.create).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'maria@email.com', role: 'user', status: 'active' }),
+        expect.objectContaining({ email: 'maria@email.com', role: 'user', status: 'inactive' }),
       );
       expect(result.message).toContain('Registration');
     });
@@ -75,6 +75,7 @@ describe('AuthService', () => {
 
       const result = await service.login({ email: 'admin@admin.com', password: '123456' });
 
+      expect(jwtService.sign).toHaveBeenCalledWith({ sub: 1, tokenVersion: 0 });
       expect(result.access_token).toBe('signed-token');
       expect(result.user.email).toBe('admin@admin.com');
     });
@@ -141,6 +142,7 @@ describe('AuthService', () => {
       expect(usersService.update).toHaveBeenCalledWith(1, {
         password: 'hashed-password',
         resetToken: null,
+        tokenVersion: 1,
       });
       expect(result.message).toContain('reset');
     });
@@ -173,48 +175,67 @@ describe('AuthService', () => {
   });
 
   describe('account lockout', () => {
-    it('should lock an account after repeated failed logins', async () => {
-      usersService.findByEmail.mockResolvedValue(
-        new User({ id: 1, email: 'admin@admin.com', password: 'hashed', role: 'user', status: 'active' }),
-      );
+    const activeUser = () =>
+      new User({ id: 1, email: 'admin@admin.com', password: 'hashed', role: 'user', status: 'active' });
+
+    it('should lock an account after repeated failed logins from the same IP', async () => {
+      usersService.findByEmail.mockResolvedValue(activeUser());
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       for (let i = 0; i < 5; i++) {
-        await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
-          UnauthorizedException,
-        );
+        await expect(
+          service.login({ email: 'admin@admin.com', password: 'errada' }, '1.1.1.1'),
+        ).rejects.toThrow(UnauthorizedException);
       }
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      await expect(service.login({ email: 'admin@admin.com', password: 'certa' })).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login({ email: 'admin@admin.com', password: 'certa' }, '1.1.1.1'),
+      ).rejects.toThrow(UnauthorizedException);
       expect(bcrypt.compare).toHaveBeenCalledTimes(5);
     });
 
-    it('should reset the failure counter on a successful login', async () => {
-      usersService.findByEmail.mockResolvedValue(
-        new User({ id: 1, email: 'admin@admin.com', password: 'hashed', role: 'user', status: 'active' }),
+    it('should not lock the account for a different IP', async () => {
+      usersService.findByEmail.mockResolvedValue(activeUser());
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      for (let i = 0; i < 5; i++) {
+        await expect(
+          service.login({ email: 'admin@admin.com', password: 'errada' }, '1.1.1.1'),
+        ).rejects.toThrow(UnauthorizedException);
+      }
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      const result = await service.login(
+        { email: 'admin@admin.com', password: 'certa' },
+        '2.2.2.2',
       );
+      expect(result.access_token).toBe('signed-token');
+    });
+
+    it('should reset the failure counter on a successful login', async () => {
+      usersService.findByEmail.mockResolvedValue(activeUser());
       (bcrypt.compare as jest.Mock)
         .mockResolvedValueOnce(false)
         .mockResolvedValue(true);
 
-      await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
-        UnauthorizedException,
-      );
-      const result = await service.login({ email: 'admin@admin.com', password: 'certa' });
+      await expect(
+        service.login({ email: 'admin@admin.com', password: 'errada' }, '1.1.1.1'),
+      ).rejects.toThrow(UnauthorizedException);
+      const result = await service.login({ email: 'admin@admin.com', password: 'certa' }, '1.1.1.1');
       expect(result.access_token).toBe('signed-token');
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
       for (let i = 0; i < 4; i++) {
-        await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
-          UnauthorizedException,
-        );
+        await expect(
+          service.login({ email: 'admin@admin.com', password: 'errada' }, '1.1.1.1'),
+        ).rejects.toThrow(UnauthorizedException);
       }
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      await expect(service.login({ email: 'admin@admin.com', password: 'certa' })).resolves.toBeTruthy();
+      await expect(
+        service.login({ email: 'admin@admin.com', password: 'certa' }, '1.1.1.1'),
+      ).resolves.toBeTruthy();
     });
   });
 });

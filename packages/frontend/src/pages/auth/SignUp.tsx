@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -36,9 +36,9 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [registered, setRegistered] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
   const passwordStrength = getPasswordStrength(password)
 
   const handleSubmit = async (e: FormEvent) => {
@@ -68,7 +68,8 @@ export default function SignUp() {
         phone: phone.replace(/\D/g, ''),
         password,
       })
-      navigate('/signin')
+      setRegistered(true)
+      setError('')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao cadastrar.')
     } finally {
@@ -139,6 +140,11 @@ export default function SignUp() {
               </Typography>
             </Box>
 
+            {registered && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Cadastro realizado! Aguarde a ativação do administrador para acessar o sistema.
+              </Alert>
+            )}
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Box component="form" onSubmit={handleSubmit}>
@@ -328,10 +334,10 @@ export default function SignUp() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                disabled={loading}
+                disabled={loading || registered}
                 sx={{ mt: 2, py: 1.4, borderRadius: 2, textTransform: 'none', fontSize: 16 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Cadastrar'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : (registered ? 'Cadastro enviado' : 'Cadastrar')}
               </Button>
             </Box>
 

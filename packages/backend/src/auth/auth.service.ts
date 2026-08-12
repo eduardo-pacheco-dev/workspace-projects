@@ -18,6 +18,7 @@ const LOCKOUT_MS = 15 * 60 * 1000;
 interface FailureEntry {
   count: number;
   lockedUntil: number;
+  lastAttemptAt: number;
 }
 
 @Injectable()
@@ -35,10 +36,11 @@ export class AuthService {
     name: string;
     email: string;
     role: string;
+    tokenVersion?: number;
     companyId?: number | null;
     company?: { nome: string } | null;
   }) {
-    const token = this.jwtService.sign({ sub: user.id });
+    const token = this.jwtService.sign({ sub: user.id, tokenVersion: user.tokenVersion ?? 0 });
     return {
       access_token: token,
       user: {
@@ -52,31 +54,43 @@ export class AuthService {
     };
   }
 
-  private isAccountLocked(email: string): boolean {
-    const key = email.toLowerCase();
-    const entry = this.failedAttempts.get(key);
-    if (!entry) return false;
-    if (entry.lockedUntil > Date.now()) return true;
-    if (entry.lockedUntil !== 0) {
-      this.failedAttempts.delete(key);
-    }
-    return false;
+  private failureKey(email: string, ip?: string): string {
+    return `${email.toLowerCase()}:${ip ?? ''}`;
   }
 
-  private registerFailure(email: string): void {
-    const key = email.toLowerCase();
-    const entry = this.failedAttempts.get(key) ?? { count: 0, lockedUntil: 0 };
+  private pruneExpiredEntries(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.failedAttempts) {
+      if (entry.lockedUntil !== 0 && entry.lockedUntil < now) {
+        this.failedAttempts.delete(key);
+      } else if (now - entry.lastAttemptAt > LOCKOUT_MS) {
+        this.failedAttempts.delete(key);
+      }
+    }
+  }
+
+  private isAccountLocked(email: string, ip?: string): boolean {
+    const entry = this.failedAttempts.get(this.failureKey(email, ip));
+    return entry ? entry.lockedUntil > Date.now() : false;
+  }
+
+  private registerFailure(email: string, ip?: string): void {
+    this.pruneExpiredEntries();
+    const key = this.failureKey(email, ip);
+    const now = Date.now();
+    const entry = this.failedAttempts.get(key) ?? { count: 0, lockedUntil: 0, lastAttemptAt: 0 };
     entry.count += 1;
+    entry.lastAttemptAt = now;
     if (entry.count >= MAX_FAILED_ATTEMPTS) {
-      entry.lockedUntil = Date.now() + LOCKOUT_MS;
+      entry.lockedUntil = now + LOCKOUT_MS;
       entry.count = 0;
       this.logger.warn(`Account temporarily locked after repeated failed logins: ${key}`);
     }
     this.failedAttempts.set(key, entry);
   }
 
-  private clearFailures(email: string): void {
-    this.failedAttempts.delete(email.toLowerCase());
+  private clearFailures(email: string, ip?: string): void {
+    this.failedAttempts.delete(this.failureKey(email, ip));
   }
 
   async register(dto: RegisterInput) {
@@ -91,31 +105,31 @@ export class AuthService {
         password: hashedPassword,
         role: 'user',
         companyId: null,
-        status: 'active',
+        status: 'inactive',
       });
     }
-    return { message: 'Registration successful. Please sign in.' };
+    return { message: 'Registration successful. Please wait for administrator approval.' };
   }
 
-  async login(dto: LoginInput) {
-    if (this.isAccountLocked(dto.email)) {
+  async login(dto: LoginInput, ip?: string) {
+    if (this.isAccountLocked(dto.email, ip)) {
       this.logger.warn(`Login attempt on a locked account: ${dto.email.toLowerCase()}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || !isActiveUser(user)) {
-      this.registerFailure(dto.email);
+      this.registerFailure(dto.email, ip);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      this.registerFailure(dto.email);
+      this.registerFailure(dto.email, ip);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    this.clearFailures(dto.email);
+    this.clearFailures(dto.email, ip);
     this.logger.log(`Successful login: ${dto.email.toLowerCase()}`);
     return this.buildTokenResponse(user);
   }
@@ -141,7 +155,11 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    await this.usersService.update(user.id, { password: hashedPassword, resetToken: null });
+    await this.usersService.update(user.id, {
+      password: hashedPassword,
+      resetToken: null,
+      tokenVersion: (user.tokenVersion ?? 0) + 1,
+    });
     return { message: 'Password reset successfully' };
   }
 }

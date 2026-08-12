@@ -38,6 +38,9 @@ export class UserEntity {
   @Column({ type: 'text', default: 'user' })
   role: string;
 
+  @Column({ type: 'integer', default: 0 })
+  tokenVersion: number;
+
   @Column({ type: 'integer', nullable: true })
   companyId: number | null;
 

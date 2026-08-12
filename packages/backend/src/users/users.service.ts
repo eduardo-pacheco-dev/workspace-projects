@@ -125,6 +125,7 @@ export class UsersService {
   private async applyPassword(user: User, password?: string): Promise<void> {
     if (!password) return;
     user.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   }
 
   private applyStatus(user: User, status: string | undefined): void {

@@ -1,23 +1,23 @@
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from './user.entity';
+import { UserEntity } from './infrastructure/user.entity';
 import { Company } from '../companies/company.entity';
 import { createUser, UserAlreadyExistsError } from './create-user.helper';
 
 describe('createUser (helper)', () => {
   let dataSource: DataSource;
-  let repo: Repository<User>;
+  let repo: Repository<UserEntity>;
 
   beforeAll(async () => {
     dataSource = new DataSource({
       type: 'sqljs' as any,
       autoSave: false,
       location: ':memory:',
-      entities: [User, Company],
+      entities: [UserEntity, Company],
       synchronize: true,
     });
     await dataSource.initialize();
-    repo = dataSource.getRepository(User);
+    repo = dataSource.getRepository(UserEntity);
   });
 
   afterAll(async () => {

@@ -1,14 +1,7 @@
 import { z } from 'zod';
+import { USER_ROLES } from '../domain/user-rules';
 
-export const userRoles = [
-  'master',
-  'admin',
-  'supervisor',
-  'coordenador',
-  'analista',
-  'technician',
-  'user',
-] as const;
+export const userRoles = USER_ROLES;
 
 export const createUserSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),

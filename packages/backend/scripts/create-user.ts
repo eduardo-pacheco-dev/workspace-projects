@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import * as path from 'path';
-import { User } from '../src/users/user.entity';
+import { UserEntity } from '../src/users/infrastructure/user.entity';
 import { createUser, UserAlreadyExistsError } from '../src/users/create-user.helper';
 
 const isSqljs = process.env.DB_TYPE === 'sqljs';
@@ -11,7 +11,7 @@ const dataSource = new DataSource(
         type: 'sqljs',
         autoSave: true,
         location: path.resolve('data/db.sqlite'),
-        entities: [User],
+        entities: [UserEntity],
         synchronize: false,
       }
     : {
@@ -21,7 +21,7 @@ const dataSource = new DataSource(
         username: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || 'admin',
         database: process.env.DB_NAME || 'db_workspace',
-        entities: [User],
+        entities: [UserEntity],
         synchronize: false,
       },
 );
@@ -38,7 +38,7 @@ async function main() {
 
   await dataSource.initialize();
   try {
-    const userRepository = dataSource.getRepository(User);
+    const userRepository = dataSource.getRepository(UserEntity);
     const user = await createUser(userRepository, name, email, password);
     console.log(`Usuário "${user.name}" (${user.email}) criado com sucesso!`);
   } catch (err: any) {

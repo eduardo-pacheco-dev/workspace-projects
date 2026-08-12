@@ -10,7 +10,7 @@ import { Job } from '../jobs/job.entity';
 import { ServiceOrder } from '../service-orders/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
-import { Project } from '../projects/project.entity';
+import { ProjectEntity } from '../projects/infrastructure/project.entity';
 import { ClientEntity } from '../clients/infrastructure/client.entity';
 import { Company } from '../companies/company.entity';
 
@@ -50,9 +50,9 @@ export class Comment {
   @Column({ type: 'integer', nullable: true })
   projectId: number | null;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'projectId' })
-  project: Project | null;
+  project: ProjectEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   clientId: number | null;

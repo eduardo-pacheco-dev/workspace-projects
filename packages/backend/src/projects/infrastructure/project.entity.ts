@@ -2,17 +2,17 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToMany,
   JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
-import { Company } from '../companies/company.entity';
+import { StationEntity } from '../../stations/infrastructure/station.entity';
+import { RadioLink } from '../../radio-links/radio-link.entity';
+import { Company } from '../../companies/company.entity';
 
-@Entity()
-export class Project {
+@Entity('project')
+export class ProjectEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

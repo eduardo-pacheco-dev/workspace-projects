@@ -1,18 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Project } from './project.entity';
-import { ProjectDocument } from './project-document.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
+import { PROJECT_REPOSITORY } from './domain/project.repository';
+import { ProjectEntity } from './infrastructure/project.entity';
+import { ProjectDocumentEntity } from './infrastructure/project-document.entity';
+import { TypeOrmProjectRepository } from './infrastructure/typeorm-project.repository';
 import { ProjectsService } from './projects.service';
 import { ProjectsController } from './projects.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, ProjectDocument, StationEntity, RadioLink, Company]),
+    TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company]),
   ],
-  providers: [ProjectsService],
+  providers: [
+    ProjectsService,
+    { provide: PROJECT_REPOSITORY, useClass: TypeOrmProjectRepository },
+  ],
   controllers: [ProjectsController],
   exports: [ProjectsService],
 })

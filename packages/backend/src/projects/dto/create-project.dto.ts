@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
+import { PROJECT_STATUSES } from '../domain/project-rules';
 
 export class CreateProjectDto {
   @IsString()
@@ -37,6 +38,6 @@ export class CreateProjectDto {
   observacoes?: string;
 
   @IsOptional()
-  @IsIn(['ativo', 'inativo'])
+  @IsIn(PROJECT_STATUSES)
   status?: string;
 }

@@ -4,8 +4,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { Project } from './project.entity';
-import { ProjectDocument } from './project-document.entity';
+import { ProjectEntity } from './infrastructure/project.entity';
+import { ProjectDocumentEntity } from './infrastructure/project-document.entity';
+import { TypeOrmProjectRepository } from './infrastructure/typeorm-project.repository';
+import { PROJECT_REPOSITORY } from './domain/project.repository';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
@@ -24,8 +26,8 @@ const mockAuthGuard = {
 
 describe('ProjectsController (integration)', () => {
   let app: INestApplication;
-  let projectRepo: Repository<Project>;
-  let documentRepo: Repository<ProjectDocument>;
+  let projectRepo: Repository<ProjectEntity>;
+  let documentRepo: Repository<ProjectDocumentEntity>;
   let stationRepo: Repository<StationEntity>;
   let radioLinkRepo: Repository<RadioLink>;
   let companyRepo: Repository<Company>;
@@ -38,21 +40,25 @@ describe('ProjectsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Project, ProjectDocument, StationEntity, RadioLink, Company],
+          entities: [ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Project, ProjectDocument, StationEntity, RadioLink, Company]),
+        TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company]),
       ],
       controllers: [ProjectsController],
-      providers: [ProjectsService, { provide: APP_GUARD, useValue: mockAuthGuard }],
+      providers: [
+        ProjectsService,
+        { provide: PROJECT_REPOSITORY, useClass: TypeOrmProjectRepository },
+        { provide: APP_GUARD, useValue: mockAuthGuard },
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
 
-    projectRepo = moduleRef.get<Repository<Project>>(getRepositoryToken(Project));
-    documentRepo = moduleRef.get<Repository<ProjectDocument>>(getRepositoryToken(ProjectDocument));
+    projectRepo = moduleRef.get<Repository<ProjectEntity>>(getRepositoryToken(ProjectEntity));
+    documentRepo = moduleRef.get<Repository<ProjectDocumentEntity>>(getRepositoryToken(ProjectDocumentEntity));
     stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
     radioLinkRepo = moduleRef.get<Repository<RadioLink>>(getRepositoryToken(RadioLink));
     companyRepo = moduleRef.get<Repository<Company>>(getRepositoryToken(Company));

@@ -1023,7 +1023,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     const { data: projects } = await this.projectsService.findAll({ limit: 100 });
     for (const project of projects.slice(0, 3)) {
-      await this.projectsService.addCompany(project.id, company.id);
+      await this.projectsService.addCompany(project.id!, company.id);
     }
 
     console.log(`Seed: ${Math.min(projects.length, 3)} projects linked to company "${company.nome}"`);
@@ -1444,7 +1444,7 @@ export class SeedService implements OnApplicationBootstrap {
     if (total > 0) return;
 
     const { data: projects } = await this.projectsService.findAll({ limit: 100 });
-    const projectId = (index: number) => projects[index]?.id ?? null;
+    const projectId = (index: number) => projects[index]?.id;
 
     const ciclos = [
       {

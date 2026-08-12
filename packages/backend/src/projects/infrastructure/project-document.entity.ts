@@ -7,19 +7,19 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Project } from './project.entity';
+import { ProjectEntity } from './project.entity';
 
-@Entity()
-export class ProjectDocument {
+@Entity('project_document')
+export class ProjectDocumentEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer' })
   projectId: number;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'projectId' })
-  project: Project;
+  project: ProjectEntity;
 
   @Column({ type: 'text' })
   nome: string;

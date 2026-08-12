@@ -8,7 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Project } from '../../projects/project.entity';
+import { ProjectEntity } from '../../projects/infrastructure/project.entity';
 import { PdcaActionEntity } from './pdca-action.entity';
 
 @Entity('pdca')
@@ -19,9 +19,9 @@ export class PdcaEntity {
   @Column({ type: 'integer', nullable: true })
   projectId: number | null;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'projectId' })
-  project: Project | null;
+  project: ProjectEntity | null;
 
   @Column({ type: 'text' })
   titulo: string;

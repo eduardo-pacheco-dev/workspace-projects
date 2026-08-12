@@ -134,6 +134,54 @@ describe('StationsController (integration)', () => {
 
       expect(res.body.endId).toBe('');
     });
+
+    it('should create a station with technical fields', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations')
+        .send({
+          siteId: 'SITE-TECH',
+          endId: 'END-TECH',
+          elementType: 'Macro',
+          technology: '4G',
+          areaHolder: 'Detentora A',
+          infraContractType: 'Locação',
+          infraHolder: 'Infra B',
+          infraType: 'Torre',
+          evType: 'EV-01',
+          evSupplier: 'Fornecedor X',
+          regional: 'Norte',
+          towerType: 'Torre treliçada',
+          nominalAev: 120,
+          groundArea: 45.5,
+          structureHeight: 60,
+          stationId: 'ST-999',
+        })
+        .expect(201);
+
+      expect(res.body).toMatchObject({
+        elementType: 'Macro',
+        technology: '4G',
+        areaHolder: 'Detentora A',
+        infraContractType: 'Locação',
+        infraHolder: 'Infra B',
+        infraType: 'Torre',
+        evType: 'EV-01',
+        evSupplier: 'Fornecedor X',
+        regional: 'Norte',
+        towerType: 'Torre treliçada',
+        nominalAev: 120,
+        groundArea: 45.5,
+        structureHeight: 60,
+        stationId: 'ST-999',
+      });
+    });
+
+    it('should return 400 for a non-numeric nominalAev', async () => {
+      await request(app.getHttpServer())
+        .post('/stations')
+        .send({ siteId: 'SITE-TECH2', endId: 'END-TECH2', nominalAev: 'abc' })
+        .expect(400);
+    });
   });
 
   describe('POST /stations/import', () => {

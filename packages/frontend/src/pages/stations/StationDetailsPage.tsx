@@ -48,10 +48,24 @@ interface Station {
   id: number
   siteId: string
   endId: string
+  elementType: string | null
+  technology: string | null
+  areaHolder: string | null
+  infraContractType: string | null
+  infraHolder: string | null
+  infraType: string | null
+  evType: string | null
+  evSupplier: string | null
   address: string | null
+  regional: string | null
   latitude: number | null
   longitude: number | null
   mobileCarrier: string | null
+  towerType: string | null
+  nominalAev: number | null
+  groundArea: number | null
+  structureHeight: number | null
+  stationId: string | null
   notes: string | null
   status: string
   createdAt: string
@@ -301,6 +315,21 @@ export default function StationDetailsPage() {
         ...(station.mobileCarrier === 'TIM'
           ? [{ label: 'End ID', value: station.endId }]
           : []),
+        { label: 'Tipo de elemento', value: station.elementType || '-' },
+        { label: 'Tecnologia', value: station.technology || '-' },
+        { label: 'Operadora', value: station.mobileCarrier || '-' },
+        { label: 'Regional', value: station.regional || '-' },
+        { label: 'Tipo da torre', value: station.towerType || '-' },
+        { label: 'Detentor da Área', value: station.areaHolder || '-' },
+        { label: 'Detentor de Infra', value: station.infraHolder || '-' },
+        { label: 'Tipo de contrato Infra', value: station.infraContractType || '-' },
+        { label: 'Tipo de Infra', value: station.infraType || '-' },
+        { label: 'Tipo de EV', value: station.evType || '-' },
+        { label: 'Fornecedor de EV', value: station.evSupplier || '-' },
+        { label: 'AEV Nominal', value: station.nominalAev != null ? String(station.nominalAev) : '-' },
+        { label: 'Área de solo', value: station.groundArea != null ? String(station.groundArea) : '-' },
+        { label: 'Altura da estrutura', value: station.structureHeight != null ? String(station.structureHeight) : '-' },
+        { label: 'Station ID (id da detentora)', value: station.stationId || '-' },
         { label: 'Endereço', value: station.address || '-' },
         {
           label: 'Coordenadas',

@@ -11,7 +11,43 @@ export class CreateStationDto {
 
   @IsOptional()
   @IsString()
+  elementType?: string;
+
+  @IsOptional()
+  @IsString()
+  technology?: string;
+
+  @IsOptional()
+  @IsString()
+  areaHolder?: string;
+
+  @IsOptional()
+  @IsString()
+  infraContractType?: string;
+
+  @IsOptional()
+  @IsString()
+  infraHolder?: string;
+
+  @IsOptional()
+  @IsString()
+  infraType?: string;
+
+  @IsOptional()
+  @IsString()
+  evType?: string;
+
+  @IsOptional()
+  @IsString()
+  evSupplier?: string;
+
+  @IsOptional()
+  @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  regional?: string;
 
   @IsOptional()
   @IsNumber()
@@ -24,6 +60,26 @@ export class CreateStationDto {
   @IsOptional()
   @IsIn(STATION_MOBILE_CARRIERS)
   mobileCarrier?: string;
+
+  @IsOptional()
+  @IsString()
+  towerType?: string;
+
+  @IsOptional()
+  @IsNumber()
+  nominalAev?: number;
+
+  @IsOptional()
+  @IsNumber()
+  groundArea?: number;
+
+  @IsOptional()
+  @IsNumber()
+  structureHeight?: number;
+
+  @IsOptional()
+  @IsString()
+  stationId?: string;
 
   @IsOptional()
   @IsString()

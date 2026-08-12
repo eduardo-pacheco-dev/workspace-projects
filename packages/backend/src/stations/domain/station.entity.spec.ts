@@ -41,6 +41,42 @@ describe('Station domain entity', () => {
       expect(station.latitude).toBeUndefined();
       expect(station.mobileCarrier).toBeUndefined();
     });
+
+    it('should preserve technical fields', () => {
+      const station = new Station({
+        siteId: 'SITE-004',
+        endId: 'END-004',
+        elementType: 'Macro',
+        technology: '4G',
+        areaHolder: 'Detentora A',
+        infraContractType: 'Locação',
+        infraHolder: 'Infra B',
+        infraType: 'Torre',
+        evType: 'EV-01',
+        evSupplier: 'Fornecedor X',
+        regional: 'Norte',
+        towerType: 'Torre treliçada',
+        nominalAev: 120,
+        groundArea: 45.5,
+        structureHeight: 60,
+        stationId: 'ST-999',
+      });
+
+      expect(station.elementType).toBe('Macro');
+      expect(station.technology).toBe('4G');
+      expect(station.areaHolder).toBe('Detentora A');
+      expect(station.infraContractType).toBe('Locação');
+      expect(station.infraHolder).toBe('Infra B');
+      expect(station.infraType).toBe('Torre');
+      expect(station.evType).toBe('EV-01');
+      expect(station.evSupplier).toBe('Fornecedor X');
+      expect(station.regional).toBe('Norte');
+      expect(station.towerType).toBe('Torre treliçada');
+      expect(station.nominalAev).toBe(120);
+      expect(station.groundArea).toBe(45.5);
+      expect(station.structureHeight).toBe(60);
+      expect(station.stationId).toBe('ST-999');
+    });
   });
 
   describe('isTim', () => {

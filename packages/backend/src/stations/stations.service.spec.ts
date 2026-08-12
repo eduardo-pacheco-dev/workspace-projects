@@ -202,6 +202,37 @@ describe('StationsService', () => {
       expect(result.skipped).toBe(1);
       expect(result.errors).toEqual(['Linha 1: Site ID e End ID são obrigatórios.']);
     });
+
+    it('should import stations with technical fields', async () => {
+      repo.findExistingRefs.mockResolvedValue([]);
+
+      const result = await service.importStations([
+        {
+          siteId: 'SITE-700',
+          endId: 'END-700',
+          elementType: 'Macro',
+          technology: '4G',
+          regional: 'Norte',
+          nominalAev: '120.5',
+          groundArea: 45,
+          structureHeight: '60',
+          stationId: 'ST-999',
+        },
+      ]);
+
+      expect(result.imported).toBe(1);
+      expect(repo.insertMany).toHaveBeenCalledWith([
+        expect.objectContaining({
+          elementType: 'Macro',
+          technology: '4G',
+          regional: 'Norte',
+          nominalAev: 120.5,
+          groundArea: 45,
+          structureHeight: 60,
+          stationId: 'ST-999',
+        }),
+      ]);
+    });
   });
 
   describe('findAll', () => {

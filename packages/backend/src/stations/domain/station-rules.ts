@@ -5,12 +5,26 @@ export const TIM_MOBILE_CARRIER = 'TIM';
 export interface StationImportItem {
   siteId?: string;
   endId?: string;
+  elementType?: string;
+  technology?: string;
+  areaHolder?: string;
+  infraContractType?: string;
+  infraHolder?: string;
+  infraType?: string;
+  evType?: string;
+  evSupplier?: string;
   address?: string;
+  regional?: string;
   latitude?: number | string;
   longitude?: number | string;
   mobileCarrier?: string;
-  notes?: string;
   status?: string;
+  towerType?: string;
+  nominalAev?: number | string;
+  groundArea?: number | string;
+  structureHeight?: number | string;
+  stationId?: string;
+  notes?: string;
 }
 
 export interface ParsedImportStation {
@@ -63,10 +77,24 @@ export function parseImportItem(
     station: new Station({
       siteId,
       endId: needsEndId ? endId : '',
+      elementType: cleanStr(item.elementType),
+      technology: cleanStr(item.technology),
+      areaHolder: cleanStr(item.areaHolder),
+      infraContractType: cleanStr(item.infraContractType),
+      infraHolder: cleanStr(item.infraHolder),
+      infraType: cleanStr(item.infraType),
+      evType: cleanStr(item.evType),
+      evSupplier: cleanStr(item.evSupplier),
       address: cleanStr(item.address),
+      regional: cleanStr(item.regional),
       latitude: parseCoordinate(item.latitude),
       longitude: parseCoordinate(item.longitude),
       mobileCarrier,
+      towerType: cleanStr(item.towerType),
+      nominalAev: parseCoordinate(item.nominalAev),
+      groundArea: parseCoordinate(item.groundArea),
+      structureHeight: parseCoordinate(item.structureHeight),
+      stationId: cleanStr(item.stationId),
       notes: cleanStr(item.notes),
       status: normalizeStatus(item.status),
     }),

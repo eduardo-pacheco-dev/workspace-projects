@@ -112,6 +112,45 @@ describe('station-rules', () => {
       expect(error).toBe('Linha 6: Site ID e End ID são obrigatórios.');
     });
 
+    it('should parse the technical fields', () => {
+      const { station } = parseImportItem(
+        {
+          siteId: 'SITE-8',
+          endId: 'END-8',
+          elementType: 'Macro',
+          technology: '4G',
+          areaHolder: 'Detentora A',
+          infraContractType: 'Locação',
+          infraHolder: 'Infra B',
+          infraType: 'Torre',
+          evType: 'EV-01',
+          evSupplier: 'Fornecedor X',
+          regional: 'Norte',
+          towerType: 'Torre treliçada',
+          nominalAev: '120.5',
+          groundArea: 45,
+          structureHeight: '60',
+          stationId: 'ST-999',
+        },
+        8,
+      );
+
+      expect(station?.elementType).toBe('Macro');
+      expect(station?.technology).toBe('4G');
+      expect(station?.areaHolder).toBe('Detentora A');
+      expect(station?.infraContractType).toBe('Locação');
+      expect(station?.infraHolder).toBe('Infra B');
+      expect(station?.infraType).toBe('Torre');
+      expect(station?.evType).toBe('EV-01');
+      expect(station?.evSupplier).toBe('Fornecedor X');
+      expect(station?.regional).toBe('Norte');
+      expect(station?.towerType).toBe('Torre treliçada');
+      expect(station?.nominalAev).toBe(120.5);
+      expect(station?.groundArea).toBe(45);
+      expect(station?.structureHeight).toBe(60);
+      expect(station?.stationId).toBe('ST-999');
+    });
+
     it('should return an error mentioning only Site ID for non-TIM rows', () => {
       const { error } = parseImportItem({ endId: 'END-7', mobileCarrier: 'VIVO' }, 7);
       expect(error).toBe('Linha 7: Site ID é obrigatório.');

@@ -38,7 +38,7 @@ export class AuthService {
     companyId?: number | null;
     company?: { nome: string } | null;
   }) {
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const token = this.jwtService.sign({ sub: user.id });
     return {
       access_token: token,
       user: {

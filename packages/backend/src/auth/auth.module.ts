@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { getJwtSecret } from '../common/config/jwt-secret';
+import { getJwtExpiresIn } from '../common/config/jwt-expires';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { getJwtSecret } from '../common/config/jwt-secret';
     PassportModule,
     JwtModule.register({
       secret: getJwtSecret(),
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '8h' },
+      signOptions: { expiresIn: getJwtExpiresIn() },
     }),
   ],
   controllers: [AuthController],

@@ -106,9 +106,11 @@ describe('AuthController (integration)', () => {
   });
 
   describe('POST /auth/login', () => {
+    let adminId: number;
+
     beforeEach(async () => {
       const hashed = await bcrypt.hash('Senha123', 10);
-      await userRepo.save({
+      const saved = await userRepo.save({
         name: 'Admin',
         email: 'admin@email.com',
         password: hashed,
@@ -116,6 +118,7 @@ describe('AuthController (integration)', () => {
         companyId: null,
         status: 'active',
       });
+      adminId = saved.id;
     });
 
     it('should return a token for valid credentials', async () => {
@@ -126,6 +129,12 @@ describe('AuthController (integration)', () => {
 
       expect(res.body.access_token).toBeDefined();
       expect(res.body.user.email).toBe('admin@email.com');
+
+      const payload = JSON.parse(
+        Buffer.from(res.body.access_token.split('.')[1], 'base64url').toString(),
+      );
+      expect(payload).toHaveProperty('sub', adminId);
+      expect(payload.email).toBeUndefined();
     });
 
     it('should return 401 for a wrong password', async () => {

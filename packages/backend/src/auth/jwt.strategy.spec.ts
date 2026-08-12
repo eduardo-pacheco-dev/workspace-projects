@@ -30,7 +30,7 @@ describe('JwtStrategy', () => {
       new User({ id: 1, name: 'Admin', email: 'admin@admin.com', role: 'master', companyId: null, status: 'active' }),
     );
 
-    const result = await strategy.validate({ sub: 1, email: 'admin@admin.com' });
+    const result = await strategy.validate({ sub: 1 });
 
     expect(result).toEqual({
       id: 1,
@@ -44,7 +44,7 @@ describe('JwtStrategy', () => {
   it('should reject a user that no longer exists', async () => {
     usersService.findById.mockResolvedValue(null);
 
-    await expect(strategy.validate({ sub: 99, email: 'x@email.com' })).rejects.toThrow(
+    await expect(strategy.validate({ sub: 99 })).rejects.toThrow(
       UnauthorizedException,
     );
   });
@@ -54,7 +54,7 @@ describe('JwtStrategy', () => {
       new User({ id: 1, name: 'Admin', email: 'admin@admin.com', role: 'user', status: 'inactive' }),
     );
 
-    await expect(strategy.validate({ sub: 1, email: 'admin@admin.com' })).rejects.toThrow(
+    await expect(strategy.validate({ sub: 1 })).rejects.toThrow(
       UnauthorizedException,
     );
   });

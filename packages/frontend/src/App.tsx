@@ -6,6 +6,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import api from './services/api'
 import { DEFAULT_USER_MODULES } from './pages/settings/roleModules'
 import Layout from './components/Layout'
+import PageTitle from './components/PageTitle'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -98,6 +99,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <ProjectProvider>
+        <PageTitle />
         <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />

@@ -11,7 +11,7 @@ import { ServiceOrder } from '../service-orders/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Project } from '../projects/project.entity';
-import { Client } from '../clients/client.entity';
+import { ClientEntity } from '../clients/infrastructure/client.entity';
 import { Company } from '../companies/company.entity';
 import { Task } from '../tasks/task.entity';
 
@@ -58,9 +58,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   clientId: number | null;
 
-  @ManyToOne(() => Client, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ClientEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'clientId' })
-  client: Client | null;
+  client: ClientEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   companyId: number | null;

@@ -3,15 +3,17 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { Client } from './client.entity';
-import { Responsavel } from './responsavel.entity';
+import { ClientEntity } from './infrastructure/client.entity';
+import { ResponsavelEntity } from './infrastructure/responsavel.entity';
+import { TypeOrmClientRepository } from './infrastructure/typeorm-client.repository';
+import { CLIENT_REPOSITORY } from './domain/client.repository';
 import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 
 describe('ClientsController (integration)', () => {
   let app: INestApplication;
-  let clientRepo: Repository<Client>;
-  let responsavelRepo: Repository<Responsavel>;
+  let clientRepo: Repository<ClientEntity>;
+  let responsavelRepo: Repository<ResponsavelEntity>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -20,21 +22,24 @@ describe('ClientsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Client, Responsavel],
+          entities: [ClientEntity, ResponsavelEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Client, Responsavel]),
+        TypeOrmModule.forFeature([ClientEntity, ResponsavelEntity]),
       ],
       controllers: [ClientsController],
-      providers: [ClientsService],
+      providers: [
+        ClientsService,
+        { provide: CLIENT_REPOSITORY, useClass: TypeOrmClientRepository },
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
 
-    clientRepo = moduleRef.get<Repository<Client>>(getRepositoryToken(Client));
-    responsavelRepo = moduleRef.get<Repository<Responsavel>>(getRepositoryToken(Responsavel));
+    clientRepo = moduleRef.get<Repository<ClientEntity>>(getRepositoryToken(ClientEntity));
+    responsavelRepo = moduleRef.get<Repository<ResponsavelEntity>>(getRepositoryToken(ResponsavelEntity));
   });
 
   afterAll(async () => {

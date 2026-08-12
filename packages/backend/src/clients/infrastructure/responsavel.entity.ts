@@ -7,19 +7,19 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Client } from './client.entity';
+import { ClientEntity } from './client.entity';
 
 @Entity('client_responsavel')
-export class Responsavel {
+export class ResponsavelEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer' })
   clientId: number;
 
-  @ManyToOne(() => Client, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ClientEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'clientId' })
-  client: Client;
+  client: ClientEntity;
 
   @Column({ type: 'text' })
   nome: string;

@@ -110,8 +110,8 @@ describe('RadioLinksService', () => {
 
     it('should resolve station A and B by siteId and fill snapshots', async () => {
       stationRepo.find.mockResolvedValue([
-        { id: 1, siteId: 'SITE-A', endId: 'END-A', endereco: 'Av A', latitude: -10, longitude: -20, operadora: 'TIM' },
-        { id: 2, siteId: 'SITE-B', endId: 'END-B', endereco: 'Av B', latitude: -11, longitude: -21, operadora: 'CLARO' },
+        { id: 1, siteId: 'SITE-A', endId: 'END-A', address: 'Av A', latitude: -10, longitude: -20, mobileCarrier: 'TIM' },
+        { id: 2, siteId: 'SITE-B', endId: 'END-B', address: 'Av B', latitude: -11, longitude: -21, mobileCarrier: 'CLARO' },
       ]);
       repo.find.mockResolvedValue([]);
       repo.insert.mockImplementation(async (rows) => rows);

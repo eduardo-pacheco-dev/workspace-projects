@@ -16,60 +16,60 @@ describe('Station domain entity', () => {
         id: 7,
         siteId: 'SITE-002',
         endId: 'END-002',
-        endereco: 'Av. Central, 100',
+        address: 'Av. Central, 100',
         latitude: -23.55,
         longitude: -46.63,
-        operadora: 'CLARO',
-        observacoes: 'obs',
+        mobileCarrier: 'CLARO',
+        notes: 'obs',
         status: 'inativo',
         createdAt,
       });
 
       expect(station.id).toBe(7);
-      expect(station.endereco).toBe('Av. Central, 100');
+      expect(station.address).toBe('Av. Central, 100');
       expect(station.latitude).toBe(-23.55);
       expect(station.longitude).toBe(-46.63);
-      expect(station.operadora).toBe('CLARO');
-      expect(station.observacoes).toBe('obs');
+      expect(station.mobileCarrier).toBe('CLARO');
+      expect(station.notes).toBe('obs');
       expect(station.status).toBe('inativo');
       expect(station.createdAt).toBe(createdAt);
     });
 
     it('should keep undefined for absent optional fields', () => {
       const station = new Station({ siteId: 'SITE-003' });
-      expect(station.endereco).toBeUndefined();
+      expect(station.address).toBeUndefined();
       expect(station.latitude).toBeUndefined();
-      expect(station.operadora).toBeUndefined();
+      expect(station.mobileCarrier).toBeUndefined();
     });
   });
 
   describe('isTim', () => {
     it('should be true for TIM', () => {
-      expect(new Station({ siteId: 'A', operadora: 'TIM' }).isTim).toBe(true);
+      expect(new Station({ siteId: 'A', mobileCarrier: 'TIM' }).isTim).toBe(true);
     });
 
-    it('should be true when operadora is missing', () => {
+    it('should be true when mobileCarrier is missing', () => {
       expect(new Station({ siteId: 'A' }).isTim).toBe(true);
     });
 
-    it('should be true when operadora is blank', () => {
-      expect(new Station({ siteId: 'A', operadora: '  ' }).isTim).toBe(true);
+    it('should be true when mobileCarrier is blank', () => {
+      expect(new Station({ siteId: 'A', mobileCarrier: '  ' }).isTim).toBe(true);
     });
 
     it('should be false for other operators', () => {
-      expect(new Station({ siteId: 'A', operadora: 'VIVO' }).isTim).toBe(false);
+      expect(new Station({ siteId: 'A', mobileCarrier: 'VIVO' }).isTim).toBe(false);
     });
   });
 
   describe('applyEndIdRule', () => {
     it('should keep endId for TIM stations', () => {
-      const station = new Station({ siteId: 'A', endId: 'END', operadora: 'TIM' });
+      const station = new Station({ siteId: 'A', endId: 'END', mobileCarrier: 'TIM' });
       station.applyEndIdRule();
       expect(station.endId).toBe('END');
     });
 
     it('should clear endId for non-TIM operators', () => {
-      const station = new Station({ siteId: 'A', endId: 'END', operadora: 'CLARO' });
+      const station = new Station({ siteId: 'A', endId: 'END', mobileCarrier: 'CLARO' });
       station.applyEndIdRule();
       expect(station.endId).toBe('');
     });
@@ -77,12 +77,12 @@ describe('Station domain entity', () => {
 
   describe('fromProps', () => {
     it('should build a station applying the endId rule', () => {
-      const station = Station.fromProps({ siteId: 'A', endId: 'END', operadora: 'Outras' });
+      const station = Station.fromProps({ siteId: 'A', endId: 'END', mobileCarrier: 'Outras' });
       expect(station.endId).toBe('');
     });
 
     it('should keep endId for TIM stations', () => {
-      const station = Station.fromProps({ siteId: 'A', endId: 'END', operadora: 'TIM' });
+      const station = Station.fromProps({ siteId: 'A', endId: 'END', mobileCarrier: 'TIM' });
       expect(station.endId).toBe('END');
     });
   });

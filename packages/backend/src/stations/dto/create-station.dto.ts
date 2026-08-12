@@ -1,7 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
-import { STATION_OPERADORAS } from '../domain/station.entity';
-
-export const stationOperadoras = STATION_OPERADORAS;
+import { STATION_MOBILE_CARRIERS } from '../domain/station.entity';
 
 export class CreateStationDto {
   @IsString()
@@ -13,7 +11,7 @@ export class CreateStationDto {
 
   @IsOptional()
   @IsString()
-  endereco?: string;
+  address?: string;
 
   @IsOptional()
   @IsNumber()
@@ -24,12 +22,12 @@ export class CreateStationDto {
   longitude?: number;
 
   @IsOptional()
-  @IsIn(stationOperadoras)
-  operadora?: string;
+  @IsIn(STATION_MOBILE_CARRIERS)
+  mobileCarrier?: string;
 
   @IsOptional()
   @IsString()
-  observacoes?: string;
+  notes?: string;
 
   @IsOptional()
   @IsIn(['ativo', 'inativo'])

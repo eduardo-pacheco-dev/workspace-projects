@@ -1,15 +1,15 @@
 import { Station } from './station.entity';
 
-export const TIM_OPERADORA = 'TIM';
+export const TIM_MOBILE_CARRIER = 'TIM';
 
 export interface StationImportItem {
   siteId?: string;
   endId?: string;
-  endereco?: string;
+  address?: string;
   latitude?: number | string;
   longitude?: number | string;
-  operadora?: string;
-  observacoes?: string;
+  mobileCarrier?: string;
+  notes?: string;
   status?: string;
 }
 
@@ -17,8 +17,8 @@ export interface ParsedImportStation {
   station: Station;
 }
 
-export function requiresEndId(operadora?: string | null): boolean {
-  return !operadora || operadora.trim() === '' || operadora === TIM_OPERADORA;
+export function requiresEndId(mobileCarrier?: string | null): boolean {
+  return !mobileCarrier || mobileCarrier.trim() === '' || mobileCarrier === TIM_MOBILE_CARRIER;
 }
 
 export function buildStationKey(siteId: string, endId: string): string {
@@ -44,12 +44,12 @@ export function parseImportItem(
   row: number,
 ): { station?: Station; error?: string } {
   const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
-  const operadora =
-    typeof item.operadora === 'string' && item.operadora.trim()
-      ? item.operadora.trim()
+  const mobileCarrier =
+    typeof item.mobileCarrier === 'string' && item.mobileCarrier.trim()
+      ? item.mobileCarrier.trim()
       : undefined;
   const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
-  const needsEndId = requiresEndId(operadora);
+  const needsEndId = requiresEndId(mobileCarrier);
 
   if (!siteId || (needsEndId && !endId)) {
     return {
@@ -63,11 +63,11 @@ export function parseImportItem(
     station: new Station({
       siteId,
       endId: needsEndId ? endId : '',
-      endereco: cleanStr(item.endereco),
+      address: cleanStr(item.address),
       latitude: parseCoordinate(item.latitude),
       longitude: parseCoordinate(item.longitude),
-      operadora,
-      observacoes: cleanStr(item.observacoes),
+      mobileCarrier,
+      notes: cleanStr(item.notes),
       status: normalizeStatus(item.status),
     }),
   };

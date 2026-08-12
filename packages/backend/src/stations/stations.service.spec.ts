@@ -43,36 +43,36 @@ describe('StationsService', () => {
     });
 
     it('should keep endId for TIM stations', async () => {
-      const saved = new Station({ id: 1, siteId: 'SITE-T', endId: 'END-T', operadora: 'TIM' });
+      const saved = new Station({ id: 1, siteId: 'SITE-T', endId: 'END-T', mobileCarrier: 'TIM' });
       repo.create.mockResolvedValue(saved);
 
-      await service.create({ siteId: 'SITE-T', endId: 'END-T', operadora: 'TIM' });
+      await service.create({ siteId: 'SITE-T', endId: 'END-T', mobileCarrier: 'TIM' });
 
       expect(repo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ siteId: 'SITE-T', endId: 'END-T', operadora: 'TIM' }),
+        expect.objectContaining({ siteId: 'SITE-T', endId: 'END-T', mobileCarrier: 'TIM' }),
       );
     });
 
-    it('should clear endId when operadora is not TIM', async () => {
-      const saved = new Station({ id: 1, siteId: 'SITE-C', endId: '', operadora: 'CLARO' });
+    it('should clear endId when mobileCarrier is not TIM', async () => {
+      const saved = new Station({ id: 1, siteId: 'SITE-C', endId: '', mobileCarrier: 'CLARO' });
       repo.create.mockResolvedValue(saved);
 
-      const result = await service.create({ siteId: 'SITE-C', endId: 'END-C', operadora: 'CLARO' });
+      const result = await service.create({ siteId: 'SITE-C', endId: 'END-C', mobileCarrier: 'CLARO' });
 
       expect(repo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ siteId: 'SITE-C', endId: '', operadora: 'CLARO' }),
+        expect.objectContaining({ siteId: 'SITE-C', endId: '', mobileCarrier: 'CLARO' }),
       );
       expect(result.endId).toBe('');
     });
 
     it('should allow creating a non-TIM station without endId', async () => {
-      const saved = new Station({ id: 1, siteId: 'SITE-V', endId: '', operadora: 'VIVO' });
+      const saved = new Station({ id: 1, siteId: 'SITE-V', endId: '', mobileCarrier: 'VIVO' });
       repo.create.mockResolvedValue(saved);
 
-      await service.create({ siteId: 'SITE-V', operadora: 'VIVO' });
+      await service.create({ siteId: 'SITE-V', mobileCarrier: 'VIVO' });
 
       expect(repo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ siteId: 'SITE-V', endId: '', operadora: 'VIVO' }),
+        expect.objectContaining({ siteId: 'SITE-V', endId: '', mobileCarrier: 'VIVO' }),
       );
     });
   });
@@ -84,17 +84,17 @@ describe('StationsService', () => {
       repo.update.mockResolvedValue(undefined);
 
       const result = await service.importStations([
-        { siteId: 'SITE-001', endId: 'END-001', operadora: 'TIM', status: 'inativo' },
-        { siteId: 'SITE-002', endId: 'END-002', operadora: 'TIM' },
+        { siteId: 'SITE-001', endId: 'END-001', mobileCarrier: 'TIM', status: 'inativo' },
+        { siteId: 'SITE-002', endId: 'END-002', mobileCarrier: 'TIM' },
       ]);
 
       expect(result).toEqual({ imported: 1, updated: 1, skipped: 0, errors: [] });
       expect(repo.update).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ status: 'inativo', operadora: 'TIM' }),
+        expect.objectContaining({ status: 'inativo', mobileCarrier: 'TIM' }),
       );
       expect(repo.insertMany).toHaveBeenCalledWith([
-        expect.objectContaining({ siteId: 'SITE-002', endId: 'END-002', operadora: 'TIM', status: 'ativo' }),
+        expect.objectContaining({ siteId: 'SITE-002', endId: 'END-002', mobileCarrier: 'TIM', status: 'ativo' }),
       ]);
     });
 
@@ -120,8 +120,8 @@ describe('StationsService', () => {
       repo.findExistingRefs.mockResolvedValue([]);
 
       const result = await service.importStations([
-        { siteId: 'SITE-010', operadora: 'VIVO', endereco: 'A' },
-        { siteId: 'SITE-010', operadora: 'VIVO', endereco: 'B' },
+        { siteId: 'SITE-010', mobileCarrier: 'VIVO', address: 'A' },
+        { siteId: 'SITE-010', mobileCarrier: 'VIVO', address: 'B' },
       ]);
 
       expect(result.imported).toBe(1);
@@ -168,12 +168,12 @@ describe('StationsService', () => {
       repo.findExistingRefs.mockResolvedValue([]);
 
       const result = await service.importStations([
-        { siteId: 'SITE-600', endId: 'END-600', operadora: 'CLARO' },
+        { siteId: 'SITE-600', endId: 'END-600', mobileCarrier: 'CLARO' },
       ]);
 
       expect(result.imported).toBe(1);
       expect(repo.insertMany).toHaveBeenCalledWith([
-        expect.objectContaining({ siteId: 'SITE-600', endId: '', operadora: 'CLARO' }),
+        expect.objectContaining({ siteId: 'SITE-600', endId: '', mobileCarrier: 'CLARO' }),
       ]);
     });
 
@@ -181,13 +181,13 @@ describe('StationsService', () => {
       repo.findExistingRefs.mockResolvedValue([]);
 
       const result = await service.importStations([
-        { siteId: 'SITE-601', operadora: 'VIVO' },
+        { siteId: 'SITE-601', mobileCarrier: 'VIVO' },
       ]);
 
       expect(result.imported).toBe(1);
       expect(result.skipped).toBe(0);
       expect(repo.insertMany).toHaveBeenCalledWith([
-        expect.objectContaining({ siteId: 'SITE-601', endId: '', operadora: 'VIVO' }),
+        expect.objectContaining({ siteId: 'SITE-601', endId: '', mobileCarrier: 'VIVO' }),
       ]);
     });
 
@@ -195,7 +195,7 @@ describe('StationsService', () => {
       repo.findExistingRefs.mockResolvedValue([]);
 
       const result = await service.importStations([
-        { siteId: 'SITE-602', operadora: 'TIM' },
+        { siteId: 'SITE-602', mobileCarrier: 'TIM' },
       ]);
 
       expect(result.imported).toBe(0);
@@ -214,7 +214,7 @@ describe('StationsService', () => {
         limit: 10,
         search: 'site',
         status: 'inativo',
-        operadora: 'TIM',
+        mobileCarrier: 'TIM',
         sortBy: 'siteId',
         sortOrder: 'DESC' as const,
       };
@@ -242,36 +242,36 @@ describe('StationsService', () => {
 
   describe('update', () => {
     it('should update an existing station', async () => {
-      const station = new Station({ id: 1, siteId: 'SITE-001', endId: 'END-001', endereco: null });
+      const station = new Station({ id: 1, siteId: 'SITE-001', endId: 'END-001', address: null });
       repo.findById.mockResolvedValue(station);
       repo.update.mockResolvedValue(undefined);
 
-      const result = await service.update(1, { endereco: 'Av. Nova, 10' });
+      const result = await service.update(1, { address: 'Av. Nova, 10' });
 
       expect(repo.update).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ id: 1, endereco: 'Av. Nova, 10' }),
+        expect.objectContaining({ id: 1, address: 'Av. Nova, 10' }),
       );
-      expect(result.endereco).toBe('Av. Nova, 10');
+      expect(result.address).toBe('Av. Nova, 10');
     });
 
     it('should throw NotFoundException when station does not exist', async () => {
       repo.findById.mockResolvedValue(null);
 
-      await expect(service.update(99, { endereco: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(99, { address: 'X' })).rejects.toThrow(NotFoundException);
       expect(repo.update).not.toHaveBeenCalled();
     });
 
     it('should clear endId when operator changes to a non-TIM operator', async () => {
-      const station = new Station({ id: 1, siteId: 'SITE-001', endId: 'END-001', operadora: 'TIM' });
+      const station = new Station({ id: 1, siteId: 'SITE-001', endId: 'END-001', mobileCarrier: 'TIM' });
       repo.findById.mockResolvedValue(station);
       repo.update.mockResolvedValue(undefined);
 
-      const result = await service.update(1, { operadora: 'CLARO' });
+      const result = await service.update(1, { mobileCarrier: 'CLARO' });
 
       expect(repo.update).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ endId: '', operadora: 'CLARO' }),
+        expect.objectContaining({ endId: '', mobileCarrier: 'CLARO' }),
       );
       expect(result.endId).toBe('');
     });

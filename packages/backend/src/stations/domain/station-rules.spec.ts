@@ -12,7 +12,7 @@ describe('station-rules', () => {
       expect(requiresEndId('TIM')).toBe(true);
     });
 
-    it('should require endId when operadora is missing', () => {
+    it('should require endId when mobileCarrier is missing', () => {
       expect(requiresEndId()).toBe(true);
       expect(requiresEndId(undefined)).toBe(true);
     });
@@ -56,7 +56,7 @@ describe('station-rules', () => {
   describe('parseImportItem', () => {
     it('should build a normalized station for a valid TIM row', () => {
       const { station } = parseImportItem(
-        { siteId: '  SITE-1  ', endId: '  END-1  ', operadora: 'TIM', status: 'INATIVO' },
+        { siteId: '  SITE-1  ', endId: '  END-1  ', mobileCarrier: 'TIM', status: 'INATIVO' },
         1,
       );
 
@@ -66,9 +66,9 @@ describe('station-rules', () => {
     });
 
     it('should clear endId for non-TIM rows', () => {
-      const { station } = parseImportItem({ siteId: 'SITE-2', endId: 'END-2', operadora: 'CLARO' }, 2);
+      const { station } = parseImportItem({ siteId: 'SITE-2', endId: 'END-2', mobileCarrier: 'CLARO' }, 2);
       expect(station?.endId).toBe('');
-      expect(station?.operadora).toBe('CLARO');
+      expect(station?.mobileCarrier).toBe('CLARO');
     });
 
     it('should trim and parse optional fields', () => {
@@ -76,29 +76,29 @@ describe('station-rules', () => {
         {
           siteId: 'SITE-3',
           endId: 'END-3',
-          endereco: '  Rua A, 10  ',
+          address: '  Rua A, 10  ',
           latitude: '-1.5',
           longitude: '-40.2',
-          observacoes: '  obs  ',
+          notes: '  obs  ',
         },
         3,
       );
 
-      expect(station?.endereco).toBe('Rua A, 10');
+      expect(station?.address).toBe('Rua A, 10');
       expect(station?.latitude).toBe(-1.5);
       expect(station?.longitude).toBe(-40.2);
-      expect(station?.observacoes).toBe('obs');
+      expect(station?.notes).toBe('obs');
     });
 
     it('should ignore invalid coordinates and blank optional strings', () => {
       const { station } = parseImportItem(
-        { siteId: 'SITE-4', endId: 'END-4', latitude: 'abc', longitude: '', endereco: '   ' },
+        { siteId: 'SITE-4', endId: 'END-4', latitude: 'abc', longitude: '', address: '   ' },
         4,
       );
 
       expect(station?.latitude).toBeUndefined();
       expect(station?.longitude).toBeUndefined();
-      expect(station?.endereco).toBeUndefined();
+      expect(station?.address).toBeUndefined();
     });
 
     it('should return an error when siteId is missing', () => {
@@ -108,12 +108,12 @@ describe('station-rules', () => {
     });
 
     it('should return an error for a TIM row without endId', () => {
-      const { error } = parseImportItem({ siteId: 'SITE-6', operadora: 'TIM' }, 6);
+      const { error } = parseImportItem({ siteId: 'SITE-6', mobileCarrier: 'TIM' }, 6);
       expect(error).toBe('Linha 6: Site ID e End ID são obrigatórios.');
     });
 
     it('should return an error mentioning only Site ID for non-TIM rows', () => {
-      const { error } = parseImportItem({ endId: 'END-7', operadora: 'VIVO' }, 7);
+      const { error } = parseImportItem({ endId: 'END-7', mobileCarrier: 'VIVO' }, 7);
       expect(error).toBe('Linha 7: Site ID é obrigatório.');
     });
   });

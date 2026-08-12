@@ -17,8 +17,8 @@ export class StationEntity {
   @Column({ type: 'text' })
   endId: string;
 
-  @Column({ type: 'text', nullable: true })
-  endereco?: string;
+  @Column({ type: 'text', nullable: true, name: 'endereco' })
+  address?: string;
 
   @Column({ type: 'real', nullable: true })
   latitude?: number;
@@ -26,11 +26,11 @@ export class StationEntity {
   @Column({ type: 'real', nullable: true })
   longitude?: number;
 
-  @Column({ type: 'text', nullable: true })
-  operadora?: string;
+  @Column({ type: 'text', nullable: true, name: 'operadora' })
+  mobileCarrier?: string;
 
-  @Column({ type: 'text', nullable: true })
-  observacoes?: string;
+  @Column({ type: 'text', nullable: true, name: 'observacoes' })
+  notes?: string;
 
   @Column({ type: 'text', default: 'ativo' })
   status: string;

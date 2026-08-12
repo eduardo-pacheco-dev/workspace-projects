@@ -48,11 +48,11 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  endereco: string | null
+  address: string | null
   latitude: number | null
   longitude: number | null
-  operadora: string | null
-  observacoes: string | null
+  mobileCarrier: string | null
+  notes: string | null
   status: string
   createdAt: string
   updatedAt: string
@@ -73,7 +73,7 @@ interface Comment {
   createdAt: string
 }
 
-const operadoraColors: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
+const mobileCarrierColors: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
   TIM: 'info',
   CLARO: 'warning',
   VIVO: 'success',
@@ -277,7 +277,7 @@ export default function StationDetailsPage() {
 
   const handleShare = async () => {
     if (!station) return
-    const text = `Estação ${station.siteId} (${station.operadora || 'sem operadora'})`
+    const text = `Estação ${station.siteId} (${station.mobileCarrier || 'sem operadora'})`
     const url = `https://maps.google.com/maps?q=${station.latitude},${station.longitude}`
     if (navigator.share) {
       try {
@@ -298,10 +298,10 @@ export default function StationDetailsPage() {
   const fields = station
     ? [
         { label: 'Site ID', value: station.siteId },
-        ...(station.operadora === 'TIM'
+        ...(station.mobileCarrier === 'TIM'
           ? [{ label: 'End ID', value: station.endId }]
           : []),
-        { label: 'Endereço', value: station.endereco || '-' },
+        { label: 'Endereço', value: station.address || '-' },
         {
           label: 'Coordenadas',
           value:
@@ -309,7 +309,7 @@ export default function StationDetailsPage() {
               ? `${station.latitude}, ${station.longitude}`
               : '-',
         },
-        { label: 'Observações', value: station.observacoes || '-' },
+        { label: 'Observações', value: station.notes || '-' },
         { label: 'Criado em', value: formatDateTime(station.createdAt) },
         { label: 'Atualizado em', value: formatDateTime(station.updatedAt) },
       ]
@@ -335,10 +335,10 @@ export default function StationDetailsPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                       <Chip
                         size="small"
-                        label={station.operadora || 'Sem operadora'}
-                        color={operadoraColors[station.operadora || ''] || 'default'}
+                        label={station.mobileCarrier || 'Sem operadora'}
+                        color={mobileCarrierColors[station.mobileCarrier || ''] || 'default'}
                       />
-                      {station.operadora === 'TIM' && (
+                      {station.mobileCarrier === 'TIM' && (
                         <Typography variant="subtitle1" color="text.secondary">
                           · {station.endId}
                         </Typography>

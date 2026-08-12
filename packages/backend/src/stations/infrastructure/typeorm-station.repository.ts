@@ -25,11 +25,11 @@ export class TypeOrmStationRepository implements StationRepository {
     return {
       siteId: station.siteId,
       endId: station.endId,
-      endereco: station.endereco ?? undefined,
+      address: station.address ?? undefined,
       latitude: station.latitude ?? undefined,
       longitude: station.longitude ?? undefined,
-      operadora: station.operadora ?? undefined,
-      observacoes: station.observacoes ?? undefined,
+      mobileCarrier: station.mobileCarrier ?? undefined,
+      notes: station.notes ?? undefined,
       status: station.status,
     };
   }
@@ -48,14 +48,14 @@ export class TypeOrmStationRepository implements StationRepository {
       sortOrder = 'ASC' as 'ASC' | 'DESC',
       search,
       status,
-      operadora,
+      mobileCarrier,
     } = query;
 
     const qb = this.repo.createQueryBuilder('s');
 
     if (search) {
       qb.where(
-        's.siteId LIKE :search OR s.endId LIKE :search OR s.endereco LIKE :search OR s.operadora LIKE :search',
+        's.siteId LIKE :search OR s.endId LIKE :search OR s.address LIKE :search OR s.mobileCarrier LIKE :search',
         { search: `%${search}%` },
       );
     }
@@ -64,11 +64,11 @@ export class TypeOrmStationRepository implements StationRepository {
       qb.andWhere('s.status = :status', { status });
     }
 
-    if (operadora) {
-      qb.andWhere('s.operadora = :operadora', { operadora });
+    if (mobileCarrier) {
+      qb.andWhere('s.mobileCarrier = :mobileCarrier', { mobileCarrier });
     }
 
-    const allowedSort = ['id', 'siteId', 'endId', 'endereco', 'operadora', 'status', 'createdAt'];
+    const allowedSort = ['id', 'siteId', 'endId', 'address', 'mobileCarrier', 'status', 'createdAt'];
     const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 

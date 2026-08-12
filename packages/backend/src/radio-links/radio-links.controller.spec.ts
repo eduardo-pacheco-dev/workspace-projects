@@ -134,16 +134,16 @@ describe('RadioLinksController (integration)', () => {
         id: 1,
         siteId: 'SITE-A1',
         endId: 'END-A1',
-        endereco: 'Av A',
-        operadora: 'TIM',
+        address: 'Av A',
+        mobileCarrier: 'TIM',
         status: 'ativo',
       });
       await stationRepo.save({
         id: 2,
         siteId: 'SITE-B1',
         endId: 'END-B1',
-        endereco: 'Av B',
-        operadora: 'CLARO',
+        address: 'Av B',
+        mobileCarrier: 'CLARO',
         status: 'ativo',
       });
 

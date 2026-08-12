@@ -40,10 +40,10 @@ export class RadioLinksService {
         radioLink.stationAId = station.id;
         radioLink.siteIdA = station.siteId;
         radioLink.endIdA = station.endId;
-        radioLink.enderecoA = station.endereco;
+        radioLink.enderecoA = station.address;
         radioLink.latitudeA = station.latitude;
         radioLink.longitudeA = station.longitude;
-        radioLink.operadoraA = station.operadora;
+        radioLink.operadoraA = station.mobileCarrier;
       }
     }
     if (dto.stationBId != null) {
@@ -52,10 +52,10 @@ export class RadioLinksService {
         radioLink.stationBId = station.id;
         radioLink.siteIdB = station.siteId;
         radioLink.endIdB = station.endId;
-        radioLink.enderecoB = station.endereco;
+        radioLink.enderecoB = station.address;
         radioLink.latitudeB = station.latitude;
         radioLink.longitudeB = station.longitude;
-        radioLink.operadoraB = station.operadora;
+        radioLink.operadoraB = station.mobileCarrier;
       }
     }
   }
@@ -141,20 +141,20 @@ export class RadioLinksService {
         item.data.stationAId = stationA.id;
         item.data.siteIdA = stationA.siteId;
         item.data.endIdA = stationA.endId;
-        item.data.enderecoA = stationA.endereco;
+        item.data.enderecoA = stationA.address;
         item.data.latitudeA = stationA.latitude;
         item.data.longitudeA = stationA.longitude;
-        item.data.operadoraA = stationA.operadora;
+        item.data.operadoraA = stationA.mobileCarrier;
       }
       const stationB = resolveStation(item.data.siteIdB, item.data.endIdB, item.data.operadoraB);
       if (stationB) {
         item.data.stationBId = stationB.id;
         item.data.siteIdB = stationB.siteId;
         item.data.endIdB = stationB.endId;
-        item.data.enderecoB = stationB.endereco;
+        item.data.enderecoB = stationB.address;
         item.data.latitudeB = stationB.latitude;
         item.data.longitudeB = stationB.longitude;
-        item.data.operadoraB = stationB.operadora;
+        item.data.operadoraB = stationB.mobileCarrier;
       }
     }
 

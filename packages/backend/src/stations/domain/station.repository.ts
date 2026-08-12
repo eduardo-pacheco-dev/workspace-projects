@@ -9,7 +9,7 @@ export interface StationQuery {
   sortOrder?: 'ASC' | 'DESC';
   search?: string;
   status?: string;
-  operadora?: string;
+  mobileCarrier?: string;
 }
 
 export interface PaginatedStations {

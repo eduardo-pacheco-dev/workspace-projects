@@ -10,18 +10,18 @@ interface StationMapItem {
   endId: string
   latitude: number | null
   longitude: number | null
-  endereco: string | null
+  address: string | null
   status: string
-  operadora: string | null
+  mobileCarrier: string | null
 }
 
 interface StationsMapTabProps {
   search?: string
   status?: string
-  operadora?: string
+  mobileCarrier?: string
 }
 
-export default function StationsMapTab({ search = '', status = '', operadora = '' }: StationsMapTabProps) {
+export default function StationsMapTab({ search = '', status = '', mobileCarrier = '' }: StationsMapTabProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [stations, setStations] = useState<StationMapItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,7 +33,7 @@ export default function StationsMapTab({ search = '', status = '', operadora = '
     const params: Record<string, unknown> = { page: 1, limit: 100000 }
     if (search) params.search = search
     if (status) params.status = status
-    if (operadora) params.operadora = operadora
+    if (mobileCarrier) params.mobileCarrier = mobileCarrier
     api
       .get('/stations', { params })
       .then((res) => {
@@ -50,7 +50,7 @@ export default function StationsMapTab({ search = '', status = '', operadora = '
     return () => {
       cancelled = true
     }
-  }, [search, status, operadora])
+  }, [search, status, mobileCarrier])
 
   useEffect(() => {
     if (!mapRef.current || loading) return
@@ -68,7 +68,7 @@ export default function StationsMapTab({ search = '', status = '', operadora = '
       const lng = Number(s.longitude)
       points.push([lat, lng])
       const inativo = s.status === 'inativo'
-      const endIdLine = s.operadora === 'TIM' ? `<br/>End ID: ${s.endId}` : ''
+      const endIdLine = s.mobileCarrier === 'TIM' ? `<br/>End ID: ${s.endId}` : ''
       L.circleMarker([lat, lng], {
         radius: 8,
         color: inativo ? '#9e9e9e' : '#1565c0',
@@ -77,7 +77,7 @@ export default function StationsMapTab({ search = '', status = '', operadora = '
       })
         .addTo(map)
         .bindPopup(
-          `<b>${s.siteId}</b>${endIdLine}<br/>Operadora: ${s.operadora || '-'}<br/>Status: ${inativo ? 'Inativo' : 'Ativo'}`,
+          `<b>${s.siteId}</b>${endIdLine}<br/>Operadora: ${s.mobileCarrier || '-'}<br/>Status: ${inativo ? 'Inativo' : 'Ativo'}`,
         )
     })
 

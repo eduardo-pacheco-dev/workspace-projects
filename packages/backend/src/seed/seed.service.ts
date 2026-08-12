@@ -1519,7 +1519,7 @@ export class SeedService implements OnApplicationBootstrap {
     const created: number[] = [];
     for (const ciclo of ciclos) {
       const saved = await this.pdcaService.create(ciclo);
-      created.push(saved.id);
+      created.push(saved.id!);
     }
 
     console.log(`Seed: ${ciclos.length} PDCA cycles created`);

@@ -68,7 +68,7 @@ describe('AuthController (integration)', () => {
     it('should register an active user and return a generic message', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ name: 'Maria', lastName: 'Souza', email: 'maria@email.com', password: '123456' })
+        .send({ name: 'Maria', lastName: 'Souza', email: 'maria@email.com', password: 'Senha123' })
         .expect(201);
 
       expect(res.body.message).toContain('Registration');
@@ -89,18 +89,25 @@ describe('AuthController (integration)', () => {
 
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ name: 'Outro', email: 'dup@email.com', password: '123456' })
+        .send({ name: 'Outro', email: 'dup@email.com', password: 'Senha123' })
         .expect(201);
 
       expect(res.body.message).toContain('Registration');
       const count = await userRepo.count({ where: { email: 'dup@email.com' } });
       expect(count).toBe(1);
     });
+
+    it('should reject a weak password', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ name: 'Fulano', email: 'fulano@email.com', password: '123' })
+        .expect(400);
+    });
   });
 
   describe('POST /auth/login', () => {
     beforeEach(async () => {
-      const hashed = await bcrypt.hash('123456', 10);
+      const hashed = await bcrypt.hash('Senha123', 10);
       await userRepo.save({
         name: 'Admin',
         email: 'admin@email.com',
@@ -114,7 +121,7 @@ describe('AuthController (integration)', () => {
     it('should return a token for valid credentials', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'admin@email.com', password: '123456' })
+        .send({ email: 'admin@email.com', password: 'Senha123' })
         .expect(201);
 
       expect(res.body.access_token).toBeDefined();
@@ -133,7 +140,7 @@ describe('AuthController (integration)', () => {
 
       await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'admin@email.com', password: '123456' })
+        .send({ email: 'admin@email.com', password: 'Senha123' })
         .expect(401);
     });
   });
@@ -175,18 +182,18 @@ describe('AuthController (integration)', () => {
 
       await request(app.getHttpServer())
         .post('/auth/reset-password')
-        .send({ token: presentation, password: 'nova123' })
+        .send({ token: presentation, password: 'Senha123' })
         .expect(201);
 
       const saved = await userRepo.findOne({ where: { email: 'joao@email.com' } });
       expect(saved?.resetToken).toBeNull();
-      expect(await bcrypt.compare('nova123', saved!.password)).toBe(true);
+      expect(await bcrypt.compare('Senha123', saved!.password)).toBe(true);
     });
 
     it('should return 400 for an expired token', async () => {
       await request(app.getHttpServer())
         .post('/auth/reset-password')
-        .send({ token: `abc.${Date.now() - 1000}`, password: 'nova123' })
+        .send({ token: `abc.${Date.now() - 1000}`, password: 'Senha123' })
         .expect(400);
     });
   });

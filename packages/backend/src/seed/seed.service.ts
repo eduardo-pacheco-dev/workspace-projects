@@ -1,5 +1,6 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { BCRYPT_ROUNDS } from '../common/config/security';
 import { UsersService } from '../users/users.service';
 import { JobsService } from '../jobs/jobs.service';
 import { LpuService } from '../lpu/lpu.service';
@@ -76,7 +77,7 @@ export class SeedService implements OnApplicationBootstrap {
     const admin = await this.usersService.findByEmail('admin@admin.com');
     if (admin) return;
 
-    const hashedPassword = await bcrypt.hash('123456', 10);
+    const hashedPassword = await bcrypt.hash('Admin@123', BCRYPT_ROUNDS);
     await this.usersService.create({
       name: 'Admin',
       email: 'admin@admin.com',
@@ -86,7 +87,7 @@ export class SeedService implements OnApplicationBootstrap {
       status: 'active',
     });
 
-    console.log('Seed: admin user created (admin@admin.com / 123456)');
+    console.log('Seed: admin user created (admin@admin.com / Admin@123)');
   }
 
   private async seedFreelancers() {
@@ -931,7 +932,7 @@ export class SeedService implements OnApplicationBootstrap {
       const linkedCompanyId = companyId(u.company);
       if (linkedCompanyId == null) continue;
 
-      const hashedPassword = await bcrypt.hash('123456', 10);
+      const hashedPassword = await bcrypt.hash('Senha@123', BCRYPT_ROUNDS);
       await this.usersService.create({
         name: u.name,
         email: u.email,
@@ -943,7 +944,7 @@ export class SeedService implements OnApplicationBootstrap {
       created++;
     }
 
-    console.log(`Seed: ${created} users created (password padrão: 123456)`);
+    console.log(`Seed: ${created} users created (password padrão: Senha@123)`);
   }
 
   private async seedCompanyMembers() {

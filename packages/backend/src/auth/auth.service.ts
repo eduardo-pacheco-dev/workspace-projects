@@ -1,12 +1,10 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { isActiveUser } from '../users/domain/user-rules';
-import {
-  buildResetToken,
-  parseResetToken,
-} from './reset-token';
+import { BCRYPT_ROUNDS } from '../common/config/security';
+import { buildResetToken, parseResetToken } from './reset-token';
 import {
   RegisterInput,
   LoginInput,
@@ -14,8 +12,19 @@ import {
   ResetPasswordInput,
 } from './schemas/auth.schemas';
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
+interface FailureEntry {
+  count: number;
+  lockedUntil: number;
+}
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly failedAttempts = new Map<string, FailureEntry>();
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -43,10 +52,37 @@ export class AuthService {
     };
   }
 
+  private isAccountLocked(email: string): boolean {
+    const key = email.toLowerCase();
+    const entry = this.failedAttempts.get(key);
+    if (!entry) return false;
+    if (entry.lockedUntil > Date.now()) return true;
+    if (entry.lockedUntil !== 0) {
+      this.failedAttempts.delete(key);
+    }
+    return false;
+  }
+
+  private registerFailure(email: string): void {
+    const key = email.toLowerCase();
+    const entry = this.failedAttempts.get(key) ?? { count: 0, lockedUntil: 0 };
+    entry.count += 1;
+    if (entry.count >= MAX_FAILED_ATTEMPTS) {
+      entry.lockedUntil = Date.now() + LOCKOUT_MS;
+      entry.count = 0;
+      this.logger.warn(`Account temporarily locked after repeated failed logins: ${key}`);
+    }
+    this.failedAttempts.set(key, entry);
+  }
+
+  private clearFailures(email: string): void {
+    this.failedAttempts.delete(email.toLowerCase());
+  }
+
   async register(dto: RegisterInput) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (!existing) {
-      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
       await this.usersService.create({
         name: dto.name,
         lastName: dto.lastName || null,
@@ -62,16 +98,25 @@ export class AuthService {
   }
 
   async login(dto: LoginInput) {
+    if (this.isAccountLocked(dto.email)) {
+      this.logger.warn(`Login attempt on a locked account: ${dto.email.toLowerCase()}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || !isActiveUser(user)) {
+      this.registerFailure(dto.email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
+      this.registerFailure(dto.email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    this.clearFailures(dto.email);
+    this.logger.log(`Successful login: ${dto.email.toLowerCase()}`);
     return this.buildTokenResponse(user);
   }
 
@@ -95,7 +140,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     await this.usersService.update(user.id, { password: hashedPassword, resetToken: null });
     return { message: 'Password reset successfully' };
   }

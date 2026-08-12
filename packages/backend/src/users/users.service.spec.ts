@@ -200,7 +200,7 @@ describe('UsersService', () => {
 
       const result = await service.createUser(dto, master);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('123456', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('123456', 12);
       expect(repo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           email: 'joao@email.com',
@@ -356,7 +356,7 @@ describe('UsersService', () => {
 
       await service.updateUser(3, { password: 'nova123' }, master);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('nova123', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('nova123', 12);
     });
 
     it('should prevent deactivating your own account', async () => {

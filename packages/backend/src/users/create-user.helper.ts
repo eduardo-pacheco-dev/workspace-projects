@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { UserEntity } from './infrastructure/user.entity';
+import { BCRYPT_ROUNDS } from '../common/config/security';
 
 export class UserAlreadyExistsError extends Error {}
 
@@ -15,7 +16,7 @@ export async function createUser(
     throw new UserAlreadyExistsError('Já existe um usuário com este email.');
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
   const user = userRepository.create({
     name,
     email,

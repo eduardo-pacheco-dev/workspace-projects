@@ -107,7 +107,7 @@ describe('UsersController (integration)', () => {
         name: 'João',
         lastName: 'Silva',
         email: 'joao@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(201);
@@ -128,7 +128,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Maria',
         email: 'maria@master.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'master',
       }).expect(201);
 
@@ -142,7 +142,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Pedro',
         email: 'pedro@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(201);
@@ -157,7 +157,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Carlos',
         email: 'carlos@outra.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 999,
       }).expect(400);
@@ -171,7 +171,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Hacker',
         email: 'hacker@outra.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'master',
       }).expect(400);
 
@@ -184,7 +184,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Sem Empresa',
         email: 'sem@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
       }).expect(400);
 
@@ -197,7 +197,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Duplicado',
         email: 'joao@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(409);

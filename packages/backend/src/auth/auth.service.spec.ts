@@ -171,4 +171,50 @@ describe('AuthService', () => {
       expect(usersService.update).not.toHaveBeenCalled();
     });
   });
+
+  describe('account lockout', () => {
+    it('should lock an account after repeated failed logins', async () => {
+      usersService.findByEmail.mockResolvedValue(
+        new User({ id: 1, email: 'admin@admin.com', password: 'hashed', role: 'user', status: 'active' }),
+      );
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      for (let i = 0; i < 5; i++) {
+        await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
+          UnauthorizedException,
+        );
+      }
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      await expect(service.login({ email: 'admin@admin.com', password: 'certa' })).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(bcrypt.compare).toHaveBeenCalledTimes(5);
+    });
+
+    it('should reset the failure counter on a successful login', async () => {
+      usersService.findByEmail.mockResolvedValue(
+        new User({ id: 1, email: 'admin@admin.com', password: 'hashed', role: 'user', status: 'active' }),
+      );
+      (bcrypt.compare as jest.Mock)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValue(true);
+
+      await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
+        UnauthorizedException,
+      );
+      const result = await service.login({ email: 'admin@admin.com', password: 'certa' });
+      expect(result.access_token).toBe('signed-token');
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      for (let i = 0; i < 4; i++) {
+        await expect(service.login({ email: 'admin@admin.com', password: 'errada' })).rejects.toThrow(
+          UnauthorizedException,
+        );
+      }
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      await expect(service.login({ email: 'admin@admin.com', password: 'certa' })).resolves.toBeTruthy();
+    });
+  });
 });

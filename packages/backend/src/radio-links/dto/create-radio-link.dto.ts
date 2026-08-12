@@ -1,6 +1,7 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
+import { RADIO_LINK_OPERADORAS, RADIO_LINK_STATUSES } from '../domain/radio-link-rules';
 
-export const radioLinkOperadoras = ['TIM', 'CLARO', 'VIVO', 'Outras'] as const;
+export const radioLinkOperadoras = RADIO_LINK_OPERADORAS;
 
 export class CreateRadioLinkDto {
   @IsString()
@@ -75,6 +76,6 @@ export class CreateRadioLinkDto {
   observacoes?: string;
 
   @IsOptional()
-  @IsIn(['ativo', 'inativo'])
+  @IsIn(RADIO_LINK_STATUSES)
   status?: string;
 }

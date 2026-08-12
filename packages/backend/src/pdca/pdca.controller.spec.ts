@@ -9,7 +9,7 @@ import { TypeOrmPdcaRepository } from './infrastructure/typeorm-pdca.repository'
 import { PDCA_REPOSITORY } from './domain/pdca.repository';
 import { ProjectEntity } from '../projects/infrastructure/project.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../companies/company.entity';
 import { PdcaController } from './pdca.controller';
 import { PdcaService } from './pdca.service';
@@ -27,7 +27,7 @@ describe('PdcaController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [PdcaEntity, PdcaActionEntity, ProjectEntity, StationEntity, RadioLink, Company],
+          entities: [PdcaEntity, PdcaActionEntity, ProjectEntity, StationEntity, RadioLinkEntity, Company],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([
@@ -35,7 +35,7 @@ describe('PdcaController (integration)', () => {
           PdcaActionEntity,
           ProjectEntity,
           StationEntity,
-          RadioLink,
+          RadioLinkEntity,
           Company,
         ]),
       ],

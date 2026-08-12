@@ -9,7 +9,7 @@ import {
 import { Job } from '../jobs/job.entity';
 import { ServiceOrder } from '../service-orders/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
 import { ProjectEntity } from '../projects/infrastructure/project.entity';
 import { ClientEntity } from '../clients/infrastructure/client.entity';
 import { Company } from '../companies/company.entity';
@@ -44,9 +44,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   radioLinkId: number | null;
 
-  @ManyToOne(() => RadioLink, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => RadioLinkEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'radioLinkId' })
-  radioLink: RadioLink | null;
+  radioLink: RadioLinkEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   projectId: number | null;

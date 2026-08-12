@@ -11,7 +11,7 @@ import {
   RelatedEntityKind,
 } from '../domain/project.repository';
 import { StationEntity } from '../../stations/infrastructure/station.entity';
-import { RadioLink } from '../../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../../companies/company.entity';
 import { ProjectEntity } from './project.entity';
 import { ProjectDocumentEntity } from './project-document.entity';
@@ -73,8 +73,8 @@ export class TypeOrmProjectRepository implements ProjectRepository {
     private readonly documentsRepo: Repository<ProjectDocumentEntity>,
     @InjectRepository(StationEntity)
     private readonly stationsRepo: Repository<StationEntity>,
-    @InjectRepository(RadioLink)
-    private readonly radioLinksRepo: Repository<RadioLink>,
+    @InjectRepository(RadioLinkEntity)
+    private readonly radioLinksRepo: Repository<RadioLinkEntity>,
     @InjectRepository(Company)
     private readonly companiesRepo: Repository<Company>,
   ) {}
@@ -112,7 +112,7 @@ export class TypeOrmProjectRepository implements ProjectRepository {
       entity.stations = project.stations.map((s) => ({ id: s.id }) as StationEntity);
     }
     if (project.radioLinks) {
-      entity.radioLinks = project.radioLinks.map((r) => ({ id: r.id }) as RadioLink);
+      entity.radioLinks = project.radioLinks.map((r) => ({ id: r.id }) as RadioLinkEntity);
     }
     return entity as Partial<ProjectEntity>;
   }

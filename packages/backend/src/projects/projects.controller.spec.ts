@@ -9,7 +9,7 @@ import { ProjectDocumentEntity } from './infrastructure/project-document.entity'
 import { TypeOrmProjectRepository } from './infrastructure/typeorm-project.repository';
 import { PROJECT_REPOSITORY } from './domain/project.repository';
 import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../companies/company.entity';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
@@ -29,7 +29,7 @@ describe('ProjectsController (integration)', () => {
   let projectRepo: Repository<ProjectEntity>;
   let documentRepo: Repository<ProjectDocumentEntity>;
   let stationRepo: Repository<StationEntity>;
-  let radioLinkRepo: Repository<RadioLink>;
+  let radioLinkRepo: Repository<RadioLinkEntity>;
   let companyRepo: Repository<Company>;
   let controller: ProjectsController;
 
@@ -40,10 +40,10 @@ describe('ProjectsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company],
+          entities: [ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLinkEntity, Company],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company]),
+        TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLinkEntity, Company]),
       ],
       controllers: [ProjectsController],
       providers: [
@@ -60,7 +60,7 @@ describe('ProjectsController (integration)', () => {
     projectRepo = moduleRef.get<Repository<ProjectEntity>>(getRepositoryToken(ProjectEntity));
     documentRepo = moduleRef.get<Repository<ProjectDocumentEntity>>(getRepositoryToken(ProjectDocumentEntity));
     stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
-    radioLinkRepo = moduleRef.get<Repository<RadioLink>>(getRepositoryToken(RadioLink));
+    radioLinkRepo = moduleRef.get<Repository<RadioLinkEntity>>(getRepositoryToken(RadioLinkEntity));
     companyRepo = moduleRef.get<Repository<Company>>(getRepositoryToken(Company));
     controller = moduleRef.get(ProjectsController);
   });

@@ -5,7 +5,7 @@ import { TypeOrmProjectRepository } from './typeorm-project.repository';
 import { ProjectEntity } from './project.entity';
 import { ProjectDocumentEntity } from './project-document.entity';
 import { StationEntity } from '../../stations/infrastructure/station.entity';
-import { RadioLink } from '../../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../../companies/company.entity';
 import { Project } from '../domain/project.entity';
 import { ProjectDocument } from '../domain/project-document.entity';
@@ -23,14 +23,14 @@ describe('TypeOrmProjectRepository', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company],
+          entities: [ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLinkEntity, Company],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([
           ProjectEntity,
           ProjectDocumentEntity,
           StationEntity,
-          RadioLink,
+          RadioLinkEntity,
           Company,
         ]),
       ],

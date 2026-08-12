@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../companies/company.entity';
 import { PROJECT_REPOSITORY } from './domain/project.repository';
 import { ProjectEntity } from './infrastructure/project.entity';
@@ -12,7 +12,7 @@ import { ProjectsController } from './projects.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLink, Company]),
+    TypeOrmModule.forFeature([ProjectEntity, ProjectDocumentEntity, StationEntity, RadioLinkEntity, Company]),
   ],
   providers: [
     ProjectsService,

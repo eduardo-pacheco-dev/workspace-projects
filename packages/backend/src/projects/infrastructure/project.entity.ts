@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { StationEntity } from '../../stations/infrastructure/station.entity';
-import { RadioLink } from '../../radio-links/radio-link.entity';
+import { RadioLinkEntity } from '../../radio-links/infrastructure/radio-link.entity';
 import { Company } from '../../companies/company.entity';
 
 @Entity('project')
@@ -50,9 +50,9 @@ export class ProjectEntity {
   @JoinTable({ name: 'project_station' })
   stations: StationEntity[];
 
-  @ManyToMany(() => RadioLink)
+  @ManyToMany(() => RadioLinkEntity)
   @JoinTable({ name: 'project_radio_link' })
-  radioLinks: RadioLink[];
+  radioLinks: RadioLinkEntity[];
 
   @ManyToMany(() => Company)
   @JoinTable({ name: 'company_project' })

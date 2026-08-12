@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Company } from '../../companies/company.entity';
 import { Collaborator, CollaboratorProps } from '../domain/collaborator.entity';
 import {
@@ -98,6 +98,25 @@ const PERSISTENCE_FIELDS = SCALAR_FIELDS.filter(
   (field) => field !== 'createdAt' && field !== 'updatedAt',
 );
 
+const SEARCH_CLAUSE =
+  'c.nome LIKE :search OR c.firstName LIKE :search OR c.lastName LIKE :search OR c.cpf LIKE :search OR c.email LIKE :search OR c.telefone LIKE :search OR c.cargo LIKE :search';
+
+const ALLOWED_SORT_COLUMNS = [
+  'id',
+  'nome',
+  'cpf',
+  'cargo',
+  'email',
+  'telefone',
+  'status',
+  'createdAt',
+  'firstName',
+  'lastName',
+  'hourlyRate',
+  'experienceLevel',
+  'availability',
+];
+
 @Injectable()
 export class TypeOrmCollaboratorRepository implements CollaboratorRepository {
   constructor(
@@ -136,6 +155,47 @@ export class TypeOrmCollaboratorRepository implements CollaboratorRepository {
     return this.toDomain(saved);
   }
 
+  private applyCompanyFilter(
+    qb: SelectQueryBuilder<CollaboratorEntity>,
+    companyId: number | undefined,
+  ): void {
+    if (companyId !== undefined) {
+      qb.where('c.companyId = :companyId', { companyId });
+    }
+  }
+
+  private applyFreelancerFilter(
+    qb: SelectQueryBuilder<CollaboratorEntity>,
+    isFreelancer: boolean | undefined,
+    companyId: number | undefined,
+  ): void {
+    if (isFreelancer === undefined) return;
+    const clause = 'c.isFreelancer = :isFreelancer';
+    const parameters = { isFreelancer };
+    if (companyId !== undefined) {
+      qb.andWhere(clause, parameters);
+    } else {
+      qb.where(clause, parameters);
+    }
+  }
+
+  private applySearchFilter(
+    qb: SelectQueryBuilder<CollaboratorEntity>,
+    search: string | undefined,
+    companyId: number | undefined,
+    isFreelancer: boolean | undefined,
+  ): void {
+    if (!search) return;
+    const clause = `(${SEARCH_CLAUSE})`;
+    const parameters = { search: `%${search}%` };
+    const hasPriorWhere = companyId !== undefined || isFreelancer !== undefined;
+    if (hasPriorWhere) {
+      qb.andWhere(clause, parameters);
+    } else {
+      qb.where(clause, parameters);
+    }
+  }
+
   async findAll(query: CollaboratorQuery): Promise<PaginatedCollaborators> {
     const {
       page = 1,
@@ -151,45 +211,11 @@ export class TypeOrmCollaboratorRepository implements CollaboratorRepository {
       .createQueryBuilder('c')
       .leftJoinAndSelect('c.company', 'company');
 
-    if (companyId !== undefined) {
-      qb.where('c.companyId = :companyId', { companyId });
-    }
+    this.applyCompanyFilter(qb, companyId);
+    this.applyFreelancerFilter(qb, isFreelancer, companyId);
+    this.applySearchFilter(qb, search, companyId, isFreelancer);
 
-    if (isFreelancer !== undefined) {
-      if (companyId !== undefined) {
-        qb.andWhere('c.isFreelancer = :isFreelancer', { isFreelancer });
-      } else {
-        qb.where('c.isFreelancer = :isFreelancer', { isFreelancer });
-      }
-    }
-
-    if (search) {
-      const searchClause =
-        'c.nome LIKE :search OR c.firstName LIKE :search OR c.lastName LIKE :search OR c.cpf LIKE :search OR c.email LIKE :search OR c.telefone LIKE :search OR c.cargo LIKE :search';
-      const hasPriorWhere = companyId !== undefined || isFreelancer !== undefined;
-      if (hasPriorWhere) {
-        qb.andWhere(`(${searchClause})`, { search: `%${search}%` });
-      } else {
-        qb.where(searchClause, { search: `%${search}%` });
-      }
-    }
-
-    const allowedSort = [
-      'id',
-      'nome',
-      'cpf',
-      'cargo',
-      'email',
-      'telefone',
-      'status',
-      'createdAt',
-      'firstName',
-      'lastName',
-      'hourlyRate',
-      'experienceLevel',
-      'availability',
-    ];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
+    const safeSort = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'id';
     const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
     const [data, total] = await qb

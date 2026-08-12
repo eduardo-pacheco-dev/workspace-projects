@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Job } from '../jobs/job.entity';
-import { ServiceOrder } from '../service-orders/service-order.entity';
+import { ServiceOrderEntity } from '../service-orders/infrastructure/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
 import { ProjectEntity } from '../projects/infrastructure/project.entity';
@@ -29,9 +29,9 @@ export class Comment {
   @Column({ type: 'integer', nullable: true })
   serviceOrderId: number | null;
 
-  @ManyToOne(() => ServiceOrder, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ServiceOrderEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'serviceOrderId' })
-  serviceOrder: ServiceOrder | null;
+  serviceOrder: ServiceOrderEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   stationId: number | null;

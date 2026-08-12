@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ServiceOrder } from './service-order.entity';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { ServiceOrder } from './domain/service-order.entity';
+import {
+  ServiceOrderRepository,
+  ServiceOrderQuery,
+  PaginatedServiceOrders,
+  SERVICE_ORDER_REPOSITORY,
+} from './domain/service-order.repository';
+import { generateServiceOrderNumero } from './domain/service-order-rules';
 import {
   CreateServiceOrderInput,
   UpdateServiceOrderInput,
@@ -10,66 +15,28 @@ import {
 @Injectable()
 export class ServiceOrdersService {
   constructor(
-    @InjectRepository(ServiceOrder)
-    private readonly serviceOrdersRepository: Repository<ServiceOrder>,
+    @Inject(SERVICE_ORDER_REPOSITORY)
+    private readonly serviceOrdersRepository: ServiceOrderRepository,
   ) {}
 
   async create(dto: CreateServiceOrderInput): Promise<ServiceOrder> {
-    const serviceOrder = this.serviceOrdersRepository.create({
-      ...dto,
-      status: dto.status ?? 'aberta',
-      numero: '',
-    });
-    const saved = await this.serviceOrdersRepository.save(serviceOrder);
-    saved.numero = `OS-${String(saved.id).padStart(3, '0')}`;
-    return this.serviceOrdersRepository.save(saved);
-  }
-
-  async findAll(query: {
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-    search?: string;
-    status?: string;
-  }): Promise<{ data: ServiceOrder[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'id',
-      sortOrder = 'ASC' as 'ASC' | 'DESC',
-      search,
-      status,
-    } = query;
-
-    const qb = this.serviceOrdersRepository.createQueryBuilder('so');
-
-    if (search) {
-      qb.where(
-        'so.numero LIKE :search OR so.cliente LIKE :search OR so.descricao LIKE :search',
-        { search: `%${search}%` },
+    let saved = await this.serviceOrdersRepository.create(
+      new ServiceOrder({ ...dto, numero: '' }),
+    );
+    if (!saved.numero) {
+      saved = await this.serviceOrdersRepository.save(
+        new ServiceOrder({ ...saved, numero: generateServiceOrderNumero(saved.id ?? 0) }),
       );
     }
+    return saved;
+  }
 
-    if (status) {
-      qb.andWhere('so.status = :status', { status });
-    }
-
-    const allowedSort = ['id', 'numero', 'cliente', 'dataInicio', 'status', 'siteId', 'operadora'];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
-    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const [data, total] = await qb
-      .orderBy(`so.${safeSort}`, safeOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total };
+  async findAll(query: ServiceOrderQuery): Promise<PaginatedServiceOrders> {
+    return this.serviceOrdersRepository.findAll(query);
   }
 
   async findById(id: number): Promise<ServiceOrder> {
-    const serviceOrder = await this.serviceOrdersRepository.findOne({ where: { id } });
+    const serviceOrder = await this.serviceOrdersRepository.findById(id);
     if (!serviceOrder) throw new NotFoundException('Ordem de serviço não encontrada');
     return serviceOrder;
   }
@@ -81,9 +48,7 @@ export class ServiceOrdersService {
   }
 
   async delete(id: number): Promise<void> {
-    const result = await this.serviceOrdersRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Ordem de serviço não encontrada');
-    }
+    const deleted = await this.serviceOrdersRepository.delete(id);
+    if (!deleted) throw new NotFoundException('Ordem de serviço não encontrada');
   }
 }

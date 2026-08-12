@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
-export class ServiceOrder {
+@Entity('service_order')
+export class ServiceOrderEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

@@ -6,19 +6,19 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { ServiceOrder } from '../service-order.entity';
+import { ServiceOrderEntity } from '../../infrastructure/service-order.entity';
 
-@Entity()
-export class ServiceOrderObservation {
+@Entity('service_order_observation')
+export class ServiceOrderObservationEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer' })
   serviceOrderId: number;
 
-  @ManyToOne(() => ServiceOrder, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ServiceOrderEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'serviceOrderId' })
-  serviceOrder: ServiceOrder;
+  serviceOrder: ServiceOrderEntity;
 
   @Column({ type: 'text' })
   title: string;

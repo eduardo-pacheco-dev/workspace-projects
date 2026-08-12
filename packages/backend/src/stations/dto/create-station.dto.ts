@@ -1,6 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
-
-export const stationOperadoras = ['TIM', 'CLARO', 'VIVO', 'Outras'] as const;
+import { STATION_MOBILE_CARRIERS } from '../domain/station.entity';
 
 export class CreateStationDto {
   @IsString()
@@ -12,7 +11,43 @@ export class CreateStationDto {
 
   @IsOptional()
   @IsString()
-  endereco?: string;
+  elementType?: string;
+
+  @IsOptional()
+  @IsString()
+  technology?: string;
+
+  @IsOptional()
+  @IsString()
+  areaHolder?: string;
+
+  @IsOptional()
+  @IsString()
+  infraContractType?: string;
+
+  @IsOptional()
+  @IsString()
+  infraHolder?: string;
+
+  @IsOptional()
+  @IsString()
+  infraType?: string;
+
+  @IsOptional()
+  @IsString()
+  evType?: string;
+
+  @IsOptional()
+  @IsString()
+  evSupplier?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  regional?: string;
 
   @IsOptional()
   @IsNumber()
@@ -23,12 +58,32 @@ export class CreateStationDto {
   longitude?: number;
 
   @IsOptional()
-  @IsIn(stationOperadoras)
-  operadora?: string;
+  @IsIn(STATION_MOBILE_CARRIERS)
+  mobileCarrier?: string;
 
   @IsOptional()
   @IsString()
-  observacoes?: string;
+  towerType?: string;
+
+  @IsOptional()
+  @IsNumber()
+  nominalAev?: number;
+
+  @IsOptional()
+  @IsNumber()
+  groundArea?: number;
+
+  @IsOptional()
+  @IsNumber()
+  structureHeight?: number;
+
+  @IsOptional()
+  @IsString()
+  stationId?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @IsOptional()
   @IsIn(['ativo', 'inativo'])

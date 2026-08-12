@@ -18,6 +18,9 @@ services:
       DB_USER: db_admin
       DB_PASSWORD: db_password
       DB_NAME: db_workspace
+      JWT_SECRET: dev-only-jwt-secret-change-before-real-deploy-0123456789abcdef
+      JWT_EXPIRES_IN: 8h
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3001
       CHOKIDAR_USEPOLLING: 'true'
     depends_on:
       db:

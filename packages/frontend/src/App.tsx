@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ToastProvider } from './contexts/ToastContext'
+import api from './services/api'
+import { DEFAULT_USER_MODULES } from './pages/settings/roleModules'
 import Layout from './components/Layout'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
@@ -44,18 +47,38 @@ import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
 
-const USER_MODULES = ['/tasks', '/service-orders', '/collaborators', '/stations', '/radio-links', '/projects', '/clients', '/pdca']
 const USER_ALWAYS_ALLOWED = ['/', '/profile']
 
 function ProtectedLayout() {
   const { isAuthenticated, user } = useAuth()
   const location = useLocation()
+  const [userModules, setUserModules] = useState<string[]>(DEFAULT_USER_MODULES)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    api
+      .get('/settings')
+      .then((res) => {
+        const role = user?.role || 'user'
+        const raw = res.data?.[`role_modules_${role}`]
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed)) setUserModules(parsed)
+          } catch {
+            setUserModules(DEFAULT_USER_MODULES)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [isAuthenticated, user])
+
   if (!isAuthenticated) return <Navigate to="/signin" replace />
   const isMaster = user?.role === 'master'
   const isAllowed =
     isMaster ||
     USER_ALWAYS_ALLOWED.includes(location.pathname) ||
-    USER_MODULES.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
+    userModules.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
   if (!isAllowed) return <Navigate to="/" replace />
   return (
     <Layout>

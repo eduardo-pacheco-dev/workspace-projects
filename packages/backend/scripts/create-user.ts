@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import * as path from 'path';
-import { User } from '../src/users/user.entity';
+import { UserEntity } from '../src/users/infrastructure/user.entity';
+import { createUser, UserAlreadyExistsError } from '../src/users/create-user.helper';
 
 const isSqljs = process.env.DB_TYPE === 'sqljs';
 
@@ -11,7 +11,7 @@ const dataSource = new DataSource(
         type: 'sqljs',
         autoSave: true,
         location: path.resolve('data/db.sqlite'),
-        entities: [User],
+        entities: [UserEntity],
         synchronize: false,
       }
     : {
@@ -21,7 +21,7 @@ const dataSource = new DataSource(
         username: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || 'admin',
         database: process.env.DB_NAME || 'db_workspace',
-        entities: [User],
+        entities: [UserEntity],
         synchronize: false,
       },
 );
@@ -37,30 +37,22 @@ async function main() {
   const [name, email, password] = args;
 
   await dataSource.initialize();
-  const userRepository = dataSource.getRepository(User);
-
-  const existing = await userRepository.findOne({ where: { email } });
-  if (existing) {
-    console.error('Erro: Já existe um usuário com este email.');
+  try {
+    const userRepository = dataSource.getRepository(UserEntity);
+    const user = await createUser(userRepository, name, email, password);
+    console.log(`Usuário "${user.name}" (${user.email}) criado com sucesso!`);
+  } catch (err: any) {
+    if (err instanceof UserAlreadyExistsError) {
+      console.error('Erro: Já existe um usuário com este email.');
+    } else {
+      console.error(`Erro ao criar usuário: ${err.message}`);
+    }
+    process.exitCode = 1;
+  } finally {
     await dataSource.destroy();
-    process.exit(1);
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = userRepository.create({
-    name,
-    email,
-    password: hashedPassword,
-    role: 'master',
-    companyId: null,
-  });
-  await userRepository.save(user);
-
-  console.log(`Usuário "${name}" (${email}) criado com sucesso!`);
-  await dataSource.destroy();
 }
 
-main().catch((err) => {
-  console.error('Erro ao criar usuário:', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main();
+}

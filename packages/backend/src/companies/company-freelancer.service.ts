@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CompanyFreelancer } from './company-freelancer.entity';
 import { CompanyService } from './company.service';
 import { CollaboratorsService } from '../collaborators/collaborators.service';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 
 @Injectable()
 export class CompanyFreelancerService {
@@ -24,7 +24,7 @@ export class CompanyFreelancerService {
       sortOrder?: 'ASC' | 'DESC';
       search?: string;
     },
-  ): Promise<{ data: (CompanyFreelancer & { freelancer: Collaborator })[]; total: number }> {
+  ): Promise<{ data: (CompanyFreelancer & { freelancer: CollaboratorEntity })[]; total: number }> {
     await this.companyService.findById(companyId);
     const {
       page = 1,
@@ -58,7 +58,7 @@ export class CompanyFreelancerService {
       .take(limit)
       .getManyAndCount();
 
-    return { data: data as (CompanyFreelancer & { freelancer: Collaborator })[], total };
+    return { data: data as (CompanyFreelancer & { freelancer: CollaboratorEntity })[], total };
   }
 
   async associate(companyId: number, freelancerId: number): Promise<CompanyFreelancer> {

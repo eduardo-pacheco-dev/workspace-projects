@@ -24,6 +24,7 @@ import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
+import { roleOptions, RoleType } from '../settings/roleModules'
 
 const baseUserSchema = z.object({
   name: z.string().min(1, 'Informe o nome.'),
@@ -32,7 +33,7 @@ const baseUserSchema = z.object({
   phone: z.string().min(1, 'Informe o telefone.'),
   password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
   confirmPassword: z.string().min(1, 'Confirme a senha.'),
-  role: z.enum(['master', 'user']),
+  role: z.enum(['master', 'admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']),
   companyId: z.number().nullable(),
 })
 
@@ -46,7 +47,7 @@ const createSchema = baseUserSchema
     path: ['companyId'],
   })
 
-const editSchema = baseUserSchema.partial().refine((data) => data.role !== 'user' || data.companyId != null, {
+const editSchema = baseUserSchema.partial().refine((data) => data.role === 'master' || data.companyId != null, {
   message: 'Selecione a empresa do usuário.',
   path: ['companyId'],
 })
@@ -70,7 +71,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState('inactive')
-  const [role, setRole] = useState<'master' | 'user'>('user')
+  const [role, setRole] = useState<RoleType>('user')
   const [companyId, setCompanyId] = useState<number | null>(null)
   const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
   const [showPassword, setShowPassword] = useState(false)
@@ -115,7 +116,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
           setEmail(data.email || '')
           setPhone(data.phone ? formatPhone(data.phone) : '')
           setStatus(data.status || 'inactive')
-          setRole(data.role === 'master' ? 'master' : 'user')
+          setRole((data.role as RoleType) || 'user')
           setCompanyId(data.companyId ?? null)
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
@@ -348,7 +349,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
             label="Perfil"
             value={role}
             onChange={(e) => {
-              setRole(e.target.value as 'master' | 'user')
+              setRole(e.target.value as RoleType)
               clearFieldError('role')
             }}
             margin="normal"
@@ -363,8 +364,13 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
             }
             error={!!fieldErrors.role}
           >
-            <MenuItem value="user">Usuário</MenuItem>
-            {showMasterOption && <MenuItem value="master">Master</MenuItem>}
+            {roleOptions
+              .filter((o) => o.value !== 'master' || showMasterOption)
+              .map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
           </TextField>
           {role !== 'master' && (
             <TextField

@@ -2,34 +2,41 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Collaborator } from './collaborator.entity';
-import { Company } from '../companies/company.entity';
 import {
   CreateCollaboratorInput,
   UpdateCollaboratorInput,
 } from './schemas/collaborator.schemas';
+import { Collaborator, CollaboratorProps } from './domain/collaborator.entity';
+import {
+  CollaboratorRepository,
+  CollaboratorQuery,
+  PaginatedCollaborators,
+  CurrentUser,
+  COLLABORATOR_REPOSITORY,
+} from './domain/collaborator.repository';
+import {
+  buildNome,
+  generateCodigo,
+  isMaster,
+  COLLABORATOR_DOCUMENT_FIELDS,
+  CollaboratorDocumentType,
+} from './domain/collaborator-rules';
 
 @Injectable()
 export class CollaboratorsService {
   constructor(
-    @InjectRepository(Collaborator)
-    private readonly collaboratorsRepository: Repository<Collaborator>,
-    @InjectRepository(Company)
-    private readonly companiesRepository: Repository<Company>,
+    @Inject(COLLABORATOR_REPOSITORY)
+    private readonly collaboratorsRepository: CollaboratorRepository,
   ) {}
 
-  private async ensureCompany(companyId: number) {
-    const company = await this.companiesRepository.findOne({ where: { id: companyId } });
-    if (!company) throw new BadRequestException('Empresa não encontrada');
+  private async ensureCompanyExists(companyId: number): Promise<void> {
+    const exists = await this.collaboratorsRepository.companyExists(companyId);
+    if (!exists) throw new BadRequestException('Empresa não encontrada');
   }
 
-  private assertVisible(
-    collaborator: Collaborator,
-    currentUser?: { role: string; companyId: number | null },
-  ) {
+  private assertVisible(collaborator: Collaborator, currentUser?: CurrentUser): void {
     if (currentUser && currentUser.role !== 'master') {
       if (collaborator.companyId !== currentUser.companyId) {
         throw new NotFoundException('Colaborador não encontrado');
@@ -37,11 +44,7 @@ export class CollaboratorsService {
     }
   }
 
-  async create(
-    dto: CreateCollaboratorInput,
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<Collaborator> {
-    const companyId = dto.companyId;
+  private assertCanCreate(currentUser: CurrentUser | undefined, companyId: number): void {
     if (currentUser && currentUser.role !== 'master') {
       if (currentUser.companyId == null || companyId !== currentUser.companyId) {
         throw new BadRequestException(
@@ -49,13 +52,27 @@ export class CollaboratorsService {
         );
       }
     }
-    await this.ensureCompany(companyId);
+  }
 
-    const isFreelancer = dto.isFreelancer ?? false;
-    const nome =
-      dto.nome || [dto.firstName, dto.lastName].filter(Boolean).join(' ') || undefined;
+  private async assertCanChangeCompany(
+    currentUser: CurrentUser | undefined,
+    companyId: number,
+  ): Promise<void> {
+    await this.ensureCompanyExists(companyId);
+    if (currentUser && currentUser.role !== 'master' && companyId !== currentUser.companyId) {
+      throw new BadRequestException(
+        'Usuário não-master não pode mover o colaborador para outra empresa.',
+      );
+    }
+  }
 
-    const collaborator = this.collaboratorsRepository.create({
+  private buildCreateProps(
+    dto: CreateCollaboratorInput,
+    companyId: number,
+    isFreelancer: boolean,
+  ): CollaboratorProps {
+    const nome = dto.nome || buildNome(dto.firstName, dto.lastName) || undefined;
+    return {
       ...dto,
       nome,
       status: dto.status ?? 'ativo',
@@ -65,100 +82,48 @@ export class CollaboratorsService {
       portfolio: dto.portfolio ?? (isFreelancer ? '[]' : undefined),
       experienceLevel: dto.experienceLevel ?? (isFreelancer ? 'junior' : undefined),
       availability: dto.availability ?? (isFreelancer ? 'available' : undefined),
+    };
+  }
+
+  private refreshNome(collaborator: Collaborator, dto: UpdateCollaboratorInput): void {
+    if (dto.firstName === undefined && dto.lastName === undefined) return;
+    collaborator.nome =
+      buildNome(dto.firstName ?? collaborator.firstName, dto.lastName ?? collaborator.lastName) ||
+      collaborator.nome;
+  }
+
+  private withCodigo(saved: Collaborator): Collaborator {
+    return new Collaborator({
+      ...saved,
+      codigo: generateCodigo(saved.isFreelancer, saved.id ?? 0),
     });
-    const saved = await this.collaboratorsRepository.save(collaborator);
+  }
+
+  async create(dto: CreateCollaboratorInput, currentUser?: CurrentUser): Promise<Collaborator> {
+    const companyId = dto.companyId;
+    this.assertCanCreate(currentUser, companyId);
+    await this.ensureCompanyExists(companyId);
+
+    const isFreelancer = dto.isFreelancer ?? false;
+    const collaborator = new Collaborator(this.buildCreateProps(dto, companyId, isFreelancer));
+
+    let saved = await this.collaboratorsRepository.save(collaborator);
     if (!saved.codigo) {
-      saved.codigo = saved.isFreelancer
-        ? `FR-${String(saved.id).padStart(4, '0')}`
-        : `COL-${String(saved.id).padStart(4, '0')}`;
-      return this.collaboratorsRepository.save(saved);
+      saved = await this.collaboratorsRepository.save(this.withCodigo(saved));
     }
     return saved;
   }
 
   async findAllPaged(
-    query: {
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-      search?: string;
-      isFreelancer?: boolean;
-    },
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<{ data: Collaborator[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'id',
-      sortOrder = 'ASC' as 'ASC' | 'DESC',
-      search,
-      isFreelancer,
-    } = query;
-
-    const qb = this.collaboratorsRepository
-      .createQueryBuilder('c')
-      .leftJoinAndSelect('c.company', 'company');
-
-    const isMaster = currentUser?.role === 'master';
-    if (!isMaster) {
-      qb.where('c.companyId = :companyId', { companyId: currentUser?.companyId ?? -1 });
-    }
-
-    if (isFreelancer !== undefined) {
-      if (isMaster) {
-        qb.where('c.isFreelancer = :isFreelancer', { isFreelancer });
-      } else {
-        qb.andWhere('c.isFreelancer = :isFreelancer', { isFreelancer });
-      }
-    }
-
-    if (search) {
-      const searchClause =
-        'c.nome LIKE :search OR c.firstName LIKE :search OR c.lastName LIKE :search OR c.cpf LIKE :search OR c.email LIKE :search OR c.telefone LIKE :search OR c.cargo LIKE :search';
-      const hasPriorWhere = !isMaster || isFreelancer !== undefined;
-      if (hasPriorWhere) {
-        qb.andWhere(`(${searchClause})`, { search: `%${search}%` });
-      } else {
-        qb.where(searchClause, { search: `%${search}%` });
-      }
-    }
-
-    const allowedSort = [
-      'id',
-      'nome',
-      'cpf',
-      'cargo',
-      'email',
-      'telefone',
-      'status',
-      'createdAt',
-      'firstName',
-      'lastName',
-      'hourlyRate',
-      'experienceLevel',
-      'availability',
-    ];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
-    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const [data, total] = await qb
-      .orderBy(`c.${safeSort}`, safeOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total };
+    query: CollaboratorQuery,
+    currentUser?: CurrentUser,
+  ): Promise<PaginatedCollaborators> {
+    const companyId = isMaster(currentUser) ? undefined : (currentUser?.companyId ?? -1);
+    return this.collaboratorsRepository.findAll({ ...query, companyId });
   }
 
-  async getByIdOrFail(
-    id: number,
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<Collaborator> {
-    const collaborator = await this.collaboratorsRepository.findOne({
-      where: { id },
-      relations: ['company'],
-    });
+  async getByIdOrFail(id: number, currentUser?: CurrentUser): Promise<Collaborator> {
+    const collaborator = await this.collaboratorsRepository.findById(id);
     if (!collaborator) throw new NotFoundException('Colaborador não encontrado');
     this.assertVisible(collaborator, currentUser);
     return collaborator;
@@ -167,31 +132,18 @@ export class CollaboratorsService {
   async update(
     id: number,
     dto: UpdateCollaboratorInput,
-    currentUser?: { role: string; companyId: number | null },
+    currentUser?: CurrentUser,
   ): Promise<Collaborator> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
     Object.assign(collaborator, dto);
-    if (dto.firstName !== undefined || dto.lastName !== undefined) {
-      collaborator.nome =
-        [dto.firstName ?? collaborator.firstName, dto.lastName ?? collaborator.lastName]
-          .filter(Boolean)
-          .join(' ') || collaborator.nome;
-    }
+    this.refreshNome(collaborator, dto);
     if (dto.companyId !== undefined) {
-      await this.ensureCompany(dto.companyId);
-      if (currentUser && currentUser.role !== 'master' && dto.companyId !== currentUser.companyId) {
-        throw new BadRequestException(
-          'Usuário não-master não pode mover o colaborador para outra empresa.',
-        );
-      }
+      await this.assertCanChangeCompany(currentUser, dto.companyId);
     }
     return this.collaboratorsRepository.save(collaborator);
   }
 
-  async getFreelancerOrFail(
-    id: number,
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<Collaborator> {
+  async getFreelancerOrFail(id: number, currentUser?: CurrentUser): Promise<Collaborator> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
     if (!collaborator.isFreelancer) {
       throw new NotFoundException('Freelancer não encontrado');
@@ -199,20 +151,13 @@ export class CollaboratorsService {
     return collaborator;
   }
 
-  async delete(
-    id: number,
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<void> {
+  async delete(id: number, currentUser?: CurrentUser): Promise<void> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
-    const result = await this.collaboratorsRepository.delete(collaborator.id);
-    if (result.affected === 0) throw new NotFoundException('Colaborador não encontrado');
+    const deleted = await this.collaboratorsRepository.delete(collaborator.id ?? 0);
+    if (!deleted) throw new NotFoundException('Colaborador não encontrado');
   }
 
-  async updatePhoto(
-    id: number,
-    url: string,
-    currentUser?: { role: string; companyId: number | null },
-  ): Promise<Collaborator> {
+  async updatePhoto(id: number, url: string, currentUser?: CurrentUser): Promise<Collaborator> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
     collaborator.foto = url;
     return this.collaboratorsRepository.save(collaborator);
@@ -222,30 +167,12 @@ export class CollaboratorsService {
     id: number,
     tipo: string,
     url: string,
-    currentUser?: { role: string; companyId: number | null },
+    currentUser?: CurrentUser,
   ): Promise<Collaborator> {
     const collaborator = await this.getByIdOrFail(id, currentUser);
-    if (tipo === 'rg') {
-      collaborator.rgArquivo = url;
-    } else if (tipo === 'carteira') {
-      collaborator.carteiraArquivo = url;
-    } else if (tipo === 'habilitacao') {
-      collaborator.habilitacaoArquivo = url;
-    } else if (tipo === 'nr10') {
-      collaborator.nr10Arquivo = url;
-    } else if (tipo === 'nr35') {
-      collaborator.nr35Arquivo = url;
-    } else if (tipo === 'aso') {
-      collaborator.asoArquivo = url;
-    } else if (tipo === 'epi') {
-      collaborator.epiArquivo = url;
-    } else if (tipo === 'ordemServico') {
-      collaborator.ordemServicoArquivo = url;
-    } else if (tipo === 'contrato') {
-      collaborator.contratoArquivo = url;
-    } else {
-      throw new NotFoundException('Tipo de documento inválido');
-    }
+    const field = COLLABORATOR_DOCUMENT_FIELDS[tipo as CollaboratorDocumentType];
+    if (!field) throw new NotFoundException('Tipo de documento inválido');
+    collaborator[field] = url;
     return this.collaboratorsRepository.save(collaborator);
   }
 }

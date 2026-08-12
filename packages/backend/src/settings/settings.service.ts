@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemSetting } from './settings.entity';
 import { UpdateSettingsInput } from './settings.schemas';
+import { DEFAULT_ROLE_MODULES, roleModulesKey } from '../common/guards/role-modules';
 
 export type SettingsRecord = Record<string, string>;
 
@@ -20,6 +21,23 @@ export class SettingsService {
       record[row.key] = row.value ?? '';
     }
     return record;
+  }
+
+  async getRoleModules(role: string): Promise<string[]> {
+    const row = await this.settingsRepository.findOne({
+      where: { key: roleModulesKey(role) },
+    });
+    if (row?.value) {
+      try {
+        const parsed = JSON.parse(row.value);
+        if (Array.isArray(parsed) && parsed.every((p) => typeof p === 'string')) {
+          return parsed;
+        }
+      } catch {
+        // valor inválido -> usa o padrão
+      }
+    }
+    return [...(DEFAULT_ROLE_MODULES[role] ?? [])];
   }
 
   async upsert(patch: UpdateSettingsInput): Promise<SettingsRecord> {

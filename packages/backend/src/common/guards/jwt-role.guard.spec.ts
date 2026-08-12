@@ -1,8 +1,14 @@
 import { ForbiddenException } from '@nestjs/common';
 import { JwtRoleGuard } from './jwt-role.guard';
+import { SettingsService } from '../../settings/settings.service';
+import { DEFAULT_USER_ALLOWED_PREFIXES } from './role-modules';
 
 describe('JwtRoleGuard', () => {
   let guard: JwtRoleGuard;
+
+  const settingsService = {
+    getRoleModules: jest.fn().mockResolvedValue(DEFAULT_USER_ALLOWED_PREFIXES),
+  };
 
   const makeContext = (path: string) =>
     ({
@@ -12,7 +18,9 @@ describe('JwtRoleGuard', () => {
     }) as any;
 
   beforeEach(() => {
-    guard = new JwtRoleGuard();
+    jest.clearAllMocks();
+    settingsService.getRoleModules.mockResolvedValue(DEFAULT_USER_ALLOWED_PREFIXES);
+    guard = new JwtRoleGuard(settingsService as unknown as SettingsService);
   });
 
   describe('canActivate', () => {
@@ -24,22 +32,22 @@ describe('JwtRoleGuard', () => {
   });
 
   describe('handleRequest', () => {
-    it('should allow master on any path', () => {
+    it('should allow master on any path', async () => {
       const ctx = makeContext('/users');
-      expect(guard.handleRequest(null, { id: 1, role: 'master' }, null, ctx)).toEqual({
+      await expect(
+        guard.handleRequest(null, { id: 1, role: 'master' }, null, ctx),
+      ).resolves.toEqual({
         id: 1,
         role: 'master',
       });
     });
 
-    it('should allow user on allowed module paths', () => {
+    it('should allow user on allowed module paths', async () => {
       const paths = [
         '/tasks',
         '/tasks/5',
         '/service-orders',
         '/service-orders/2',
-        '/collaborators',
-        '/collaborators/3',
         '/stations',
         '/stations/4',
         '/radio-links',
@@ -48,24 +56,33 @@ describe('JwtRoleGuard', () => {
         '/projects/2',
         '/clients',
         '/clients/7',
-        '/users',
         '/attachments',
         '/comments',
-        '/lpus',
-        '/teams',
       ];
       for (const path of paths) {
         const ctx = makeContext(path);
-        expect(() => guard.handleRequest(null, { id: 1, role: 'user' }, null, ctx)).not.toThrow();
+        await expect(
+          guard.handleRequest(null, { id: 1, role: 'user' }, null, ctx),
+        ).resolves.toEqual({ id: 1, role: 'user' });
       }
     });
 
-    it('should allow user on own profile path', () => {
+    it('should allow user on own profile path', async () => {
       const ctx = makeContext('/users/5');
-      expect(() => guard.handleRequest(null, { id: 5, role: 'user' }, null, ctx)).not.toThrow();
+      await expect(
+        guard.handleRequest(null, { id: 5, role: 'user' }, null, ctx),
+      ).resolves.toEqual({ id: 5, role: 'user' });
     });
 
-    it('should deny user on restricted paths', () => {
+    it('should allow user on paths configured via settings', async () => {
+      settingsService.getRoleModules.mockResolvedValue(['/finance']);
+      const ctx = makeContext('/finance/entries');
+      await expect(
+        guard.handleRequest(null, { id: 1, role: 'admin' }, null, ctx),
+      ).resolves.toEqual({ id: 1, role: 'admin' });
+    });
+
+    it('should deny user on restricted paths', async () => {
       const paths = [
         '/finance',
         '/finance/entries',
@@ -78,12 +95,18 @@ describe('JwtRoleGuard', () => {
         '/proposals',
         '/companies',
         '/companies/1/freelancers',
+        '/collaborators',
+        '/collaborators/3',
+        '/users',
+        '/lpus',
+        '/teams',
+        '/pdca',
       ];
       for (const path of paths) {
         const ctx = makeContext(path);
-        expect(() => guard.handleRequest(null, { id: 1, role: 'user' }, null, ctx)).toThrow(
-          ForbiddenException,
-        );
+        await expect(
+          guard.handleRequest(null, { id: 1, role: 'user' }, null, ctx),
+        ).rejects.toThrow(ForbiddenException);
       }
     });
   });

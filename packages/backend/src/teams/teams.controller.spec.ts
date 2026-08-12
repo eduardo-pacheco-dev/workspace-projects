@@ -6,7 +6,7 @@ import request from 'supertest';
 import { Repository } from 'typeorm';
 import { Team } from './team.entity';
 import { TeamMember } from './team-member.entity';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 import { Company } from '../companies/company.entity';
 import { Lpu } from '../lpu/lpu.entity';
 import { TeamsController } from './teams.controller';
@@ -41,10 +41,10 @@ describe('TeamsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Team, TeamMember, Collaborator, Company, Lpu],
+          entities: [Team, TeamMember, CollaboratorEntity, Company, Lpu],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Team, TeamMember, Collaborator, Company, Lpu]),
+        TypeOrmModule.forFeature([Team, TeamMember, CollaboratorEntity, Company, Lpu]),
       ],
       controllers: [TeamsController],
       providers: [TeamsService],
@@ -59,7 +59,7 @@ describe('TeamsController (integration)', () => {
     const companyRepo = moduleRef.get<Repository<Company>>(getRepositoryToken(Company));
     const company = await companyRepo.save({ nome: 'EA Projetos Telecom Ltda' });
 
-    const collaboratorRepo = moduleRef.get<Repository<Collaborator>>(getRepositoryToken(Collaborator));
+    const collaboratorRepo = moduleRef.get<Repository<CollaboratorEntity>>(getRepositoryToken(CollaboratorEntity));
     const saved = await collaboratorRepo.save([
       { nome: 'Carlos Silva', companyId: company.id, isFreelancer: true, status: 'ativo' },
       { nome: 'Ana Souza', companyId: company.id, isFreelancer: false, status: 'ativo' },

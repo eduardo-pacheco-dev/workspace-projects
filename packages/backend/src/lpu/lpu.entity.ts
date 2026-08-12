@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 
 @Entity()
 export class Lpu {
@@ -17,9 +17,9 @@ export class Lpu {
   @Column({ type: 'integer' })
   freelancerId: number;
 
-  @ManyToOne(() => Collaborator, (collaborator) => collaborator.lpus, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CollaboratorEntity, (collaborator) => collaborator.lpus, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'freelancerId' })
-  freelancer: Collaborator;
+  freelancer: CollaboratorEntity;
 
   @Column({ type: 'text' })
   nome: string;

@@ -49,8 +49,8 @@ interface StationOption {
   id: number
   siteId: string
   endId: string
-  endereco: string | null
-  operadora: string | null
+  address: string | null
+  mobileCarrier: string | null
 }
 
 interface RadioLinkOption {
@@ -145,8 +145,8 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
     setSelectedStation(station)
     setSiteId(station?.siteId ?? '')
     setEndId(station?.endId ?? '')
-    setOperadora(station?.operadora ?? '')
-    setEndereco(station?.endereco ?? '')
+    setOperadora(station?.mobileCarrier ?? '')
+    setEndereco(station?.address ?? '')
   }
 
   const handleSelectRadioLink = (link: RadioLinkOption | null) => {
@@ -300,7 +300,7 @@ export default function ServiceOrderModal({ open, editId, onClose, onSaved }: Se
             <Autocomplete
               fullWidth
               options={stations}
-              getOptionLabel={(s) => `${s.siteId} - ${s.endereco || s.endId}`}
+              getOptionLabel={(s) => `${s.siteId} - ${s.address || s.endId}`}
               value={selectedStation}
               onChange={(_, v) => {
                 handleSelectStation(v)

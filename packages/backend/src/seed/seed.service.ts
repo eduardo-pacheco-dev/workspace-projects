@@ -1,5 +1,6 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { BCRYPT_ROUNDS } from '../common/config/security';
 import { UsersService } from '../users/users.service';
 import { JobsService } from '../jobs/jobs.service';
 import { LpuService } from '../lpu/lpu.service';
@@ -76,16 +77,17 @@ export class SeedService implements OnApplicationBootstrap {
     const admin = await this.usersService.findByEmail('admin@admin.com');
     if (admin) return;
 
-    const hashedPassword = await bcrypt.hash('123456', 10);
+    const hashedPassword = await bcrypt.hash('Admin@123', BCRYPT_ROUNDS);
     await this.usersService.create({
       name: 'Admin',
       email: 'admin@admin.com',
       password: hashedPassword,
       role: 'master',
       companyId: null,
+      status: 'active',
     });
 
-    console.log('Seed: admin user created (admin@admin.com / 123456)');
+    console.log('Seed: admin user created (admin@admin.com / Admin@123)');
   }
 
   private async seedFreelancers() {
@@ -391,7 +393,7 @@ export class SeedService implements OnApplicationBootstrap {
     if (freelancers.length === 0) return;
 
     for (const freelancer of freelancers) {
-      const existing = await this.lpuService.findAllByFreelancer(freelancer.id);
+      const existing = await this.lpuService.findAllByFreelancer(freelancer.id!);
       if (existing.length > 0) return;
     }
 
@@ -444,7 +446,7 @@ export class SeedService implements OnApplicationBootstrap {
       const freelancer = freelancers[lpu.freelancerIndex];
       if (!freelancer) continue;
       await this.lpuService.create({
-        freelancerId: freelancer.id,
+        freelancerId: freelancer.id!,
         nome: lpu.nome,
         descricao: lpu.descricao,
         valor: lpu.valor,
@@ -930,7 +932,7 @@ export class SeedService implements OnApplicationBootstrap {
       const linkedCompanyId = companyId(u.company);
       if (linkedCompanyId == null) continue;
 
-      const hashedPassword = await bcrypt.hash('123456', 10);
+      const hashedPassword = await bcrypt.hash('Senha@123', BCRYPT_ROUNDS);
       await this.usersService.create({
         name: u.name,
         email: u.email,
@@ -942,7 +944,7 @@ export class SeedService implements OnApplicationBootstrap {
       created++;
     }
 
-    console.log(`Seed: ${created} users created (password padrão: 123456)`);
+    console.log(`Seed: ${created} users created (password padrão: Senha@123)`);
   }
 
   private async seedCompanyMembers() {
@@ -971,7 +973,7 @@ export class SeedService implements OnApplicationBootstrap {
     const { data: freelancers } = await this.collaboratorsService.findAllPaged({ limit: 100, isFreelancer: true });
     const toAssociate = freelancers.slice(0, 3);
     for (const freelancer of toAssociate) {
-      await this.companyFreelancerService.associate(company.id, freelancer.id);
+      await this.companyFreelancerService.associate(company.id, freelancer.id!);
     }
 
     console.log(`Seed: ${toAssociate.length} freelancers linked to company "${company.nome}"`);
@@ -1367,8 +1369,8 @@ export class SeedService implements OnApplicationBootstrap {
         descricao: so.descricao,
         siteId: station?.siteId,
         endId: station?.endId,
-        operadora: (so.operadora ?? station?.operadora ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
-        endereco: station?.endereco,
+        operadora: (so.operadora ?? station?.mobileCarrier ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
+        endereco: station?.address ?? undefined,
         dataInicio: so.dataInicio,
         dataFim: so.dataFim,
         status: so.status,

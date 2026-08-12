@@ -4,14 +4,16 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
-import { User } from './user.entity';
+import { UserEntity } from './infrastructure/user.entity';
+import { TypeOrmUserRepository } from './infrastructure/typeorm-user.repository';
+import { USER_REPOSITORY } from './domain/user.repository';
 import { Company } from '../companies/company.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 describe('UsersController (integration)', () => {
   let app: INestApplication;
-  let userRepo: Repository<User>;
+  let userRepo: Repository<UserEntity>;
 
   let currentUser: {
     id: number;
@@ -58,20 +60,23 @@ describe('UsersController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [User, Company],
+          entities: [UserEntity, Company],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([User, Company]),
+        TypeOrmModule.forFeature([UserEntity, Company]),
       ],
       controllers: [UsersController],
-      providers: [UsersService],
+      providers: [
+        UsersService,
+        { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
+      ],
     })
       .overrideGuard(AuthGuard('jwt'))
       .useValue(mockAuthGuard)
       .compile();
 
     app = moduleRef.createNestApplication();
-    userRepo = moduleRef.get(getRepositoryToken(User));
+    userRepo = moduleRef.get(getRepositoryToken(UserEntity));
     const companyRepo = moduleRef.get<Repository<Company>>(getRepositoryToken(Company));
     await app.init();
 
@@ -102,7 +107,7 @@ describe('UsersController (integration)', () => {
         name: 'João',
         lastName: 'Silva',
         email: 'joao@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(201);
@@ -123,7 +128,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Maria',
         email: 'maria@master.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'master',
       }).expect(201);
 
@@ -137,7 +142,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Pedro',
         email: 'pedro@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(201);
@@ -152,7 +157,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Carlos',
         email: 'carlos@outra.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 999,
       }).expect(400);
@@ -166,7 +171,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Hacker',
         email: 'hacker@outra.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'master',
       }).expect(400);
 
@@ -179,7 +184,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Sem Empresa',
         email: 'sem@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
       }).expect(400);
 
@@ -192,7 +197,7 @@ describe('UsersController (integration)', () => {
       const res = await postUser({
         name: 'Duplicado',
         email: 'joao@empresa.com',
-        password: '123456',
+        password: 'Senha123',
         role: 'user',
         companyId: 1,
       }).expect(409);

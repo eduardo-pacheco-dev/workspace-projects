@@ -8,7 +8,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Team } from './team.entity';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 
 @Entity('team_member')
 @Unique(['teamId', 'collaboratorId'])
@@ -26,9 +26,9 @@ export class TeamMember {
   @Column({ type: 'integer' })
   collaboratorId: number;
 
-  @ManyToOne(() => Collaborator, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CollaboratorEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'collaboratorId' })
-  collaborator: Collaborator;
+  collaborator: CollaboratorEntity;
 
   @CreateDateColumn()
   createdAt: Date;

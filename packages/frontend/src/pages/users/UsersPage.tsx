@@ -26,6 +26,7 @@ import {
 } from '@mui/material'
 import { Edit, Delete, PersonAdd } from '@mui/icons-material'
 import api from '../../services/api'
+import { roleLabels } from '../settings/roleModules'
 import UserModal from './UserModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -192,7 +193,7 @@ export default function UsersPage() {
                   <Chip
                     size="small"
                     variant="outlined"
-                    label={u.role === 'master' ? 'Master' : 'Usuário'}
+                    label={u.role ? (roleLabels[u.role] || u.role) : '-'}
                     color={u.role === 'master' ? 'primary' : 'default'}
                   />
                 </TableCell>

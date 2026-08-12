@@ -4,7 +4,9 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { Station } from './station.entity';
+import { StationEntity } from './infrastructure/station.entity';
+import { TypeOrmStationRepository } from './infrastructure/typeorm-station.repository';
+import { STATION_REPOSITORY } from './domain/station.repository';
 import { StationsController } from './stations.controller';
 import { StationsService } from './stations.service';
 
@@ -33,7 +35,7 @@ describe('StationsController (integration)', () => {
     },
   };
 
-  let stationRepo: Repository<Station>;
+  let stationRepo: Repository<StationEntity>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -42,13 +44,16 @@ describe('StationsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Station],
+          entities: [StationEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Station]),
+        TypeOrmModule.forFeature([StationEntity]),
       ],
       controllers: [StationsController],
-      providers: [StationsService],
+      providers: [
+        StationsService,
+        { provide: STATION_REPOSITORY, useClass: TypeOrmStationRepository },
+      ],
     })
       .overrideGuard(AuthGuard('jwt'))
       .useValue(mockAuthGuard)
@@ -58,7 +63,7 @@ describe('StationsController (integration)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
 
-    stationRepo = moduleRef.get<Repository<Station>>(getRepositoryToken(Station));
+    stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
   });
 
   afterAll(async () => {
@@ -73,13 +78,13 @@ describe('StationsController (integration)', () => {
     it('should create a station with ativo default', async () => {
       const res = await request(app.getHttpServer())
         .post('/stations')
-        .send({ siteId: 'SITE-001', endId: 'END-001', operadora: 'TIM' })
+        .send({ siteId: 'SITE-001', endId: 'END-001', mobileCarrier: 'TIM' })
         .expect(201);
 
       expect(res.body).toMatchObject({
         siteId: 'SITE-001',
         endId: 'END-001',
-        operadora: 'TIM',
+        mobileCarrier: 'TIM',
         status: 'ativo',
       });
     });
@@ -105,17 +110,17 @@ describe('StationsController (integration)', () => {
         .expect(400);
     });
 
-    it('should return 400 for an invalid operadora', async () => {
+    it('should return 400 for an invalid mobileCarrier', async () => {
       await request(app.getHttpServer())
         .post('/stations')
-        .send({ siteId: 'SITE-004', endId: 'END-004', operadora: 'OI' })
+        .send({ siteId: 'SITE-004', endId: 'END-004', mobileCarrier: 'OI' })
         .expect(400);
     });
 
-    it('should clear endId when operadora is not TIM', async () => {
+    it('should clear endId when mobileCarrier is not TIM', async () => {
       const res = await request(app.getHttpServer())
         .post('/stations')
-        .send({ siteId: 'SITE-005', endId: 'END-005', operadora: 'CLARO' })
+        .send({ siteId: 'SITE-005', endId: 'END-005', mobileCarrier: 'CLARO' })
         .expect(201);
 
       expect(res.body.endId).toBe('');
@@ -124,10 +129,58 @@ describe('StationsController (integration)', () => {
     it('should create a non-TIM station without endId', async () => {
       const res = await request(app.getHttpServer())
         .post('/stations')
-        .send({ siteId: 'SITE-006', operadora: 'VIVO' })
+        .send({ siteId: 'SITE-006', mobileCarrier: 'VIVO' })
         .expect(201);
 
       expect(res.body.endId).toBe('');
+    });
+
+    it('should create a station with technical fields', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/stations')
+        .send({
+          siteId: 'SITE-TECH',
+          endId: 'END-TECH',
+          elementType: 'Macro',
+          technology: '4G',
+          areaHolder: 'Detentora A',
+          infraContractType: 'Locação',
+          infraHolder: 'Infra B',
+          infraType: 'Torre',
+          evType: 'EV-01',
+          evSupplier: 'Fornecedor X',
+          regional: 'Norte',
+          towerType: 'Torre treliçada',
+          nominalAev: 120,
+          groundArea: 45.5,
+          structureHeight: 60,
+          stationId: 'ST-999',
+        })
+        .expect(201);
+
+      expect(res.body).toMatchObject({
+        elementType: 'Macro',
+        technology: '4G',
+        areaHolder: 'Detentora A',
+        infraContractType: 'Locação',
+        infraHolder: 'Infra B',
+        infraType: 'Torre',
+        evType: 'EV-01',
+        evSupplier: 'Fornecedor X',
+        regional: 'Norte',
+        towerType: 'Torre treliçada',
+        nominalAev: 120,
+        groundArea: 45.5,
+        structureHeight: 60,
+        stationId: 'ST-999',
+      });
+    });
+
+    it('should return 400 for a non-numeric nominalAev', async () => {
+      await request(app.getHttpServer())
+        .post('/stations')
+        .send({ siteId: 'SITE-TECH2', endId: 'END-TECH2', nominalAev: 'abc' })
+        .expect(400);
     });
   });
 
@@ -137,8 +190,8 @@ describe('StationsController (integration)', () => {
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-100', endId: 'END-100', operadora: 'TIM', status: 'ativo' },
-            { siteId: 'SITE-101', endId: 'END-101', operadora: 'CLARO' },
+            { siteId: 'SITE-100', endId: 'END-100', mobileCarrier: 'TIM', status: 'ativo' },
+            { siteId: 'SITE-101', endId: 'END-101', mobileCarrier: 'CLARO' },
           ],
         })
         .expect(201);
@@ -150,13 +203,13 @@ describe('StationsController (integration)', () => {
     });
 
     it('should update stations that already exist', async () => {
-      await stationRepo.save({ siteId: 'SITE-200', endId: 'END-200', operadora: 'TIM', status: 'ativo' });
+      await stationRepo.save({ siteId: 'SITE-200', endId: 'END-200', mobileCarrier: 'TIM', status: 'ativo' });
 
       const res = await request(app.getHttpServer())
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-200', endId: 'END-200', operadora: 'TIM', status: 'inativo' },
+            { siteId: 'SITE-200', endId: 'END-200', mobileCarrier: 'TIM', status: 'inativo' },
           ],
         })
         .expect(201);
@@ -168,13 +221,13 @@ describe('StationsController (integration)', () => {
     });
 
     it('should update existing non-TIM stations by siteId', async () => {
-      await stationRepo.save({ siteId: 'SITE-210', endId: '', operadora: 'CLARO', status: 'ativo' });
+      await stationRepo.save({ siteId: 'SITE-210', endId: '', mobileCarrier: 'CLARO', status: 'ativo' });
 
       const res = await request(app.getHttpServer())
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-210', operadora: 'CLARO', status: 'inativo' },
+            { siteId: 'SITE-210', mobileCarrier: 'CLARO', status: 'inativo' },
           ],
         })
         .expect(201);
@@ -187,14 +240,14 @@ describe('StationsController (integration)', () => {
     });
 
     it('should mix inserts and updates', async () => {
-      await stationRepo.save({ siteId: 'SITE-300', endId: 'END-300', operadora: 'TIM' });
+      await stationRepo.save({ siteId: 'SITE-300', endId: 'END-300', mobileCarrier: 'TIM' });
 
       const res = await request(app.getHttpServer())
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-300', endId: 'END-300', operadora: 'TIM' },
-            { siteId: 'SITE-301', endId: 'END-301', operadora: 'TIM' },
+            { siteId: 'SITE-300', endId: 'END-300', mobileCarrier: 'TIM' },
+            { siteId: 'SITE-301', endId: 'END-301', mobileCarrier: 'TIM' },
           ],
         })
         .expect(201);
@@ -243,8 +296,8 @@ describe('StationsController (integration)', () => {
         .post('/stations/import')
         .send({
           stations: [
-            { siteId: 'SITE-600', endId: 'END-600', operadora: 'CLARO' },
-            { siteId: 'SITE-601', operadora: 'VIVO' },
+            { siteId: 'SITE-600', endId: 'END-600', mobileCarrier: 'CLARO' },
+            { siteId: 'SITE-601', mobileCarrier: 'VIVO' },
           ],
         })
         .expect(201);
@@ -261,8 +314,8 @@ describe('StationsController (integration)', () => {
   describe('GET /stations', () => {
     beforeEach(async () => {
       await stationRepo.save([
-        { siteId: 'SITE-A1', endId: 'END-A1', operadora: 'TIM', status: 'ativo' },
-        { siteId: 'SITE-B2', endId: 'END-B2', operadora: 'CLARO', status: 'inativo' },
+        { siteId: 'SITE-A1', endId: 'END-A1', mobileCarrier: 'TIM', status: 'ativo' },
+        { siteId: 'SITE-B2', endId: 'END-B2', mobileCarrier: 'CLARO', status: 'inativo' },
       ]);
     });
 
@@ -281,10 +334,10 @@ describe('StationsController (integration)', () => {
       expect(res.body.data[0].siteId).toBe('SITE-B2');
     });
 
-    it('should filter by operadora', async () => {
+    it('should filter by mobileCarrier', async () => {
       const res = await request(app.getHttpServer())
         .get('/stations')
-        .query({ operadora: 'TIM' })
+        .query({ mobileCarrier: 'TIM' })
         .expect(200);
       expect(res.body.total).toBe(1);
       expect(res.body.data[0].siteId).toBe('SITE-A1');
@@ -344,10 +397,10 @@ describe('StationsController (integration)', () => {
       const created = await stationRepo.save({ siteId: 'SITE-Y', endId: 'END-Y' });
       const res = await request(app.getHttpServer())
         .patch(`/stations/${created.id}`)
-        .send({ endereco: 'Av. Nova, 10', status: 'inativo' })
+        .send({ address: 'Av. Nova, 10', status: 'inativo' })
         .expect(200);
 
-      expect(res.body.endereco).toBe('Av. Nova, 10');
+      expect(res.body.address).toBe('Av. Nova, 10');
       expect(res.body.status).toBe('inativo');
     });
 
@@ -358,7 +411,7 @@ describe('StationsController (integration)', () => {
     });
 
     it('should return 404 when station does not exist', async () => {
-      await request(app.getHttpServer()).patch('/stations/999').send({ endereco: 'X' }).expect(404);
+      await request(app.getHttpServer()).patch('/stations/999').send({ address: 'X' }).expect(404);
     });
   });
 

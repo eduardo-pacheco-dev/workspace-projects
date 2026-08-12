@@ -26,11 +26,28 @@ import {
   UpdateCollaboratorInput,
 } from './schemas/collaborator.schemas';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { COLLABORATOR_DOCUMENT_TYPES } from './domain/collaborator-rules';
 
 @Controller('collaborators')
 @UseGuards(AuthGuard('jwt'))
 export class CollaboratorsController {
   constructor(private readonly collaboratorsService: CollaboratorsService) {}
+
+  private saveUpload(
+    id: number,
+    prefix: string,
+    file: Express.Multer.File,
+    defaultExt = '',
+  ): string {
+    const dir = path.resolve('uploads', `freelancer-${id}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const ext = path.extname(file.originalname) || defaultExt;
+    const filename = `${prefix}-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+    return `/uploads/freelancer-${id}/${filename}`;
+  }
 
   @Post()
   create(
@@ -47,14 +64,7 @@ export class CollaboratorsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
   ) {
-    const dir = path.resolve('uploads', `freelancer-${id}`);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    const ext = path.extname(file.originalname) || '.jpg';
-    const filename = `photo-${Date.now()}${ext}`;
-    fs.writeFileSync(path.join(dir, filename), file.buffer);
-    const url = `/uploads/freelancer-${id}/${filename}`;
+    const url = this.saveUpload(id, 'photo', file, '.jpg');
     return this.collaboratorsService.updatePhoto(id, url, req.user);
   }
 
@@ -66,19 +76,16 @@ export class CollaboratorsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
   ) {
-    const allowed = ['rg', 'carteira', 'habilitacao', 'nr10', 'nr35', 'aso', 'epi', 'ordemServico', 'contrato'];
-    if (!allowed.includes(tipo)) {
+    if (!COLLABORATOR_DOCUMENT_TYPES.includes(tipo as (typeof COLLABORATOR_DOCUMENT_TYPES)[number])) {
       return { message: 'Tipo de documento inválido' };
     }
-    const dir = path.resolve('uploads', `freelancer-${id}`);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    const ext = path.extname(file.originalname) || '';
-    const filename = `${tipo}-${Date.now()}${ext}`;
-    fs.writeFileSync(path.join(dir, filename), file.buffer);
-    const url = `/uploads/freelancer-${id}/${filename}`;
+    const url = this.saveUpload(id, tipo, file);
     return this.collaboratorsService.updateDocument(id, tipo, url, req.user);
+  }
+
+  private parseBooleanQuery(value?: string): boolean | undefined {
+    if (value === undefined) return undefined;
+    return value === 'true' || value === '1';
   }
 
   @Get()
@@ -91,10 +98,8 @@ export class CollaboratorsController {
     @Query('isFreelancer') isFreelancer?: string,
     @Request() req?: any,
   ) {
-    const parsedFreelancer =
-      isFreelancer === undefined ? undefined : isFreelancer === 'true' || isFreelancer === '1';
     return this.collaboratorsService.findAllPaged(
-      { page, limit, sortBy, sortOrder, search, isFreelancer: parsedFreelancer },
+      { page, limit, sortBy, sortOrder, search, isFreelancer: this.parseBooleanQuery(isFreelancer) },
       req?.user,
     );
   }

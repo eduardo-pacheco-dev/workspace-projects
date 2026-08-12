@@ -31,7 +31,7 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  operadora: string | null
+  mobileCarrier: string | null
 }
 
 export default function RadioLinkModal({ open, editId, onClose, onSaved }: RadioLinkModalProps) {
@@ -123,7 +123,7 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
   }
 
   const stationLabel = (s: Station) =>
-    `${s.siteId} · ${s.endId}${s.operadora ? ` (${s.operadora})` : ''}`
+    `${s.siteId} · ${s.endId}${s.mobileCarrier ? ` (${s.mobileCarrier})` : ''}`
 
   const renderEnd = (label: string, end: 'A' | 'B', value: Station | null, setValue: (s: Station | null) => void) => (
     <Grid item xs={12}>

@@ -1,171 +1,82 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Station } from './station.entity';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
-import { ImportStationItem } from './dto/import-stations.dto';
+import { Station } from './domain/station.entity';
+import {
+  StationRepository,
+  StationQuery,
+  PaginatedStations,
+  ImportResult,
+  STATION_REPOSITORY,
+} from './domain/station.repository';
+import { buildStationKey, parseImportItem, StationImportItem } from './domain/station-rules';
 
-export interface StationQuery {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  search?: string;
-  status?: string;
-  operadora?: string;
-}
-
-export interface ImportResult {
-  imported: number;
-  updated: number;
-  skipped: number;
-  errors: string[];
-}
+export type { StationQuery, ImportResult } from './domain/station.repository';
 
 @Injectable()
 export class StationsService {
   constructor(
-    @InjectRepository(Station)
-    private readonly stationsRepository: Repository<Station>,
+    @Inject(STATION_REPOSITORY)
+    private readonly stationsRepository: StationRepository,
   ) {}
 
   async create(dto: CreateStationDto): Promise<Station> {
-    this.applyEndIdRule(dto);
-    dto.endId = dto.endId ?? '';
-    const station = this.stationsRepository.create(dto);
-    return this.stationsRepository.save(station);
+    const station = Station.fromProps({ ...dto });
+    return this.stationsRepository.create(station);
   }
 
-  async importStations(items: ImportStationItem[]): Promise<ImportResult> {
+  async importStations(items: StationImportItem[]): Promise<ImportResult> {
     const result: ImportResult = { imported: 0, updated: 0, skipped: 0, errors: [] };
 
-    const parsed: { data: Partial<Station>; row: number }[] = [];
+    const parsed: { station: Station }[] = [];
     items.forEach((item, index) => {
       const row = index + 1;
-      const siteId = typeof item.siteId === 'string' ? item.siteId.trim() : '';
-      const operadora =
-        typeof item.operadora === 'string' && item.operadora.trim()
-          ? item.operadora.trim()
-          : undefined;
-      const endId = typeof item.endId === 'string' ? item.endId.trim() : '';
-      const needsEndId = !operadora || operadora === 'TIM';
-
-      if (!siteId || (needsEndId && !endId)) {
+      const { station, error } = parseImportItem(item, row);
+      if (station) {
+        parsed.push({ station });
+      } else {
         result.skipped++;
-        result.errors.push(
-          needsEndId
-            ? `Linha ${row}: Site ID e End ID são obrigatórios.`
-            : `Linha ${row}: Site ID é obrigatório.`,
-        );
-        return;
+        result.errors.push(error ?? `Linha ${row}: Dados inválidos.`);
       }
-
-      const status = item.status === 'inativo' ? 'inativo' : 'ativo';
-      const endereco =
-        typeof item.endereco === 'string' && item.endereco.trim()
-          ? item.endereco.trim()
-          : undefined;
-      const observacoes =
-        typeof item.observacoes === 'string' && item.observacoes.trim()
-          ? item.observacoes.trim()
-          : undefined;
-
-      const parseCoord = (value: unknown): number | undefined => {
-        if (value === undefined || value === null || value === '') return undefined;
-        const num = Number(value);
-        return Number.isFinite(num) ? num : undefined;
-      };
-
-      parsed.push({
-        row,
-        data: {
-          siteId,
-          endId: needsEndId ? endId : '',
-          endereco,
-          latitude: parseCoord(item.latitude),
-          longitude: parseCoord(item.longitude),
-          operadora,
-          observacoes,
-          status,
-        },
-      });
     });
 
     if (parsed.length === 0) return result;
 
-    const existing = await this.stationsRepository.find({ select: ['id', 'siteId', 'endId'] });
-    const existingByKey = new Map(existing.map((s) => [`${s.siteId}::${s.endId}`, s]));
+    const existing = await this.stationsRepository.findExistingRefs();
+    const existingByKey = new Map(existing.map((s) => [buildStationKey(s.siteId, s.endId), s]));
 
-    const pendingInsert = new Map<string, Partial<Station>>();
-    const toUpdate: { id: number; data: Partial<Station> }[] = [];
+    const pendingInsert = new Map<string, Station>();
+    const toUpdate: { id: number; station: Station }[] = [];
 
-    for (const { data } of parsed) {
-      const key = `${data.siteId}::${data.endId}`;
+    for (const { station } of parsed) {
+      const key = buildStationKey(station.siteId, station.endId);
       const existingStation = existingByKey.get(key);
       if (existingStation) {
-        toUpdate.push({ id: existingStation.id, data });
+        toUpdate.push({ id: existingStation.id, station });
       } else {
-        pendingInsert.set(key, data);
+        pendingInsert.set(key, station);
       }
     }
 
     if (pendingInsert.size > 0) {
-      await this.stationsRepository.insert([...pendingInsert.values()]);
+      await this.stationsRepository.insertMany([...pendingInsert.values()]);
       result.imported = pendingInsert.size;
     }
 
-    for (const { id, data } of toUpdate) {
-      await this.stationsRepository.update(id, data);
+    for (const { id, station } of toUpdate) {
+      await this.stationsRepository.update(id, station);
       result.updated++;
     }
 
     return result;
   }
 
-  async findAll(query: StationQuery): Promise<{ data: Station[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'id',
-      sortOrder = 'ASC' as 'ASC' | 'DESC',
-      search,
-      status,
-      operadora,
-    } = query;
-
-    const qb = this.stationsRepository.createQueryBuilder('s');
-
-    if (search) {
-      qb.where(
-        's.siteId LIKE :search OR s.endId LIKE :search OR s.endereco LIKE :search OR s.operadora LIKE :search',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (status) {
-      qb.andWhere('s.status = :status', { status });
-    }
-
-    if (operadora) {
-      qb.andWhere('s.operadora = :operadora', { operadora });
-    }
-
-    const allowedSort = ['id', 'siteId', 'endId', 'endereco', 'operadora', 'status', 'createdAt'];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
-    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const [data, total] = await qb
-      .orderBy(`s.${safeSort}`, safeOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total };
+  async findAll(query: StationQuery): Promise<PaginatedStations> {
+    return this.stationsRepository.findAll(query);
   }
 
   async findById(id: number): Promise<Station> {
-    const station = await this.stationsRepository.findOne({ where: { id } });
+    const station = await this.stationsRepository.findById(id);
     if (!station) throw new NotFoundException('Estação não encontrada');
     return station;
   }
@@ -173,18 +84,13 @@ export class StationsService {
   async update(id: number, dto: UpdateStationDto): Promise<Station> {
     const station = await this.findById(id);
     Object.assign(station, dto);
-    this.applyEndIdRule(station);
-    return this.stationsRepository.save(station);
+    station.applyEndIdRule();
+    await this.stationsRepository.update(id, station);
+    return this.findById(id);
   }
 
   async delete(id: number): Promise<void> {
-    const result = await this.stationsRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException('Estação não encontrada');
-  }
-
-  private applyEndIdRule(data: { endId?: string | null; operadora?: string | null }): void {
-    if (data.operadora && data.operadora.trim() !== '' && data.operadora.trim() !== 'TIM') {
-      data.endId = '';
-    }
+    const deleted = await this.stationsRepository.delete(id);
+    if (!deleted) throw new NotFoundException('Estação não encontrada');
   }
 }

@@ -48,11 +48,25 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  endereco: string | null
+  elementType: string | null
+  technology: string | null
+  areaHolder: string | null
+  infraContractType: string | null
+  infraHolder: string | null
+  infraType: string | null
+  evType: string | null
+  evSupplier: string | null
+  address: string | null
+  regional: string | null
   latitude: number | null
   longitude: number | null
-  operadora: string | null
-  observacoes: string | null
+  mobileCarrier: string | null
+  towerType: string | null
+  nominalAev: number | null
+  groundArea: number | null
+  structureHeight: number | null
+  stationId: string | null
+  notes: string | null
   status: string
   createdAt: string
   updatedAt: string
@@ -73,7 +87,7 @@ interface Comment {
   createdAt: string
 }
 
-const operadoraColors: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
+const mobileCarrierColors: Record<string, 'success' | 'info' | 'warning' | 'default'> = {
   TIM: 'info',
   CLARO: 'warning',
   VIVO: 'success',
@@ -277,7 +291,7 @@ export default function StationDetailsPage() {
 
   const handleShare = async () => {
     if (!station) return
-    const text = `Estação ${station.siteId} (${station.operadora || 'sem operadora'})`
+    const text = `Estação ${station.siteId} (${station.mobileCarrier || 'sem operadora'})`
     const url = `https://maps.google.com/maps?q=${station.latitude},${station.longitude}`
     if (navigator.share) {
       try {
@@ -298,10 +312,25 @@ export default function StationDetailsPage() {
   const fields = station
     ? [
         { label: 'Site ID', value: station.siteId },
-        ...(station.operadora === 'TIM'
+        ...(station.mobileCarrier === 'TIM'
           ? [{ label: 'End ID', value: station.endId }]
           : []),
-        { label: 'Endereço', value: station.endereco || '-' },
+        { label: 'Tipo de elemento', value: station.elementType || '-' },
+        { label: 'Tecnologia', value: station.technology || '-' },
+        { label: 'Operadora', value: station.mobileCarrier || '-' },
+        { label: 'Regional', value: station.regional || '-' },
+        { label: 'Tipo da torre', value: station.towerType || '-' },
+        { label: 'Detentor da Área', value: station.areaHolder || '-' },
+        { label: 'Detentor de Infra', value: station.infraHolder || '-' },
+        { label: 'Tipo de contrato Infra', value: station.infraContractType || '-' },
+        { label: 'Tipo de Infra', value: station.infraType || '-' },
+        { label: 'Tipo de EV', value: station.evType || '-' },
+        { label: 'Fornecedor de EV', value: station.evSupplier || '-' },
+        { label: 'AEV Nominal', value: station.nominalAev != null ? String(station.nominalAev) : '-' },
+        { label: 'Área de solo', value: station.groundArea != null ? String(station.groundArea) : '-' },
+        { label: 'Altura da estrutura', value: station.structureHeight != null ? String(station.structureHeight) : '-' },
+        { label: 'Station ID (id da detentora)', value: station.stationId || '-' },
+        { label: 'Endereço', value: station.address || '-' },
         {
           label: 'Coordenadas',
           value:
@@ -309,7 +338,7 @@ export default function StationDetailsPage() {
               ? `${station.latitude}, ${station.longitude}`
               : '-',
         },
-        { label: 'Observações', value: station.observacoes || '-' },
+        { label: 'Observações', value: station.notes || '-' },
         { label: 'Criado em', value: formatDateTime(station.createdAt) },
         { label: 'Atualizado em', value: formatDateTime(station.updatedAt) },
       ]
@@ -335,10 +364,10 @@ export default function StationDetailsPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                       <Chip
                         size="small"
-                        label={station.operadora || 'Sem operadora'}
-                        color={operadoraColors[station.operadora || ''] || 'default'}
+                        label={station.mobileCarrier || 'Sem operadora'}
+                        color={mobileCarrierColors[station.mobileCarrier || ''] || 'default'}
                       />
-                      {station.operadora === 'TIM' && (
+                      {station.mobileCarrier === 'TIM' && (
                         <Typography variant="subtitle1" color="text.secondary">
                           · {station.endId}
                         </Typography>

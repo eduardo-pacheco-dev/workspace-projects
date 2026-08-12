@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -7,8 +7,11 @@ const DEFAULT_LOG_PATH = 'logs/security.log';
 @Injectable()
 export class AuditLogger {
   private readonly logger = new Logger('SecurityAudit');
+  private readonly logPath: string;
 
-  constructor(private readonly logPath = DEFAULT_LOG_PATH) {}
+  constructor(@Optional() logPath?: string) {
+    this.logPath = logPath ?? DEFAULT_LOG_PATH;
+  }
 
   private write(event: string, details: Record<string, unknown>): void {
     const line = JSON.stringify({ ts: new Date().toISOString(), event, ...details });

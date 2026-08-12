@@ -21,6 +21,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import GroupIcon from '@mui/icons-material/Group'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import ProfileForm from '../users/ProfileForm'
 import { settingsFields, emptySettings, Settings, SettingsField } from './settingsTypes'
 import {
   ALL_ROLE_MODULES,
@@ -162,6 +163,8 @@ export default function SettingsPage() {
     return <TextField type={field.type === 'email' ? 'email' : 'text'} {...common} />
   }
 
+  const showPerfis = isMaster && tab === 2
+  const showPerfil = isMaster ? tab === 3 : tab === 2
   const activeKeys = tab === 0 ? systemKeys : tab === 1 ? companyKeys : []
   const activeFields = settingsFields.filter((f) => activeKeys.includes(f.key))
   const activeTitle = tab === 0 ? 'Configuração Geral do Sistema' : tab === 1 ? 'Configuração da Empresa' : 'Perfis de Acesso'
@@ -191,14 +194,15 @@ export default function SettingsPage() {
       )}
 
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={isMaster ? tab : Math.min(tab, 1)} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
+        <Tabs value={isMaster ? tab : Math.min(tab, 2)} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
           <Tab label="Sistema" />
           <Tab label="Empresa" />
           {isMaster && <Tab label="Perfis" />}
+          <Tab label="Perfil" />
         </Tabs>
       </Paper>
 
-      {isMaster && tab === 2 ? (
+      {showPerfis ? (
         <Paper sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <GroupIcon color="primary" />
@@ -244,6 +248,8 @@ export default function SettingsPage() {
             </Button>
           </Box>
         </Paper>
+      ) : showPerfil ? (
+        <ProfileForm />
       ) : (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>

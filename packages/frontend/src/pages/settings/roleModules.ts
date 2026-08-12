@@ -39,6 +39,7 @@ export const ALL_ROLE_MODULES: { value: string; label: string }[] = [
   { value: '/comments', label: 'Comentários' },
   { value: '/lpus', label: 'LPU' },
   { value: '/teams', label: 'Equipes' },
+  { value: '/settings', label: 'Configurações' },
 ]
 
 const allModuleValues = ALL_ROLE_MODULES.map((m) => m.value)
@@ -59,6 +60,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/lpus',
     '/attachments',
     '/comments',
+    '/settings',
   ],
   technician: [
     '/tasks',
@@ -69,6 +71,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/pdca',
     '/attachments',
     '/comments',
+    '/settings',
   ],
   user: [...allModuleValues],
   master: [],

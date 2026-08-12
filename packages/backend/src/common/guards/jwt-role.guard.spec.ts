@@ -64,6 +64,7 @@ describe('JwtRoleGuard', () => {
         '/lpus',
         '/teams',
         '/pdca',
+        '/settings',
       ];
       for (const path of paths) {
         const ctx = makeContext(path);
@@ -93,7 +94,6 @@ describe('JwtRoleGuard', () => {
         '/finance',
         '/finance/entries',
         '/finance/reports/summary',
-        '/settings',
         '/schedule',
         '/ms-project',
         '/jobs',

@@ -119,6 +119,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
     { label: 'PDCA', path: '/pdca', icon: <LoopIcon /> },
     { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
+    { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
   ]
 
   const items = user?.role === 'master' ? masterItems : userItems

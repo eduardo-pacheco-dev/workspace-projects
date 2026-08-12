@@ -391,7 +391,7 @@ export class SeedService implements OnApplicationBootstrap {
     if (freelancers.length === 0) return;
 
     for (const freelancer of freelancers) {
-      const existing = await this.lpuService.findAllByFreelancer(freelancer.id);
+      const existing = await this.lpuService.findAllByFreelancer(freelancer.id!);
       if (existing.length > 0) return;
     }
 
@@ -444,7 +444,7 @@ export class SeedService implements OnApplicationBootstrap {
       const freelancer = freelancers[lpu.freelancerIndex];
       if (!freelancer) continue;
       await this.lpuService.create({
-        freelancerId: freelancer.id,
+        freelancerId: freelancer.id!,
         nome: lpu.nome,
         descricao: lpu.descricao,
         valor: lpu.valor,
@@ -971,7 +971,7 @@ export class SeedService implements OnApplicationBootstrap {
     const { data: freelancers } = await this.collaboratorsService.findAllPaged({ limit: 100, isFreelancer: true });
     const toAssociate = freelancers.slice(0, 3);
     for (const freelancer of toAssociate) {
-      await this.companyFreelancerService.associate(company.id, freelancer.id);
+      await this.companyFreelancerService.associate(company.id, freelancer.id!);
     }
 
     console.log(`Seed: ${toAssociate.length} freelancers linked to company "${company.nome}"`);
@@ -1367,8 +1367,8 @@ export class SeedService implements OnApplicationBootstrap {
         descricao: so.descricao,
         siteId: station?.siteId,
         endId: station?.endId,
-        operadora: (so.operadora ?? station?.operadora ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
-        endereco: station?.endereco,
+        operadora: (so.operadora ?? station?.mobileCarrier ?? 'Outras') as 'TIM' | 'CLARO' | 'VIVO' | 'Outras',
+        endereco: station?.address ?? undefined,
         dataInicio: so.dataInicio,
         dataFim: so.dataFim,
         status: so.status,

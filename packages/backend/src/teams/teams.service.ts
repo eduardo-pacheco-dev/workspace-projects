@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './team.entity';
 import { TeamMember } from './team-member.entity';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 import {
   CreateTeamInput,
   UpdateTeamInput,
@@ -16,8 +16,8 @@ export class TeamsService {
     private readonly teamsRepository: Repository<Team>,
     @InjectRepository(TeamMember)
     private readonly membersRepository: Repository<TeamMember>,
-    @InjectRepository(Collaborator)
-    private readonly collaboratorsRepository: Repository<Collaborator>,
+    @InjectRepository(CollaboratorEntity)
+    private readonly collaboratorsRepository: Repository<CollaboratorEntity>,
   ) {}
 
   async create(dto: CreateTeamInput): Promise<Team> {

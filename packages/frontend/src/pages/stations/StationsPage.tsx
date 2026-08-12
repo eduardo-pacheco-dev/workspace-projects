@@ -35,15 +35,15 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  endereco: string | null
+  address: string | null
   latitude: number | null
   longitude: number | null
-  operadora: string | null
-  observacoes: string | null
+  mobileCarrier: string | null
+  notes: string | null
   status: string
 }
 
-type SortBy = 'id' | 'siteId' | 'endId' | 'endereco' | 'operadora' | 'status'
+type SortBy = 'id' | 'siteId' | 'endId' | 'address' | 'mobileCarrier' | 'status'
 type SortOrder = 'ASC' | 'DESC'
 
 export default function StationsPage() {
@@ -57,7 +57,7 @@ export default function StationsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [operadoraFilter, setOperadoraFilter] = useState('')
+  const [mobileCarrierFilter, setMobileCarrierFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
@@ -74,7 +74,7 @@ export default function StationsPage() {
       }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
-      if (operadoraFilter) params.operadora = operadoraFilter
+      if (mobileCarrierFilter) params.mobileCarrier = mobileCarrierFilter
 
       const res = await api.get('/stations', { params })
       if (Array.isArray(res.data)) {
@@ -87,7 +87,7 @@ export default function StationsPage() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter, operadoraFilter])
+  }, [page, rowsPerPage, sortBy, sortOrder, search, statusFilter, mobileCarrierFilter])
 
   useEffect(() => {
     fetchData()
@@ -127,8 +127,8 @@ export default function StationsPage() {
   const columns: { id: SortBy; label: string }[] = [
     { id: 'siteId', label: 'Site ID' },
     { id: 'endId', label: 'End ID' },
-    { id: 'operadora', label: 'Operadora' },
-    { id: 'endereco', label: 'Endereço' },
+    { id: 'mobileCarrier', label: 'Operadora' },
+    { id: 'address', label: 'Endereço' },
     { id: 'status', label: 'Status' },
   ]
 
@@ -176,9 +176,9 @@ export default function StationsPage() {
           size="small"
           select
           label="Operadora"
-          value={operadoraFilter}
+          value={mobileCarrierFilter}
           onChange={(e) => {
-            setOperadoraFilter(e.target.value)
+            setMobileCarrierFilter(e.target.value)
             setPage(0)
           }}
           sx={{ minWidth: 140 }}
@@ -197,7 +197,7 @@ export default function StationsPage() {
       </Tabs>
 
       {tab === 1 ? (
-        <StationsMapTab search={search} status={statusFilter} operadora={operadoraFilter} />
+        <StationsMapTab search={search} status={statusFilter} mobileCarrier={mobileCarrierFilter} />
       ) : (
         <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -229,9 +229,9 @@ export default function StationsPage() {
                 sx={{ cursor: 'pointer' }}
               >
                 <TableCell>{s.siteId}</TableCell>
-                <TableCell>{s.operadora === 'TIM' ? s.endId : '-'}</TableCell>
-                <TableCell>{s.operadora || '-'}</TableCell>
-                <TableCell>{s.endereco || '-'}</TableCell>
+                <TableCell>{s.mobileCarrier === 'TIM' ? s.endId : '-'}</TableCell>
+                <TableCell>{s.mobileCarrier || '-'}</TableCell>
+                <TableCell>{s.address || '-'}</TableCell>
                 <TableCell>
                   <Chip
                     size="small"

@@ -60,7 +60,7 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  operadora: string | null
+  mobileCarrier: string | null
 }
 
 interface RadioLink {
@@ -573,7 +573,7 @@ function ProjectDashboard({ projectId }: { projectId: number }) {
                       <Typography variant="body1" sx={{ fontWeight: 600 }}>
                         {s.siteId} · {s.endId}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">{s.operadora || 'Sem operadora'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{s.mobileCarrier || 'Sem operadora'}</Typography>
                     </Box>
                   </Box>
                   {index < stations.length - 1 && <Divider />}

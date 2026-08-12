@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RadioLink } from './radio-link.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLinksService } from './radio-links.service';
 import { RadioLinksController } from './radio-links.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RadioLink, Station])],
+  imports: [TypeOrmModule.forFeature([RadioLink, StationEntity])],
   providers: [RadioLinksService],
   controllers: [RadioLinksController],
   exports: [RadioLinksService],

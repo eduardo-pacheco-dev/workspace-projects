@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Repository } from 'typeorm';
 import { RadioLink } from './radio-link.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLinksController } from './radio-links.controller';
 import { RadioLinksService } from './radio-links.service';
 
@@ -35,7 +35,7 @@ describe('RadioLinksController (integration)', () => {
   };
 
   let radioLinkRepo: Repository<RadioLink>;
-  let stationRepo: Repository<Station>;
+  let stationRepo: Repository<StationEntity>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -44,10 +44,10 @@ describe('RadioLinksController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [RadioLink, Station],
+          entities: [RadioLink, StationEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([RadioLink, Station]),
+        TypeOrmModule.forFeature([RadioLink, StationEntity]),
       ],
       controllers: [RadioLinksController],
       providers: [RadioLinksService],
@@ -61,7 +61,7 @@ describe('RadioLinksController (integration)', () => {
     await app.init();
 
     radioLinkRepo = moduleRef.get<Repository<RadioLink>>(getRepositoryToken(RadioLink));
-    stationRepo = moduleRef.get<Repository<Station>>(getRepositoryToken(Station));
+    stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
   });
 
   afterAll(async () => {
@@ -134,16 +134,16 @@ describe('RadioLinksController (integration)', () => {
         id: 1,
         siteId: 'SITE-A1',
         endId: 'END-A1',
-        endereco: 'Av A',
-        operadora: 'TIM',
+        address: 'Av A',
+        mobileCarrier: 'TIM',
         status: 'ativo',
       });
       await stationRepo.save({
         id: 2,
         siteId: 'SITE-B1',
         endId: 'END-B1',
-        endereco: 'Av B',
-        operadora: 'CLARO',
+        address: 'Av B',
+        mobileCarrier: 'CLARO',
         status: 'ativo',
       });
 

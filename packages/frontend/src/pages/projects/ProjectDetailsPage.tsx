@@ -69,8 +69,8 @@ interface Station {
   id: number
   siteId: string
   endId: string
-  endereco: string | null
-  operadora: string | null
+  address: string | null
+  mobileCarrier: string | null
   status: string
 }
 
@@ -399,7 +399,7 @@ export default function ProjectDetailsPage() {
                 <Autocomplete
                   fullWidth
                   options={allStations.filter((s) => !projectStations.some((ps) => ps.id === s.id))}
-                  getOptionLabel={(s) => `${s.siteId} · ${s.endId}${s.operadora ? ` (${s.operadora})` : ''}`}
+                  getOptionLabel={(s) => `${s.siteId} · ${s.endId}${s.mobileCarrier ? ` (${s.mobileCarrier})` : ''}`}
                   value={selectedStation}
                   onChange={(_, v) => setSelectedStation(v)}
                   renderInput={(params) => (
@@ -431,7 +431,7 @@ export default function ProjectDetailsPage() {
                       </ListItemIcon>
                       <ListItemText
                         primary={`${s.siteId} · ${s.endId}`}
-                        secondary={`${s.operadora || 'Sem operadora'}${s.endereco ? ` · ${s.endereco}` : ''}`}
+                        secondary={`${s.mobileCarrier || 'Sem operadora'}${s.address ? ` · ${s.address}` : ''}`}
                       />
                       <ListItemSecondaryAction>
                         <IconButton

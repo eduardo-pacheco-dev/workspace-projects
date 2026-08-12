@@ -4,7 +4,7 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { Team } from './team.entity';
 import { TeamMember } from './team-member.entity';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 
 describe('TeamsService', () => {
   let service: TeamsService;
@@ -47,7 +47,7 @@ describe('TeamsService', () => {
         TeamsService,
         { provide: getRepositoryToken(Team), useValue: teamsRepo },
         { provide: getRepositoryToken(TeamMember), useValue: membersRepo },
-        { provide: getRepositoryToken(Collaborator), useValue: collaboratorsRepo },
+        { provide: getRepositoryToken(CollaboratorEntity), useValue: collaboratorsRepo },
       ],
     }).compile();
 

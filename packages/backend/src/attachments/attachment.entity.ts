@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Job } from '../jobs/job.entity';
 import { ServiceOrder } from '../service-orders/service-order.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Project } from '../projects/project.entity';
 import { Client } from '../clients/client.entity';
@@ -37,9 +37,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   stationId: number | null;
 
-  @ManyToOne(() => Station, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => StationEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'stationId' })
-  station: Station | null;
+  station: StationEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   radioLinkId: number | null;

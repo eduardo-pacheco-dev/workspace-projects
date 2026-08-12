@@ -6,7 +6,7 @@ import request from 'supertest';
 import { Repository } from 'typeorm';
 import { Project } from './project.entity';
 import { ProjectDocument } from './project-document.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
 import { ProjectsController } from './projects.controller';
@@ -26,7 +26,7 @@ describe('ProjectsController (integration)', () => {
   let app: INestApplication;
   let projectRepo: Repository<Project>;
   let documentRepo: Repository<ProjectDocument>;
-  let stationRepo: Repository<Station>;
+  let stationRepo: Repository<StationEntity>;
   let radioLinkRepo: Repository<RadioLink>;
   let companyRepo: Repository<Company>;
   let controller: ProjectsController;
@@ -38,10 +38,10 @@ describe('ProjectsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Project, ProjectDocument, Station, RadioLink, Company],
+          entities: [Project, ProjectDocument, StationEntity, RadioLink, Company],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Project, ProjectDocument, Station, RadioLink, Company]),
+        TypeOrmModule.forFeature([Project, ProjectDocument, StationEntity, RadioLink, Company]),
       ],
       controllers: [ProjectsController],
       providers: [ProjectsService, { provide: APP_GUARD, useValue: mockAuthGuard }],
@@ -53,7 +53,7 @@ describe('ProjectsController (integration)', () => {
 
     projectRepo = moduleRef.get<Repository<Project>>(getRepositoryToken(Project));
     documentRepo = moduleRef.get<Repository<ProjectDocument>>(getRepositoryToken(ProjectDocument));
-    stationRepo = moduleRef.get<Repository<Station>>(getRepositoryToken(Station));
+    stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
     radioLinkRepo = moduleRef.get<Repository<RadioLink>>(getRepositoryToken(RadioLink));
     companyRepo = moduleRef.get<Repository<Company>>(getRepositoryToken(Company));
     controller = moduleRef.get(ProjectsController);

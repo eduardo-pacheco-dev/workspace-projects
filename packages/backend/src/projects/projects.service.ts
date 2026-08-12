@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './project.entity';
 import { ProjectDocument } from './project-document.entity';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -26,8 +26,8 @@ export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private readonly projectsRepository: Repository<Project>,
-    @InjectRepository(Station)
-    private readonly stationsRepository: Repository<Station>,
+    @InjectRepository(StationEntity)
+    private readonly stationsRepository: Repository<StationEntity>,
     @InjectRepository(RadioLink)
     private readonly radioLinksRepository: Repository<RadioLink>,
     @InjectRepository(ProjectDocument)
@@ -206,7 +206,7 @@ export class ProjectsService {
     return this.projectsRepository.save(project);
   }
 
-  async findStations(projectId: number): Promise<Station[]> {
+  async findStations(projectId: number): Promise<StationEntity[]> {
     const project = await this.projectsRepository.findOne({
       where: { id: projectId },
       relations: ['stations'],

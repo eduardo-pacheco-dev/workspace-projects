@@ -4,7 +4,9 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { Collaborator } from './collaborator.entity';
+import { CollaboratorEntity } from './infrastructure/collaborator.entity';
+import { TypeOrmCollaboratorRepository } from './infrastructure/typeorm-collaborator.repository';
+import { COLLABORATOR_REPOSITORY } from './domain/collaborator.repository';
 import { Company } from '../companies/company.entity';
 import { Lpu } from '../lpu/lpu.entity';
 import { CollaboratorsController } from './collaborators.controller';
@@ -44,13 +46,16 @@ describe('CollaboratorsController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Collaborator, Company, Lpu],
+          entities: [CollaboratorEntity, Company, Lpu],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Collaborator, Company, Lpu]),
+        TypeOrmModule.forFeature([CollaboratorEntity, Company, Lpu]),
       ],
       controllers: [CollaboratorsController],
-      providers: [CollaboratorsService],
+      providers: [
+        CollaboratorsService,
+        { provide: COLLABORATOR_REPOSITORY, useClass: TypeOrmCollaboratorRepository },
+      ],
     })
       .overrideGuard(AuthGuard('jwt'))
       .useValue(mockAuthGuard)

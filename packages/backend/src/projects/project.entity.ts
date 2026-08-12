@@ -7,7 +7,7 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
-import { Station } from '../stations/station.entity';
+import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLink } from '../radio-links/radio-link.entity';
 import { Company } from '../companies/company.entity';
 
@@ -46,9 +46,9 @@ export class Project {
   @Column({ type: 'text', default: 'ativo' })
   status: string;
 
-  @ManyToMany(() => Station)
+  @ManyToMany(() => StationEntity)
   @JoinTable({ name: 'project_station' })
-  stations: Station[];
+  stations: StationEntity[];
 
   @ManyToMany(() => RadioLink)
   @JoinTable({ name: 'project_radio_link' })

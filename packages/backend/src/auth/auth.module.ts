@@ -7,6 +7,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { getJwtSecret } from '../common/config/jwt-secret';
 import { getJwtExpiresIn } from '../common/config/jwt-expires';
+import { AuditLogger } from '../common/audit/audit-logger';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { getJwtExpiresIn } from '../common/config/jwt-expires';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AuditLogger],
 })
 export class AuthModule {}

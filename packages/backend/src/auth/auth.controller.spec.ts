@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { buildResetToken } from './reset-token';
+import { AuditLogger } from '../common/audit/audit-logger';
 import { UsersService } from '../users/users.service';
 import { USER_REPOSITORY } from '../users/domain/user.repository';
 import { UserEntity } from '../users/infrastructure/user.entity';
@@ -44,6 +45,16 @@ describe('AuthController (integration)', () => {
         UsersService,
         { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository },
         { provide: APP_GUARD, useClass: ThrottlerGuard },
+        {
+          provide: AuditLogger,
+          useValue: {
+            loginSuccess: jest.fn(),
+            loginFailure: jest.fn(),
+            accountLocked: jest.fn(),
+            passwordReset: jest.fn(),
+            register: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

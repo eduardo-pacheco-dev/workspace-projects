@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { buildResetToken } from './reset-token';
+import { AuditLogger } from '../common/audit/audit-logger';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/domain/user.entity';
 
@@ -21,6 +22,14 @@ describe('AuthService', () => {
 
   const jwtService = { sign: jest.fn().mockReturnValue('signed-token') };
 
+  const audit = {
+    loginSuccess: jest.fn(),
+    loginFailure: jest.fn(),
+    accountLocked: jest.fn(),
+    passwordReset: jest.fn(),
+    register: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
@@ -31,6 +40,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsersService, useValue: usersService },
         { provide: JwtService, useValue: jwtService },
+        { provide: AuditLogger, useValue: audit },
       ],
     }).compile();
 
@@ -50,6 +60,7 @@ describe('AuthService', () => {
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ email: 'maria@email.com', role: 'user', status: 'inactive' }),
       );
+      expect(audit.register).toHaveBeenCalledWith('maria@email.com');
       expect(result.message).toContain('Registration');
     });
 
@@ -144,6 +155,7 @@ describe('AuthService', () => {
         resetToken: null,
         tokenVersion: 1,
       });
+      expect(audit.passwordReset).toHaveBeenCalledWith(1);
       expect(result.message).toContain('reset');
     });
 
@@ -193,6 +205,7 @@ describe('AuthService', () => {
         service.login({ email: 'admin@admin.com', password: 'certa' }, '1.1.1.1'),
       ).rejects.toThrow(UnauthorizedException);
       expect(bcrypt.compare).toHaveBeenCalledTimes(5);
+      expect(audit.accountLocked).toHaveBeenCalledWith('admin@admin.com', '1.1.1.1');
     });
 
     it('should not lock the account for a different IP', async () => {

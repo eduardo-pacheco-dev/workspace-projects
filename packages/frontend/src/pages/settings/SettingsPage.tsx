@@ -20,6 +20,7 @@ import SaveIcon from '@mui/icons-material/Save'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GroupIcon from '@mui/icons-material/Group'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { settingsFields, emptySettings, Settings, SettingsField } from './settingsTypes'
 import {
   ALL_ROLE_MODULES,
@@ -40,6 +41,8 @@ const systemKeys: (keyof Settings)[] = ['timezone', 'language', 'currency']
 const configurableRoles = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
 
 export default function SettingsPage() {
+  const { user } = useAuth()
+  const isMaster = user?.role === 'master'
   const [tab, setTab] = useState(0)
   const [form, setForm] = useState<Settings>(emptySettings)
   const [selectedRole, setSelectedRole] = useState('user')
@@ -188,14 +191,14 @@ export default function SettingsPage() {
       )}
 
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
+        <Tabs value={isMaster ? tab : Math.min(tab, 1)} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
           <Tab label="Sistema" />
           <Tab label="Empresa" />
-          <Tab label="Perfis" />
+          {isMaster && <Tab label="Perfis" />}
         </Tabs>
       </Paper>
 
-      {tab === 2 ? (
+      {isMaster && tab === 2 ? (
         <Paper sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <GroupIcon color="primary" />

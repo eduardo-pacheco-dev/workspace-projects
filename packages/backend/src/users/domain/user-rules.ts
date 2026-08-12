@@ -17,6 +17,10 @@ export function isMaster(currentUser?: { role?: string } | null): boolean {
   return currentUser?.role === MASTER_ROLE;
 }
 
+export function isActiveUser(user?: { status?: string } | null): boolean {
+  return user?.status === ACTIVE_STATUS;
+}
+
 export function roleRequiresCompany(role: string): boolean {
   return role !== MASTER_ROLE;
 }

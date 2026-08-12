@@ -13,6 +13,7 @@ export interface UserProps {
   password?: string;
   resetToken?: string | null;
   role?: string;
+  tokenVersion?: number;
   companyId?: number | null;
   company?: UserCompany | null;
   createdAt?: Date;
@@ -29,12 +30,13 @@ export class User {
   password: string;
   resetToken?: string | null;
   role: string;
+  tokenVersion: number;
   companyId?: number | null;
   company?: UserCompany | null;
   createdAt?: Date;
   updatedAt?: Date;
 
   constructor(props: UserProps) {
-    Object.assign(this, { status: 'inactive', role: 'user', ...props });
+    Object.assign(this, { status: 'inactive', role: 'user', tokenVersion: 0, ...props });
   }
 }

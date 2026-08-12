@@ -8,11 +8,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Company } from '../companies/company.entity';
-import { Lpu } from '../lpu/lpu.entity';
+import { Company } from '../../companies/company.entity';
+import { Lpu } from '../../lpu/lpu.entity';
 
 @Entity('collaborator')
-export class Collaborator {
+export class CollaboratorEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

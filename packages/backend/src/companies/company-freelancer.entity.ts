@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Company } from './company.entity';
-import { Collaborator } from '../collaborators/collaborator.entity';
+import { CollaboratorEntity } from '../collaborators/infrastructure/collaborator.entity';
 
 @Entity('company_freelancer')
 export class CompanyFreelancer {
@@ -24,9 +24,9 @@ export class CompanyFreelancer {
   @Column({ type: 'integer' })
   freelancerId: number;
 
-  @ManyToOne(() => Collaborator, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CollaboratorEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'freelancerId' })
-  freelancer: Collaborator;
+  freelancer: CollaboratorEntity;
 
   @CreateDateColumn()
   createdAt: Date;

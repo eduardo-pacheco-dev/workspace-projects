@@ -20,6 +20,7 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { z } from 'zod'
+import { strongPasswordSchema } from '../../schemas/authSchemas'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -31,7 +32,7 @@ const baseUserSchema = z.object({
   lastName: z.string().min(1, 'Informe o sobrenome.'),
   email: z.string().min(1, 'Informe o email.').email('Email inválido.'),
   phone: z.string().min(1, 'Informe o telefone.'),
-  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+  password: strongPasswordSchema,
   confirmPassword: z.string().min(1, 'Confirme a senha.'),
   role: z.enum(['master', 'admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']),
   companyId: z.number().nullable(),

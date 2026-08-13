@@ -8,7 +8,12 @@ import { Observable } from 'rxjs';
 import { SettingsService } from '../../settings/settings.service';
 import { DEFAULT_ROLE_MODULES } from './role-modules';
 
-const PUBLIC_PREFIXES = ['/auth'];
+const PUBLIC_ROUTES = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
 
 const OWN_PROFILE_REGEX = /^\/users\/\d+$/;
 
@@ -40,7 +45,7 @@ export class JwtRoleGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const req = context.switchToHttp().getRequest();
     const path: string = req?.path ?? '';
-    if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return true;
+    if (PUBLIC_ROUTES.includes(path)) return true;
     return super.canActivate(context);
   }
 

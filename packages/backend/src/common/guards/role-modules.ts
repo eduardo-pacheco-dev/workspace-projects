@@ -56,7 +56,17 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/comments',
     '/settings',
   ],
-  user: [...allModuleValues],
+  user: [
+    '/tasks',
+    '/service-orders',
+    '/stations',
+    '/radio-links',
+    '/projects',
+    '/clients',
+    '/attachments',
+    '/comments',
+    '/settings',
+  ],
   master: [],
 };
 

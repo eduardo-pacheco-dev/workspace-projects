@@ -1,13 +1,12 @@
 import { z } from 'zod';
+import { passwordSchema } from '../../common/schemas/password.schema';
 
 export const registerSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
   lastName: z.string().optional(),
   email: z.string().min(1, 'Email é obrigatório.').email('Email inválido.'),
   phone: z.string().optional(),
-  password: z
-    .string()
-    .min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+  password: passwordSchema,
 });
 
 export const loginSchema = z.object({
@@ -19,17 +18,10 @@ export const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email é obrigatório.').email('Email inválido.'),
 });
 
-export const resetPasswordSchema = z
-  .object({
-    token: z.string().min(1, 'Token é obrigatório.'),
-    password: z
-      .string()
-      .min(8, 'A senha deve ter no mínimo 8 caracteres.'),
-  })
-  .refine((data) => data.password.length >= 8, {
-    message: 'A senha deve ter no mínimo 8 caracteres.',
-    path: ['password'],
-  });
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token é obrigatório.'),
+  password: passwordSchema,
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

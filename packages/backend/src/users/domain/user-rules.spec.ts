@@ -1,6 +1,7 @@
 import { User } from './user.entity';
 import {
   isMaster,
+  isActiveUser,
   canSeeUser,
   roleRequiresCompany,
   MASTER_ROLE,
@@ -57,6 +58,18 @@ describe('User domain', () => {
       expect(isMaster({ role: 'user' })).toBe(false);
       expect(isMaster(undefined)).toBe(false);
       expect(isMaster(null)).toBe(false);
+    });
+  });
+
+  describe('isActiveUser', () => {
+    it('should be true for an active user', () => {
+      expect(isActiveUser({ status: 'active' })).toBe(true);
+    });
+
+    it('should be false for an inactive or unknown user', () => {
+      expect(isActiveUser({ status: 'inactive' })).toBe(false);
+      expect(isActiveUser(undefined)).toBe(false);
+      expect(isActiveUser(null)).toBe(false);
     });
   });
 

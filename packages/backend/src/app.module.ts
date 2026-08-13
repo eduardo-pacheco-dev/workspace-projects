@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtRoleGuard } from './common/guards/jwt-role.guard';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -31,6 +32,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 100 }]),
     TypeOrmModule.forRoot(
       dbType === 'sqljs'
         ? {
@@ -78,6 +80,9 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     PdcaModule,
     SeedModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: JwtRoleGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtRoleGuard },
+  ],
 })
 export class AppModule {}

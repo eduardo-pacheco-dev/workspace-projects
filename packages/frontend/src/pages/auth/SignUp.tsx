@@ -28,6 +28,7 @@ import { formatPhone } from '../../utils/phone'
 import { getPasswordStrength, getStrengthColor } from '../../utils/password'
 
 export default function SignUp() {
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -38,7 +39,6 @@ export default function SignUp() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
   const passwordStrength = getPasswordStrength(password)
 
   const handleSubmit = async (e: FormEvent) => {

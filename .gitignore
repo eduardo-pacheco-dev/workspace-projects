@@ -3,6 +3,7 @@ dist/
 coverage/
 data/
 uploads/
+logs/
 pnpm-lock.yaml
 .env
 *.local

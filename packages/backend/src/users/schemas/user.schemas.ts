@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { USER_ROLES } from '../domain/user-rules';
+import { passwordSchema } from '../../common/schemas/password.schema';
 
 export const userRoles = USER_ROLES;
 
@@ -8,7 +9,7 @@ export const createUserSchema = z.object({
   lastName: z.string().optional(),
   email: z.string().min(1, 'Email é obrigatório.').email('Email inválido.'),
   phone: z.string().optional(),
-  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+  password: passwordSchema,
   role: z.enum(userRoles).optional(),
   companyId: z.number().int().positive().nullable().optional(),
 });
@@ -19,7 +20,7 @@ export const updateUserSchema = z
     lastName: z.string().optional(),
     email: z.string().min(1, 'Email é obrigatório.').email('Email inválido.').optional(),
     phone: z.string().optional(),
-    password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.').optional(),
+    password: passwordSchema.optional(),
     status: z.enum(['active', 'inactive'], 'Status inválido.').optional(),
     role: z.enum(userRoles).optional(),
     companyId: z.number().int().positive().nullable().optional(),

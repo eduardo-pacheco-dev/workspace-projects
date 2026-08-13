@@ -21,6 +21,7 @@ import {
   ACTIVE_STATUS,
   INACTIVE_STATUS,
 } from './domain/user-rules';
+import { BCRYPT_ROUNDS } from '../common/config/security';
 import {
   CreateUserInput,
   UpdateUserInput,
@@ -124,7 +125,8 @@ export class UsersService {
 
   private async applyPassword(user: User, password?: string): Promise<void> {
     if (!password) return;
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   }
 
   private applyStatus(user: User, status: string | undefined): void {
@@ -158,7 +160,7 @@ export class UsersService {
       await this.assertCompanyExists(companyId);
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     return this.usersRepository.create(
       new User({
         name: dto.name,

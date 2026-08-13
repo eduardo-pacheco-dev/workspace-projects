@@ -48,8 +48,6 @@ describe('JwtRoleGuard', () => {
         '/tasks/5',
         '/service-orders',
         '/service-orders/2',
-        '/collaborators',
-        '/collaborators/3',
         '/stations',
         '/stations/4',
         '/radio-links',
@@ -58,12 +56,8 @@ describe('JwtRoleGuard', () => {
         '/projects/2',
         '/clients',
         '/clients/7',
-        '/users',
         '/attachments',
         '/comments',
-        '/lpus',
-        '/teams',
-        '/pdca',
         '/settings',
       ];
       for (const path of paths) {
@@ -101,6 +95,12 @@ describe('JwtRoleGuard', () => {
         '/proposals',
         '/companies',
         '/companies/1/freelancers',
+        '/collaborators',
+        '/collaborators/3',
+        '/users',
+        '/lpus',
+        '/teams',
+        '/pdca',
       ];
       for (const path of paths) {
         const ctx = makeContext(path);

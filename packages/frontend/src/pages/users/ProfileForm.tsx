@@ -23,7 +23,7 @@ import { getPasswordStrength, getStrengthColor } from '../../utils/password'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import { getFieldErrors } from '../../schemas/authSchemas'
+import { getFieldErrors, strongPasswordSchema } from '../../schemas/authSchemas'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
 interface UserProfile {
@@ -38,7 +38,7 @@ interface UserProfile {
 
 const passwordSchema = z
   .object({
-    newPassword: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

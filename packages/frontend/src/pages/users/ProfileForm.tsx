@@ -12,12 +12,14 @@ import {
   Typography,
   InputAdornment,
   IconButton,
+  LinearProgress,
 } from '@mui/material'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { z } from 'zod'
 import { formatDateTime } from '../../utils/format'
 import { formatPhone } from '../../utils/phone'
+import { getPasswordStrength, getStrengthColor } from '../../utils/password'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -59,6 +61,7 @@ export default function ProfileForm() {
   const [passError, setPassError] = useState<Record<string, string>>({})
   const [passSaved, setPassSaved] = useState(false)
   const [passSaving, setPassSaving] = useState(false)
+  const passwordStrength = getPasswordStrength(newPassword)
 
   useEffect(() => {
     if (!user?.id) return
@@ -237,6 +240,46 @@ export default function ProfileForm() {
                 ),
               }}
             />
+            {newPassword && (
+              <Box sx={{ mt: 0.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Nível de segurança
+                  </Typography>
+                  <Typography variant="caption" fontWeight={600} sx={{ color: getStrengthColor(passwordStrength.score) }}>
+                    {passwordStrength.label}
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={passwordStrength.score}
+                  color={getStrengthColor(passwordStrength.score).replace('.main', '') as any}
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+                <Box component="ul" sx={{ m: 0, mt: 1, p: 0, listStyle: 'none' }}>
+                  {passwordStrength.criteria.map((criterion) => (
+                    <Box
+                      component="li"
+                      key={criterion.label}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        py: 0.25,
+                        color: criterion.met ? 'success.main' : 'text.disabled',
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ fontSize: 14 }}>
+                        {criterion.met ? '✓' : '•'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ textDecoration: criterion.met ? 'line-through' : 'none' }}>
+                        {criterion.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField

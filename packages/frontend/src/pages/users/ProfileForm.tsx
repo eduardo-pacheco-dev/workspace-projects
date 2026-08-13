@@ -10,11 +10,18 @@ import {
   Alert,
   Chip,
   Typography,
+  InputAdornment,
+  IconButton,
 } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import { z } from 'zod'
 import { formatDateTime } from '../../utils/format'
+import { formatPhone } from '../../utils/phone'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { getFieldErrors } from '../../schemas/authSchemas'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
 interface UserProfile {
@@ -27,6 +34,16 @@ interface UserProfile {
   createdAt: string
 }
 
+const passwordSchema = z
+  .object({
+    newPassword: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+    confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'As senhas não conferem.',
+    path: ['confirmPassword'],
+  })
+
 export default function ProfileForm() {
   const { user, logout } = useAuth()
   const { showToast } = useToast()
@@ -36,6 +53,12 @@ export default function ProfileForm() {
   const [saving, setSaving] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [passError, setPassError] = useState<Record<string, string>>({})
+  const [passSaved, setPassSaved] = useState(false)
+  const [passSaving, setPassSaving] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -69,6 +92,32 @@ export default function ProfileForm() {
       setError(err.response?.data?.message || 'Não foi possível salvar.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPassError({})
+    setPassSaved(false)
+
+    const result = passwordSchema.safeParse({ newPassword, confirmPassword })
+    if (!result.success) {
+      setPassError(getFieldErrors(result.error))
+      return
+    }
+
+    if (!user?.id) return
+    setPassSaving(true)
+    try {
+      await api.patch(`/users/${user.id}`, { password: newPassword })
+      setPassSaved(true)
+      setNewPassword('')
+      setConfirmPassword('')
+      showToast('Senha alterada com sucesso.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível alterar a senha.', 'error')
+    } finally {
+      setPassSaving(false)
     }
   }
 
@@ -140,7 +189,7 @@ export default function ProfileForm() {
               <TextField
                 fullWidth
                 label="Telefone"
-                value={data.phone || ''}
+                value={formatPhone(data.phone || '')}
                 onChange={(e) => setData({ ...data, phone: e.target.value })}
               />
             </Grid>
@@ -154,6 +203,69 @@ export default function ProfileForm() {
           </Button>
         </Box>
       )}
+
+      <Divider sx={{ my: 3 }} />
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+        Alterar Senha
+      </Typography>
+      {passSaved && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setPassSaved(false)}>
+          Senha alterada com sucesso.
+        </Alert>
+      )}
+      <Box component="form" onSubmit={handleChangePassword}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nova Senha"
+              type={showPassword ? 'text' : 'password'}
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value)
+                setPassError((prev) => ({ ...prev, newPassword: '' }))
+              }}
+              error={!!passError.newPassword}
+              helperText={passError.newPassword || (newPassword ? '' : 'No mínimo 6 caracteres.')}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end" size="small">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Confirmar Nova Senha"
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value)
+                setPassError((prev) => ({ ...prev, confirmPassword: '' }))
+              }}
+              error={!!passError.confirmPassword}
+              helperText={passError.confirmPassword}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end" size="small">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+        </Grid>
+        <Button type="submit" variant="contained" size="large" disabled={passSaving} sx={{ mt: 2 }}>
+          {passSaving ? 'Salvando...' : 'Alterar Senha'}
+        </Button>
+      </Box>
 
       <Divider sx={{ my: 3 }} />
       <Typography variant="subtitle2" color="error" sx={{ mb: 1, fontWeight: 600 }}>

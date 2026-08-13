@@ -8,20 +8,20 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Project } from '../projects/project.entity';
-import { PdcaAction } from './pdca-action.entity';
+import { ProjectEntity } from '../../projects/infrastructure/project.entity';
+import { PdcaActionEntity } from './pdca-action.entity';
 
 @Entity('pdca')
-export class Pdca {
+export class PdcaEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer', nullable: true })
   projectId: number | null;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'projectId' })
-  project: Project | null;
+  project: ProjectEntity | null;
 
   @Column({ type: 'text' })
   titulo: string;
@@ -89,12 +89,12 @@ export class Pdca {
   @Column({ type: 'integer', nullable: true })
   cicloPaiId?: number;
 
-  @ManyToOne(() => Pdca, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => PdcaEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'cicloPaiId' })
-  cicloPai?: Pdca;
+  cicloPai?: PdcaEntity;
 
-  @OneToMany(() => PdcaAction, (action) => action.pdca)
-  actions: PdcaAction[];
+  @OneToMany(() => PdcaActionEntity, (action) => action.pdca)
+  actions: PdcaActionEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

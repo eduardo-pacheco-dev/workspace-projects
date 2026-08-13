@@ -1,74 +1,34 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Client } from './client.entity';
-import { Responsavel } from './responsavel.entity';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Client } from './domain/client.entity';
+import { Responsavel } from './domain/responsavel.entity';
+import {
+  ClientRepository,
+  ClientQuery,
+  PaginatedClients,
+  CLIENT_REPOSITORY,
+} from './domain/client.repository';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { CreateResponsavelDto } from './dto/create-responsavel.dto';
 import { UpdateResponsavelDto } from './dto/update-responsavel.dto';
 
-export interface ClientQuery {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  search?: string;
-  status?: string;
-}
-
 @Injectable()
 export class ClientsService {
   constructor(
-    @InjectRepository(Client)
-    private readonly clientsRepository: Repository<Client>,
-    @InjectRepository(Responsavel)
-    private readonly responsaveisRepository: Repository<Responsavel>,
+    @Inject(CLIENT_REPOSITORY)
+    private readonly clientsRepository: ClientRepository,
   ) {}
 
   async create(dto: CreateClientDto): Promise<Client> {
-    const client = this.clientsRepository.create(dto);
-    return this.clientsRepository.save(client);
+    return this.clientsRepository.create(new Client({ ...dto }));
   }
 
-  async findAll(query: ClientQuery): Promise<{ data: Client[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'id',
-      sortOrder = 'ASC' as 'ASC' | 'DESC',
-      search,
-      status,
-    } = query;
-
-    const qb = this.clientsRepository.createQueryBuilder('c');
-
-    if (search) {
-      qb.where(
-        'c.nome LIKE :search OR c.documento LIKE :search OR c.email LIKE :search OR c.telefone LIKE :search OR c.cidade LIKE :search',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (status) {
-      qb.andWhere('c.status = :status', { status });
-    }
-
-    const allowedSort = ['id', 'nome', 'documento', 'email', 'telefone', 'cidade', 'status', 'createdAt'];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'id';
-    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const [data, total] = await qb
-      .orderBy(`c.${safeSort}`, safeOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total };
+  async findAll(query: ClientQuery): Promise<PaginatedClients> {
+    return this.clientsRepository.findAll(query);
   }
 
   async findById(id: number): Promise<Client> {
-    const client = await this.clientsRepository.findOne({ where: { id } });
+    const client = await this.clientsRepository.findById(id);
     if (!client) throw new NotFoundException('Cliente não encontrado');
     return client;
   }
@@ -80,16 +40,13 @@ export class ClientsService {
   }
 
   async delete(id: number): Promise<void> {
-    const result = await this.clientsRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException('Cliente não encontrado');
+    const deleted = await this.clientsRepository.delete(id);
+    if (!deleted) throw new NotFoundException('Cliente não encontrado');
   }
 
   async findResponsaveisByClient(clientId: number): Promise<Responsavel[]> {
     await this.findById(clientId);
-    return this.responsaveisRepository.find({
-      where: { clientId },
-      order: { nome: 'ASC' },
-    });
+    return this.clientsRepository.findResponsaveisByClient(clientId);
   }
 
   async createResponsavel(
@@ -97,22 +54,21 @@ export class ClientsService {
     dto: CreateResponsavelDto,
   ): Promise<Responsavel> {
     await this.findById(clientId);
-    const responsavel = this.responsaveisRepository.create({ clientId, ...dto });
-    return this.responsaveisRepository.save(responsavel);
+    return this.clientsRepository.createResponsavel(new Responsavel({ clientId, ...dto }));
   }
 
   async updateResponsavel(
     id: number,
     dto: UpdateResponsavelDto,
   ): Promise<Responsavel> {
-    const responsavel = await this.responsaveisRepository.findOne({ where: { id } });
+    const responsavel = await this.clientsRepository.findResponsavelById(id);
     if (!responsavel) throw new NotFoundException('Responsável não encontrado');
     Object.assign(responsavel, dto);
-    return this.responsaveisRepository.save(responsavel);
+    return this.clientsRepository.saveResponsavel(responsavel);
   }
 
   async deleteResponsavel(id: number): Promise<void> {
-    const result = await this.responsaveisRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException('Responsável não encontrado');
+    const deleted = await this.clientsRepository.deleteResponsavel(id);
+    if (!deleted) throw new NotFoundException('Responsável não encontrado');
   }
 }

@@ -1,9 +1,15 @@
 import { IsString, IsOptional, IsInt, IsIn } from 'class-validator';
+import {
+  PDCA_FASES,
+  PDCA_STATUS_CICLO,
+  PDCA_TECNICAS_ANALISE,
+  PDCA_STATUS_VALIDACAO,
+} from '../domain/pdca-rules';
 
-export const pdcaFases = ['plan', 'do', 'check', 'act'] as const;
-export const pdcaStatusCiclo = ['aberto', 'em_execucao', 'em_verificacao', 'concluido', 'cancelado'] as const;
-export const pdcaTecnicasAnalise = ['5-porques', 'ishikawa', 'livre'] as const;
-export const pdcaStatusValidacao = ['sucesso', 'sucesso_parcial', 'falha'] as const;
+export const pdcaFases = PDCA_FASES;
+export const pdcaStatusCiclo = PDCA_STATUS_CICLO;
+export const pdcaTecnicasAnalise = PDCA_TECNICAS_ANALISE;
+export const pdcaStatusValidacao = PDCA_STATUS_VALIDACAO;
 
 export class CreatePdcaDto {
   @IsString()

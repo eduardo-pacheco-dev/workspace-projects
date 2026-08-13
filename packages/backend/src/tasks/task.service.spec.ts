@@ -1,40 +1,29 @@
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TaskService } from './task.service';
-import { Task } from './task.entity';
+import { Task } from './domain/task.entity';
+import { TASK_REPOSITORY } from './domain/task.repository';
 
 describe('TaskService', () => {
   let service: TaskService;
 
-  const repository = {
+  const repo = {
     create: jest.fn(),
     save: jest.fn(),
-    findOne: jest.fn(),
-    find: jest.fn(),
-    delete: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
-
-  const buildQueryBuilder = (data: Task[], total: number) => {
-    const qb = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getManyAndCount: jest.fn().mockResolvedValue([data, total]),
-    };
-    return qb;
+    findAll: jest.fn(),
+    findById: jest.fn(),
+    findByIdWithSubtasks: jest.fn(),
+    findSubtasks: jest.fn(),
+    findParent: jest.fn(),
+    deleteWithSubtasks: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-
     const moduleRef = await Test.createTestingModule({
       providers: [
         TaskService,
-        { provide: getRepositoryToken(Task), useValue: repository },
+        { provide: TASK_REPOSITORY, useValue: repo },
       ],
     }).compile();
 
@@ -42,199 +31,123 @@ describe('TaskService', () => {
   });
 
   describe('create', () => {
-    it('should create a task with default status and priority when not provided', async () => {
-      const created = { id: 1, title: 'Revisar projeto', status: 'pending', priority: 'medium' } as Task;
-      repository.create.mockReturnValue(created);
-      repository.save.mockResolvedValue(created);
+    it('should create a task with defaults', async () => {
+      repo.create.mockResolvedValue(
+        new Task({ id: 1, title: 'Revisar projeto', status: 'pending', priority: 'medium' }),
+      );
 
       const result = await service.create({ title: 'Revisar projeto' });
 
-      expect(repository.create).toHaveBeenCalledWith({
-        title: 'Revisar projeto',
-        status: 'pending',
-        priority: 'medium',
-      });
-      expect(repository.save).toHaveBeenCalledWith(created);
-      expect(result).toEqual(created);
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Revisar projeto', status: 'pending', priority: 'medium' }),
+      );
+      expect(result.status).toBe('pending');
     });
 
-    it('should create a task keeping the provided status and priority', async () => {
-      const created = {
-        id: 2,
-        title: 'Entrega de relatório',
-        status: 'in_progress',
-        priority: 'high',
-      } as Task;
-      repository.create.mockReturnValue(created);
-      repository.save.mockResolvedValue(created);
+    it('should check the parent when a parentId is provided', async () => {
+      repo.findParent.mockResolvedValue(new Task({ id: 5, title: 'Pai' }));
+      repo.create.mockImplementation(async (t) => t);
 
-      const result = await service.create({ title: 'Entrega de relatório', status: 'in_progress', priority: 'high' });
+      await service.create({ title: 'Sub', parentId: 5 });
 
-      expect(repository.create).toHaveBeenCalledWith({
-        title: 'Entrega de relatório',
-        status: 'in_progress',
-        priority: 'high',
-      });
-      expect(result.status).toBe('in_progress');
-      expect(result.priority).toBe('high');
+      expect(repo.findParent).toHaveBeenCalledWith(5);
     });
 
-    it('should create a subtask when the parent task exists', async () => {
-      const created = {
-        id: 3,
-        title: 'Subtarefa',
-        status: 'pending',
-        priority: 'medium',
-        parentId: 1,
-      } as Task;
-      repository.findOne.mockResolvedValue({ id: 1, title: 'Tarefa' });
-      repository.create.mockReturnValue(created);
-      repository.save.mockResolvedValue(created);
+    it('should throw NotFoundException when the parent does not exist', async () => {
+      repo.findParent.mockResolvedValue(null);
 
-      const result = await service.create({ title: 'Subtarefa', parentId: 1 });
-
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ parentId: 1 }));
-      expect(result.parentId).toBe(1);
-    });
-
-    it('should throw NotFoundException when creating a subtask with an unknown parent', async () => {
-      repository.findOne.mockResolvedValue(null);
-
-      await expect(service.create({ title: 'Subtarefa', parentId: 99 })).rejects.toThrow(NotFoundException);
+      await expect(service.create({ title: 'Sub', parentId: 99 })).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('findAll', () => {
-    it('should return paginated tasks with default sort by dueAt ascending', async () => {
-      const task = { id: 1, title: 'Tarefa', dueAt: '2026-08-03' } as Task;
-      const qb = buildQueryBuilder([task], 1);
-      repository.createQueryBuilder.mockReturnValue(qb);
+    it('should delegate to the repository', async () => {
+      const data = [new Task({ id: 1, title: 'A' })];
+      repo.findAll.mockResolvedValue({ data, total: 1 });
 
-      const result = await service.findAll({});
+      const query = { page: 1, limit: 10, search: 'a', status: 'pending', priority: 'high' };
+      const result = await service.findAll(query);
 
-      expect(repository.createQueryBuilder).toHaveBeenCalledWith('t');
-      expect(qb.orderBy).toHaveBeenCalledWith('t.dueAt', 'ASC');
-      expect(qb.skip).toHaveBeenCalledWith(0);
-      expect(qb.take).toHaveBeenCalledWith(10);
-      expect(result).toEqual({ data: [task], total: 1 });
-    });
-
-    it('should apply search, status and priority filters', async () => {
-      const task = { id: 1, title: 'Manutenção' } as Task;
-      const qb = buildQueryBuilder([task], 1);
-      repository.createQueryBuilder.mockReturnValue(qb);
-
-      await service.findAll({ search: 'manu', status: 'pending', priority: 'high' });
-
-      expect(qb.where).toHaveBeenCalledWith('t.parentId IS NULL');
-      expect(qb.andWhere).toHaveBeenCalledWith(
-        't.title LIKE :search OR t.description LIKE :search OR t.project LIKE :search OR t.client LIKE :search OR t.assignedTo LIKE :search',
-        { search: '%manu%' },
-      );
-      expect(qb.andWhere).toHaveBeenCalledWith('t.status = :status', { status: 'pending' });
-      expect(qb.andWhere).toHaveBeenCalledWith('t.priority = :priority', { priority: 'high' });
-    });
-
-    it('should fall back to dueAt when sortBy is not allowed', async () => {
-      const qb = buildQueryBuilder([], 0);
-      repository.createQueryBuilder.mockReturnValue(qb);
-
-      await service.findAll({ sortBy: 'notAllowed', sortOrder: 'DESC' });
-
-      expect(qb.orderBy).toHaveBeenCalledWith('t.dueAt', 'DESC');
-    });
-
-    it('should use the allowed sortBy and sortOrder when provided', async () => {
-      const qb = buildQueryBuilder([], 0);
-      repository.createQueryBuilder.mockReturnValue(qb);
-
-      await service.findAll({ sortBy: 'priority', sortOrder: 'DESC' });
-
-      expect(qb.orderBy).toHaveBeenCalledWith('t.priority', 'DESC');
+      expect(repo.findAll).toHaveBeenCalledWith(query);
+      expect(result).toEqual({ data, total: 1 });
     });
   });
 
   describe('findById', () => {
-    it('should return the task with subtasks when found', async () => {
-      const task = { id: 1, title: 'Tarefa', subtasks: [] } as unknown as Task;
-      repository.findOne.mockResolvedValue(task);
+    it('should return the task with subtasks', async () => {
+      const task = new Task({ id: 1, title: 'A', subtasks: [new Task({ id: 2, title: 'Sub' })] });
+      repo.findByIdWithSubtasks.mockResolvedValue(task);
 
-      const result = await service.findById(1);
-
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
-        relations: { subtasks: true },
-        order: { subtasks: { createdAt: 'ASC' } },
-      });
-      expect(result).toEqual(task);
+      await expect(service.findById(1)).resolves.toEqual(task);
     });
 
-    it('should throw NotFoundException when the task does not exist', async () => {
-      repository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException when not found', async () => {
+      repo.findByIdWithSubtasks.mockResolvedValue(null);
 
-      await expect(service.findById(1)).rejects.toThrow(NotFoundException);
+      await expect(service.findById(99)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('findSubtasks', () => {
-    it('should return the subtasks of a task', async () => {
-      repository.findOne.mockResolvedValue({ id: 1, title: 'Tarefa' });
-      repository.find = jest.fn().mockResolvedValue([
-        { id: 2, title: 'Subtarefa 1', parentId: 1 },
-        { id: 3, title: 'Subtarefa 2', parentId: 1 },
-      ]);
+    it('should return the subtasks of an existing task', async () => {
+      repo.findById.mockResolvedValue(new Task({ id: 1, title: 'Pai' }));
+      const subtasks = [new Task({ id: 2, title: 'Sub' })];
+      repo.findSubtasks.mockResolvedValue(subtasks);
 
       const result = await service.findSubtasks(1);
 
-      expect(repository.find).toHaveBeenCalledWith({
-        where: { parentId: 1 },
-        order: { createdAt: 'ASC' },
-      });
-      expect(result).toHaveLength(2);
+      expect(repo.findSubtasks).toHaveBeenCalledWith(1);
+      expect(result).toEqual(subtasks);
     });
 
-    it('should throw NotFoundException when the parent task does not exist', async () => {
-      repository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException when the parent does not exist', async () => {
+      repo.findById.mockResolvedValue(null);
 
       await expect(service.findSubtasks(99)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should merge the dto into the existing task and save it', async () => {
-      const task = { id: 1, title: 'Antiga', status: 'pending', priority: 'low' } as Task;
-      repository.findOne.mockResolvedValue(task);
-      repository.save.mockImplementation(async (t: Task) => t);
+    it('should update an existing task', async () => {
+      const task = new Task({ id: 1, title: 'Antes', priority: 'low' });
+      repo.findById.mockResolvedValue(task);
+      repo.save.mockImplementation(async (t) => t);
 
-      const result = await service.update(1, { title: 'Nova', priority: 'urgent' });
+      const result = await service.update(1, { title: 'Depois', status: 'completed' });
 
-      expect(task.title).toBe('Nova');
-      expect(task.priority).toBe('urgent');
-      expect(repository.save).toHaveBeenCalledWith(task);
-      expect(result.title).toBe('Nova');
+      expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ title: 'Depois' }));
+      expect(result.status).toBe('completed');
+    });
+
+    it('should check the parent when moving a task under a new parent', async () => {
+      repo.findById.mockResolvedValue(new Task({ id: 1, title: 'A' }));
+      repo.findParent.mockResolvedValue(new Task({ id: 5, title: 'Pai' }));
+      repo.save.mockImplementation(async (t) => t);
+
+      await service.update(1, { parentId: 5 });
+
+      expect(repo.findParent).toHaveBeenCalledWith(5);
     });
 
     it('should throw NotFoundException when the task does not exist', async () => {
-      repository.findOne.mockResolvedValue(null);
+      repo.findById.mockResolvedValue(null);
 
-      await expect(service.update(1, { title: 'Nova' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(99, { title: 'X' })).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('delete', () => {
-    it('should delete the subtasks and then the task when found', async () => {
-      repository.delete.mockResolvedValue({ affected: 1 });
+    it('should delete an existing task', async () => {
+      repo.deleteWithSubtasks.mockResolvedValue(true);
 
       await expect(service.delete(1)).resolves.toBeUndefined();
-      expect(repository.delete).toHaveBeenCalledWith({ parentId: 1 });
-      expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(repo.deleteWithSubtasks).toHaveBeenCalledWith(1);
     });
 
-    it('should throw NotFoundException when nothing was deleted', async () => {
-      repository.delete.mockResolvedValue({ affected: 0 });
+    it('should throw NotFoundException when the task does not exist', async () => {
+      repo.deleteWithSubtasks.mockResolvedValue(false);
 
-      await expect(service.delete(1)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(99)).rejects.toThrow(NotFoundException);
     });
   });
 });

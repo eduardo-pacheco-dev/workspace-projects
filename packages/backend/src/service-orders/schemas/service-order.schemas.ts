@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { OPERADORA_OPTIONS, SERVICE_ORDER_STATUSES } from '../domain/service-order-rules';
 
-export const serviceOrderStatus = ['aberta', 'em_andamento', 'concluida', 'cancelada'] as const;
-export const operadoraOptions = ['TIM', 'CLARO', 'VIVO', 'Outras'] as const;
+export const serviceOrderStatus = SERVICE_ORDER_STATUSES;
+export const operadoraOptions = OPERADORA_OPTIONS;
 
 export const createServiceOrderSchema = z.object({
   cliente: z.string().min(1, 'Cliente é obrigatório.'),

@@ -4,7 +4,9 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { AuthGuard } from '@nestjs/passport';
 import request from 'supertest';
 import { Repository } from 'typeorm';
-import { RadioLink } from './radio-link.entity';
+import { RadioLinkEntity } from './infrastructure/radio-link.entity';
+import { TypeOrmRadioLinkRepository } from './infrastructure/typeorm-radio-link.repository';
+import { RADIO_LINK_REPOSITORY } from './domain/radio-link.repository';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLinksController } from './radio-links.controller';
 import { RadioLinksService } from './radio-links.service';
@@ -34,7 +36,7 @@ describe('RadioLinksController (integration)', () => {
     },
   };
 
-  let radioLinkRepo: Repository<RadioLink>;
+  let radioLinkRepo: Repository<RadioLinkEntity>;
   let stationRepo: Repository<StationEntity>;
 
   beforeAll(async () => {
@@ -44,13 +46,16 @@ describe('RadioLinksController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [RadioLink, StationEntity],
+          entities: [RadioLinkEntity, StationEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([RadioLink, StationEntity]),
+        TypeOrmModule.forFeature([RadioLinkEntity, StationEntity]),
       ],
       controllers: [RadioLinksController],
-      providers: [RadioLinksService],
+      providers: [
+        RadioLinksService,
+        { provide: RADIO_LINK_REPOSITORY, useClass: TypeOrmRadioLinkRepository },
+      ],
     })
       .overrideGuard(AuthGuard('jwt'))
       .useValue(mockAuthGuard)
@@ -60,7 +65,7 @@ describe('RadioLinksController (integration)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
 
-    radioLinkRepo = moduleRef.get<Repository<RadioLink>>(getRepositoryToken(RadioLink));
+    radioLinkRepo = moduleRef.get<Repository<RadioLinkEntity>>(getRepositoryToken(RadioLinkEntity));
     stationRepo = moduleRef.get<Repository<StationEntity>>(getRepositoryToken(StationEntity));
   });
 

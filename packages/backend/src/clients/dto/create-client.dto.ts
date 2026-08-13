@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
+import { CLIENT_STATUSES } from '../domain/client-rules';
 
 export class CreateClientDto {
   @IsString()
@@ -33,6 +34,6 @@ export class CreateClientDto {
   observacoes?: string;
 
   @IsOptional()
-  @IsIn(['ativo', 'inativo'])
+  @IsIn(CLIENT_STATUSES)
   status?: string;
 }

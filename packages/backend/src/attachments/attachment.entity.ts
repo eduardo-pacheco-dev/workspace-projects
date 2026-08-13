@@ -7,13 +7,13 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Job } from '../jobs/job.entity';
-import { ServiceOrder } from '../service-orders/service-order.entity';
+import { ServiceOrderEntity } from '../service-orders/infrastructure/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
-import { RadioLink } from '../radio-links/radio-link.entity';
-import { Project } from '../projects/project.entity';
-import { Client } from '../clients/client.entity';
+import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
+import { ProjectEntity } from '../projects/infrastructure/project.entity';
+import { ClientEntity } from '../clients/infrastructure/client.entity';
 import { Company } from '../companies/company.entity';
-import { Task } from '../tasks/task.entity';
+import { TaskEntity } from '../tasks/infrastructure/task.entity';
 
 @Entity()
 export class Attachment {
@@ -30,9 +30,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   serviceOrderId: number | null;
 
-  @ManyToOne(() => ServiceOrder, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ServiceOrderEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'serviceOrderId' })
-  serviceOrder: ServiceOrder | null;
+  serviceOrder: ServiceOrderEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   stationId: number | null;
@@ -44,23 +44,23 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   radioLinkId: number | null;
 
-  @ManyToOne(() => RadioLink, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => RadioLinkEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'radioLinkId' })
-  radioLink: RadioLink | null;
+  radioLink: RadioLinkEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   projectId: number | null;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'projectId' })
-  project: Project | null;
+  project: ProjectEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   clientId: number | null;
 
-  @ManyToOne(() => Client, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => ClientEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'clientId' })
-  client: Client | null;
+  client: ClientEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   companyId: number | null;
@@ -72,9 +72,9 @@ export class Attachment {
   @Column({ type: 'integer', nullable: true })
   taskId: number | null;
 
-  @ManyToOne(() => Task, { onDelete: 'CASCADE', nullable: true })
+  @ManyToOne(() => TaskEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'taskId' })
-  task: Task | null;
+  task: TaskEntity | null;
 
   @Column({ type: 'integer', nullable: true })
   folderId: number | null;

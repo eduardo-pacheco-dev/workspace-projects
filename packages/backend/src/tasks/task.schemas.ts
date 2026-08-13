@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { TASK_PRIORITIES, TASK_STATUSES } from './domain/task-rules';
 
-export const taskStatus = ['pending', 'in_progress', 'completed', 'cancelled'] as const;
-export const taskPriority = ['low', 'medium', 'high', 'urgent'] as const;
+export const taskStatus = TASK_STATUSES;
+export const taskPriority = TASK_PRIORITIES;
 
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório.'),

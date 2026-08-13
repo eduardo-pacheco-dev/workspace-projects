@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
@@ -61,7 +61,7 @@ describe('AuthService', () => {
         expect.objectContaining({ email: 'maria@email.com', role: 'user', status: 'inactive' }),
       );
       expect(audit.register).toHaveBeenCalledWith('maria@email.com');
-      expect(result.message).toContain('Registration');
+      expect(result.message).toContain('Conta criada com sucesso');
     });
 
     it('should not reveal whether the email is already registered', async () => {
@@ -74,7 +74,7 @@ describe('AuthService', () => {
       });
 
       expect(usersService.create).not.toHaveBeenCalled();
-      expect(result.message).toContain('Registration');
+      expect(result.message).toContain('Conta criada com sucesso');
     });
   });
 
@@ -105,9 +105,9 @@ describe('AuthService', () => {
       );
 
       await expect(service.login({ email: 'admin@admin.com', password: '123456' })).rejects.toThrow(
-        UnauthorizedException,
+        ForbiddenException,
       );
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(bcrypt.compare).toHaveBeenCalled();
     });
 
     it('should reject a wrong password', async () => {

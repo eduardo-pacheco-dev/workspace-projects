@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
-import { isActiveUser } from '../users/domain/user-rules';
+import { ACTIVE_STATUS, isActiveUser } from '../users/domain/user-rules';
 import { BCRYPT_ROUNDS } from '../common/config/security';
 import { AuditLogger } from '../common/audit/audit-logger';
 import { buildResetToken, parseResetToken } from './reset-token';
@@ -12,6 +12,8 @@ import {
   ForgotPasswordInput,
   ResetPasswordInput,
 } from './schemas/auth.schemas';
+
+export const ACCOUNT_INACTIVE_CODE = 'ACCOUNT_INACTIVE';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -37,6 +39,7 @@ export class AuthService {
     name: string;
     email: string;
     role: string;
+    status?: string;
     tokenVersion?: number;
     companyId?: number | null;
     company?: { nome: string } | null;
@@ -49,6 +52,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        status: user.status ?? ACTIVE_STATUS,
         companyId: user.companyId,
         companyName: user.company?.nome ?? null,
       },
@@ -110,27 +114,36 @@ export class AuthService {
       });
       this.audit.register(dto.email);
     }
-    return { message: 'Registration successful. Please wait for administrator approval.' };
+    return { message: 'Conta criada com sucesso. Aguarde a ativação pelo administrador para acessar o sistema.' };
   }
 
   async login(dto: LoginInput, ip?: string) {
     if (this.isAccountLocked(dto.email, ip)) {
       this.audit.loginFailure(dto.email, ip, 'account_locked');
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user || !isActiveUser(user)) {
+    if (!user) {
       this.registerFailure(dto.email, ip);
-      this.audit.loginFailure(dto.email, ip, user ? 'inactive' : 'unknown_email');
-      throw new UnauthorizedException('Invalid credentials');
+      this.audit.loginFailure(dto.email, ip, 'unknown_email');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       this.registerFailure(dto.email, ip);
       this.audit.loginFailure(dto.email, ip, 'bad_password');
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    if (!isActiveUser(user)) {
+      this.audit.loginFailure(dto.email, ip, 'inactive');
+      throw new ForbiddenException({
+        statusCode: 403,
+        message: 'Conta inativa. Aguarde a ativação pelo administrador.',
+        code: ACCOUNT_INACTIVE_CODE,
+      });
     }
 
     this.clearFailures(dto.email, ip);

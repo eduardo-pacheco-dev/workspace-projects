@@ -7,10 +7,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { StationEntity } from '../stations/infrastructure/station.entity';
+import { StationEntity } from '../../stations/infrastructure/station.entity';
 
-@Entity()
-export class RadioLink {
+@Entity('radio_link')
+export class RadioLinkEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

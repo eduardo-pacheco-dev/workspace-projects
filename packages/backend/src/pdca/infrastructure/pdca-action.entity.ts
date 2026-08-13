@@ -7,19 +7,19 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Pdca } from './pdca.entity';
+import { PdcaEntity } from './pdca.entity';
 
 @Entity('pdca_action')
-export class PdcaAction {
+export class PdcaActionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'integer' })
   pdcaId: number;
 
-  @ManyToOne(() => Pdca, (pdca) => pdca.actions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PdcaEntity, (pdca) => pdca.actions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'pdcaId' })
-  pdca: Pdca;
+  pdca: PdcaEntity;
 
   @Column({ type: 'text' })
   what: string;

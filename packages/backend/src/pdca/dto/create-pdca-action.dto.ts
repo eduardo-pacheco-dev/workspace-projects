@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsInt, IsIn, Min, Max, IsNumber } from 'class-validator';
+import { PDCA_STATUS_ACAO } from '../domain/pdca-rules';
 
-export const pdcaStatusAcao = ['pendente', 'em_andamento', 'concluido', 'atrasado'] as const;
+export const pdcaStatusAcao = PDCA_STATUS_ACAO;
 
 export class CreatePdcaActionDto {
   @IsString()

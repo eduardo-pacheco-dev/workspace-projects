@@ -82,7 +82,7 @@ describe('AuthController (integration)', () => {
         .send({ name: 'Maria', lastName: 'Souza', email: 'maria@email.com', password: 'Senha123' })
         .expect(201);
 
-      expect(res.body.message).toContain('Registration');
+      expect(res.body.message).toContain('Conta criada com sucesso');
 
       const saved = await userRepo.findOne({ where: { email: 'maria@email.com' } });
       expect(saved?.status).toBe('inactive');
@@ -103,7 +103,7 @@ describe('AuthController (integration)', () => {
         .send({ name: 'Outro', email: 'dup@email.com', password: 'Senha123' })
         .expect(201);
 
-      expect(res.body.message).toContain('Registration');
+      expect(res.body.message).toContain('Conta criada com sucesso');
       const count = await userRepo.count({ where: { email: 'dup@email.com' } });
       expect(count).toBe(1);
     });
@@ -156,13 +156,15 @@ describe('AuthController (integration)', () => {
         .expect(401);
     });
 
-    it('should return 401 for an inactive user', async () => {
+    it('should return 403 for an inactive user awaiting activation', async () => {
       await userRepo.update({ email: 'admin@email.com' }, { status: 'inactive' });
 
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send({ email: 'admin@email.com', password: 'Senha123' })
-        .expect(401);
+        .expect(403);
+
+      expect(res.body.code).toBe('ACCOUNT_INACTIVE');
     });
   });
 

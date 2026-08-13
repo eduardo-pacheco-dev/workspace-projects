@@ -18,6 +18,7 @@ import {
   canSeeUser,
   roleRequiresCompany,
   MASTER_ROLE,
+  ACTIVE_STATUS,
   INACTIVE_STATUS,
 } from './domain/user-rules';
 import { BCRYPT_ROUNDS } from '../common/config/security';
@@ -167,7 +168,7 @@ export class UsersService {
         phone: dto.phone || null,
         email: dto.email,
         password: hashedPassword,
-        status: 'inactive',
+        status: role === MASTER_ROLE ? ACTIVE_STATUS : INACTIVE_STATUS,
         role,
         companyId,
       }),

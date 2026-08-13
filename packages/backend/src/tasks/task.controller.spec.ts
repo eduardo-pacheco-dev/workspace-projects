@@ -2,7 +2,9 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import request from 'supertest';
-import { Task } from './task.entity';
+import { TaskEntity } from './infrastructure/task.entity';
+import { TypeOrmTaskRepository } from './infrastructure/typeorm-task.repository';
+import { TASK_REPOSITORY } from './domain/task.repository';
 import { TaskController } from './task.controller';
 import { TaskService } from './task.service';
 
@@ -16,13 +18,16 @@ describe('TaskController (integration)', () => {
           type: 'sqljs',
           autoSave: false,
           location: ':memory:',
-          entities: [Task],
+          entities: [TaskEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Task]),
+        TypeOrmModule.forFeature([TaskEntity]),
       ],
       controllers: [TaskController],
-      providers: [TaskService],
+      providers: [
+        TaskService,
+        { provide: TASK_REPOSITORY, useClass: TypeOrmTaskRepository },
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -94,7 +99,7 @@ describe('TaskController (integration)', () => {
         .expect(200);
 
       expect(res.body.total).toBeGreaterThan(0);
-      for (const task of res.body.data as Task[]) {
+      for (const task of res.body.data as TaskEntity[]) {
         expect(task.status).toBe('in_progress');
       }
     });
@@ -105,7 +110,7 @@ describe('TaskController (integration)', () => {
         .query({ priority: 'high' })
         .expect(200);
 
-      for (const task of res.body.data as Task[]) {
+      for (const task of res.body.data as TaskEntity[]) {
         expect(task.priority).toBe('high');
       }
     });
@@ -117,7 +122,7 @@ describe('TaskController (integration)', () => {
         .expect(200);
 
       expect(res.body.total).toBeGreaterThan(0);
-      for (const task of res.body.data as Task[]) {
+      for (const task of res.body.data as TaskEntity[]) {
         expect(task.title).toMatch(/Revisar/i);
       }
     });

@@ -1,112 +1,64 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Task } from './task.entity';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Task } from './domain/task.entity';
+import {
+  TaskRepository,
+  TaskQuery,
+  PaginatedTasks,
+  TASK_REPOSITORY,
+} from './domain/task.repository';
 import { CreateTaskInput, UpdateTaskInput } from './task.schemas';
 
 @Injectable()
 export class TaskService {
   constructor(
-    @InjectRepository(Task)
-    private readonly taskRepository: Repository<Task>,
+    @Inject(TASK_REPOSITORY)
+    private readonly taskRepository: TaskRepository,
   ) {}
 
   async create(dto: CreateTaskInput): Promise<Task> {
     if (dto.parentId != null) {
-      const parent = await this.taskRepository.findOne({ where: { id: dto.parentId } });
-      if (!parent) throw new NotFoundException('Tarefa pai não encontrada');
+      await this.ensureParent(dto.parentId);
     }
-    const task = this.taskRepository.create({
-      ...dto,
-      status: dto.status ?? 'pending',
-      priority: dto.priority ?? 'medium',
-    });
-    return this.taskRepository.save(task);
+    return this.taskRepository.create(new Task({ ...dto }));
   }
 
-  async findAll(query: {
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-    search?: string;
-    status?: string;
-    priority?: string;
-  }): Promise<{ data: Task[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sortBy = 'dueAt',
-      sortOrder = 'ASC' as 'ASC' | 'DESC',
-      search,
-      status,
-      priority,
-    } = query;
-
-    const qb = this.taskRepository.createQueryBuilder('t');
-    qb.where('t.parentId IS NULL');
-
-    if (search) {
-      qb.andWhere(
-        't.title LIKE :search OR t.description LIKE :search OR t.project LIKE :search OR t.client LIKE :search OR t.assignedTo LIKE :search',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (status) {
-      qb.andWhere('t.status = :status', { status });
-    }
-
-    if (priority) {
-      qb.andWhere('t.priority = :priority', { priority });
-    }
-
-    const allowedSort = ['id', 'title', 'status', 'priority', 'dueAt', 'project', 'client', 'assignedTo'];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'dueAt';
-    const safeOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const [data, total] = await qb
-      .orderBy(`t.${safeSort}`, safeOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total };
+  async findAll(query: TaskQuery): Promise<PaginatedTasks> {
+    return this.taskRepository.findAll(query);
   }
 
   async findById(id: number): Promise<Task> {
-    const task = await this.taskRepository.findOne({
-      where: { id },
-      relations: { subtasks: true },
-      order: { subtasks: { createdAt: 'ASC' } },
-    });
+    const task = await this.taskRepository.findByIdWithSubtasks(id);
     if (!task) throw new NotFoundException('Tarefa não encontrada');
     return task;
   }
 
   async findSubtasks(id: number): Promise<Task[]> {
-    await this.findById(id);
-    return this.taskRepository.find({
-      where: { parentId: id },
-      order: { createdAt: 'ASC' },
-    });
+    await this.ensureTask(id);
+    return this.taskRepository.findSubtasks(id);
   }
 
   async update(id: number, dto: UpdateTaskInput): Promise<Task> {
-    const task = await this.findById(id);
+    const task = await this.ensureTask(id);
     if (dto.parentId != null) {
-      const parent = await this.taskRepository.findOne({ where: { id: dto.parentId } });
-      if (!parent) throw new NotFoundException('Tarefa pai não encontrada');
+      await this.ensureParent(dto.parentId);
     }
     Object.assign(task, dto);
     return this.taskRepository.save(task);
   }
 
   async delete(id: number): Promise<void> {
-    await this.taskRepository.delete({ parentId: id });
-    const result = await this.taskRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Tarefa não encontrada');
-    }
+    const deleted = await this.taskRepository.deleteWithSubtasks(id);
+    if (!deleted) throw new NotFoundException('Tarefa não encontrada');
+  }
+
+  private async ensureTask(id: number): Promise<Task> {
+    const task = await this.taskRepository.findById(id);
+    if (!task) throw new NotFoundException('Tarefa não encontrada');
+    return task;
+  }
+
+  private async ensureParent(parentId: number): Promise<void> {
+    const parent = await this.taskRepository.findParent(parentId);
+    if (!parent) throw new NotFoundException('Tarefa pai não encontrada');
   }
 }

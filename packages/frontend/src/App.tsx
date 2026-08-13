@@ -6,10 +6,12 @@ import { ToastProvider } from './contexts/ToastContext'
 import api from './services/api'
 import { DEFAULT_USER_MODULES } from './pages/settings/roleModules'
 import Layout from './components/Layout'
+import PageTitle from './components/PageTitle'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
+import AccountPending from './pages/auth/AccountPending'
 import Dashboard from './pages/Dashboard'
 import UsersPage from './pages/users/UsersPage'
 import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage'
@@ -98,11 +100,13 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <ProjectProvider>
+        <PageTitle />
         <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/activation-pending" element={<AccountPending />} />
         <Route path="/500" element={<InternalError />} />
         <Route path="/401" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />

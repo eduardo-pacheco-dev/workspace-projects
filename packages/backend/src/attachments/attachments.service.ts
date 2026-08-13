@@ -34,9 +34,9 @@ export class AttachmentsService {
       this.projectsService.findById(projectId),
       this.projectsService.findCompanies(projectId),
     ]);
-    const company = companies[0];
+    const company = companies?.[0];
     const companyFolder = company
-      ? `empresa-${company.id}-${this.slugify(company.nome)}`
+      ? `empresa-${company.id}-${this.slugify(company.nome ?? '')}`
       : 'empresa-sem-vinculo';
     const clientFolder = `cliente-${this.slugify(project.cliente || 'sem-cliente')}`;
     return path.resolve('uploads', companyFolder, clientFolder, `projeto-${projectId}`);

@@ -20,6 +20,8 @@ import SaveIcon from '@mui/icons-material/Save'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GroupIcon from '@mui/icons-material/Group'
 import api from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
+import ProfileForm from '../users/ProfileForm'
 import { settingsFields, emptySettings, Settings, SettingsField } from './settingsTypes'
 import {
   ALL_ROLE_MODULES,
@@ -40,6 +42,9 @@ const systemKeys: (keyof Settings)[] = ['timezone', 'language', 'currency']
 const configurableRoles = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
 
 export default function SettingsPage() {
+  const { user } = useAuth()
+  const isMaster = user?.role === 'master'
+  const canEditSystem = isMaster || user?.role === 'admin'
   const [tab, setTab] = useState(0)
   const [form, setForm] = useState<Settings>(emptySettings)
   const [selectedRole, setSelectedRole] = useState('user')
@@ -131,12 +136,13 @@ export default function SettingsPage() {
     }
   }
 
-  const renderField = (key: keyof Settings, field: SettingsField) => {
+  const renderField = (key: keyof Settings, field: SettingsField, disabled = false) => {
     const common = {
       fullWidth: true,
       size: 'small' as const,
       label: field.label,
       value: form[key],
+      disabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleChange(key, e.target.value),
     }
 
@@ -159,6 +165,9 @@ export default function SettingsPage() {
     return <TextField type={field.type === 'email' ? 'email' : 'text'} {...common} />
   }
 
+  const showPerfis = isMaster && tab === 2
+  const showPerfil = isMaster ? tab === 3 : tab === 2
+  const formLocked = tab <= 1 && !canEditSystem
   const activeKeys = tab === 0 ? systemKeys : tab === 1 ? companyKeys : []
   const activeFields = settingsFields.filter((f) => activeKeys.includes(f.key))
   const activeTitle = tab === 0 ? 'Configuração Geral do Sistema' : tab === 1 ? 'Configuração da Empresa' : 'Perfis de Acesso'
@@ -188,14 +197,15 @@ export default function SettingsPage() {
       )}
 
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
+        <Tabs value={isMaster ? tab : Math.min(tab, 2)} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
           <Tab label="Sistema" />
           <Tab label="Empresa" />
-          <Tab label="Perfis" />
+          {isMaster && <Tab label="Perfis" />}
+          <Tab label="Perfil" />
         </Tabs>
       </Paper>
 
-      {tab === 2 ? (
+      {showPerfis ? (
         <Paper sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <GroupIcon color="primary" />
@@ -241,22 +251,29 @@ export default function SettingsPage() {
             </Button>
           </Box>
         </Paper>
+      ) : showPerfil ? (
+        <ProfileForm />
       ) : (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             {activeTitle}
           </Typography>
+          {formLocked && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Apenas administradores podem alterar estas configurações.
+            </Alert>
+          )}
           <Divider sx={{ mb: 3 }} />
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={2}>
               {activeFields.map((field) => (
                 <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.key}>
-                  {renderField(field.key, field)}
+                  {renderField(field.key, field, formLocked)}
                 </Grid>
               ))}
             </Grid>
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving}>
+              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || formLocked}>
                 {saving ? 'Salvando...' : 'Salvar alterações'}
               </Button>
             </Box>

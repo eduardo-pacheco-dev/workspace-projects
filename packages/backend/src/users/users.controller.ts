@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Post,
@@ -69,13 +68,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async delete(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ) {
-    if (req.user?.id === id) {
-      throw new BadRequestException('Não é possível excluir o próprio usuário.');
-    }
+  async delete(@Param('id', ParseIntPipe) id: number) {
     await this.usersService.deleteUser(id);
     return { message: 'Usuário excluído com sucesso' };
   }

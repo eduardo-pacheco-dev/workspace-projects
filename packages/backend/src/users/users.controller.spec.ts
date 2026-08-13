@@ -345,12 +345,13 @@ describe('UsersController (integration)', () => {
   });
 
   describe('DELETE /users/:id', () => {
-    it('should reject deleting your own user', async () => {
+    it('should allow deleting your own user', async () => {
       currentUser = masterUser;
 
-      const res = await request(app.getHttpServer()).delete('/users/1').expect(400);
+      const res = await request(app.getHttpServer()).delete('/users/1').expect(200);
+      expect(res.body.message).toBe('Usuário excluído com sucesso');
 
-      expect(res.body.message).toContain('próprio usuário');
+      await request(app.getHttpServer()).get('/users/1').expect(404);
     });
 
     it('should delete another user', async () => {

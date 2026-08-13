@@ -14,6 +14,8 @@ import {
 import { formatDateTime } from '../../utils/format'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 interface UserProfile {
   id: number
@@ -26,11 +28,14 @@ interface UserProfile {
 }
 
 export default function ProfileForm() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const { showToast } = useToast()
   const [data, setData] = useState<UserProfile | null>(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -64,6 +69,21 @@ export default function ProfileForm() {
       setError(err.response?.data?.message || 'Não foi possível salvar.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return
+    setDeleting(true)
+    try {
+      await api.delete(`/users/${user.id}`)
+      showToast('Conta excluída com sucesso.')
+      logout()
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível excluir a conta. Tente novamente.', 'error')
+      setDeleteOpen(false)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -134,6 +154,26 @@ export default function ProfileForm() {
           </Button>
         </Box>
       )}
+
+      <Divider sx={{ my: 3 }} />
+      <Typography variant="subtitle2" color="error" sx={{ mb: 1, fontWeight: 600 }}>
+        Zona de Perigo
+      </Typography>
+      <Alert severity="error" sx={{ mb: 2 }}>
+        A exclusão da conta é permanente e não pode ser desfeita. Todos os seus dados serão removidos.
+      </Alert>
+      <Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)} disabled={deleting}>
+        {deleting ? 'Excluindo...' : 'Excluir conta'}
+      </Button>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Excluir conta"
+        message="Tem certeza que deseja excluir sua conta? Essa ação é permanente e não pode ser desfeita."
+        confirmLabel="Excluir conta"
+        onConfirm={handleDeleteAccount}
+        onClose={() => setDeleteOpen(false)}
+      />
     </Paper>
   )
 }

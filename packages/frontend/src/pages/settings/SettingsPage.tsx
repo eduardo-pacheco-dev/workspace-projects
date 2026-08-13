@@ -167,7 +167,7 @@ export default function SettingsPage() {
 
   const showPerfis = isMaster && tab === 2
   const showPerfil = isMaster ? tab === 3 : tab === 2
-  const systemLocked = tab === 0 && !canEditSystem
+  const formLocked = tab <= 1 && !canEditSystem
   const activeKeys = tab === 0 ? systemKeys : tab === 1 ? companyKeys : []
   const activeFields = settingsFields.filter((f) => activeKeys.includes(f.key))
   const activeTitle = tab === 0 ? 'Configuração Geral do Sistema' : tab === 1 ? 'Configuração da Empresa' : 'Perfis de Acesso'
@@ -258,9 +258,9 @@ export default function SettingsPage() {
           <Typography variant="h6" sx={{ mb: 2 }}>
             {activeTitle}
           </Typography>
-          {systemLocked && (
+          {formLocked && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Apenas administradores podem alterar as configurações do sistema.
+              Apenas administradores podem alterar estas configurações.
             </Alert>
           )}
           <Divider sx={{ mb: 3 }} />
@@ -268,12 +268,12 @@ export default function SettingsPage() {
             <Grid container spacing={2}>
               {activeFields.map((field) => (
                 <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.key}>
-                  {renderField(field.key, field, systemLocked)}
+                  {renderField(field.key, field, formLocked)}
                 </Grid>
               ))}
             </Grid>
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || systemLocked}>
+              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || formLocked}>
                 {saving ? 'Salvando...' : 'Salvar alterações'}
               </Button>
             </Box>

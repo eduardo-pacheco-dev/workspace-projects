@@ -270,6 +270,28 @@ describe('UsersService', () => {
       expect(result.companyId).toBeNull();
     });
 
+    it('should create a master user already active', async () => {
+      repo.findByEmail.mockResolvedValue(null);
+      const created = new User({
+        id: 6,
+        email: 'master2@email.com',
+        role: 'master',
+        companyId: null,
+        status: 'active',
+      });
+      repo.create.mockResolvedValue(created);
+
+      const result = await service.createUser(
+        { name: 'M2', email: 'master2@email.com', password: '123456', role: 'master' },
+        master,
+      );
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'master', status: 'active' }),
+      );
+      expect(result).toEqual(created);
+    });
+
     it('should require a company for a non-master role', async () => {
       repo.findByEmail.mockResolvedValue(null);
 

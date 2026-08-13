@@ -82,6 +82,7 @@ export class SeedService implements OnApplicationBootstrap {
       email: 'admin@admin.com',
       password: hashedPassword,
       role: 'master',
+      status: 'active',
       companyId: null,
     });
 

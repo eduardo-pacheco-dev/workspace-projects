@@ -1,14 +1,17 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
+import { ACTIVE_STATUS } from '../users/domain/user-rules';
 import {
   RegisterInput,
   LoginInput,
   ForgotPasswordInput,
   ResetPasswordInput,
 } from './schemas/auth.schemas';
+
+export const ACCOUNT_INACTIVE_CODE = 'ACCOUNT_INACTIVE';
 
 @Injectable()
 export class AuthService {
@@ -20,11 +23,11 @@ export class AuthService {
   async register(dto: RegisterInput) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
-      throw new BadRequestException('Email already in use');
+      throw new BadRequestException('Email já cadastrado');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.usersService.create({
+    await this.usersService.create({
       name: dto.name,
       lastName: dto.lastName || null,
       phone: dto.phone || null,
@@ -34,29 +37,28 @@ export class AuthService {
       companyId: null,
     });
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
     return {
-      access_token: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId,
-        companyName: user.company?.nome ?? null,
-      },
+      message: 'Conta criada com sucesso. Aguarde a ativação pelo administrador para acessar o sistema.',
     };
   }
 
   async login(dto: LoginInput) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    if (user.status !== ACTIVE_STATUS) {
+      throw new ForbiddenException({
+        statusCode: 403,
+        message: 'Conta inativa. Aguarde a ativação pelo administrador.',
+        code: ACCOUNT_INACTIVE_CODE,
+      });
     }
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
@@ -69,6 +71,7 @@ export class AuthService {
         role: user.role,
         companyId: user.companyId,
         companyName: user.company?.nome ?? null,
+        status: user.status,
       },
     };
   }

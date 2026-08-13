@@ -68,7 +68,7 @@ export default function SignUp() {
         phone: phone.replace(/\D/g, ''),
         password,
       })
-      navigate('/signin')
+      navigate('/activation-pending')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao cadastrar.')
     } finally {

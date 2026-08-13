@@ -50,6 +50,10 @@ export default function SignIn() {
       await login(email, password)
       navigate('/')
     } catch (err: any) {
+      if (err.response?.data?.code === 'ACCOUNT_INACTIVE') {
+        navigate('/activation-pending')
+        return
+      }
       setError(err.response?.data?.message || 'Erro ao fazer login.')
     } finally {
       setLoading(false)

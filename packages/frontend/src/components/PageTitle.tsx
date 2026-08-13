@@ -8,6 +8,7 @@ const ROUTE_TITLES: { pattern: string[]; title: string }[] = [
   { pattern: ['signup'], title: 'Criar Conta' },
   { pattern: ['forgot-password'], title: 'Recuperar Senha' },
   { pattern: ['reset-password'], title: 'Redefinir Senha' },
+  { pattern: ['activation-pending'], title: 'Aguardando Ativação' },
   { pattern: ['500'], title: 'Erro Interno' },
   { pattern: ['401'], title: 'Não Autorizado' },
   { pattern: [], title: 'Dashboard' },

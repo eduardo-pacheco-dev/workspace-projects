@@ -7,7 +7,7 @@ export const registerSchema = z.object({
   phone: z.string().optional(),
   password: z
     .string()
-    .min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+    .min(8, 'A senha deve ter no mínimo 8 caracteres.'),
 });
 
 export const loginSchema = z.object({
@@ -24,10 +24,10 @@ export const resetPasswordSchema = z
     token: z.string().min(1, 'Token é obrigatório.'),
     password: z
       .string()
-      .min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+      .min(8, 'A senha deve ter no mínimo 8 caracteres.'),
   })
-  .refine((data) => data.password.length >= 6, {
-    message: 'A senha deve ter no mínimo 6 caracteres.',
+  .refine((data) => data.password.length >= 8, {
+    message: 'A senha deve ter no mínimo 8 caracteres.',
     path: ['password'],
   });
 

@@ -36,7 +36,7 @@ interface UserProfile {
 
 const passwordSchema = z
   .object({
-    newPassword: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+    newPassword: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
     confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -226,7 +226,7 @@ export default function ProfileForm() {
                 setPassError((prev) => ({ ...prev, newPassword: '' }))
               }}
               error={!!passError.newPassword}
-              helperText={passError.newPassword || (newPassword ? '' : 'No mínimo 6 caracteres.')}
+              helperText={passError.newPassword || (newPassword ? '' : 'No mínimo 8 caracteres.')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

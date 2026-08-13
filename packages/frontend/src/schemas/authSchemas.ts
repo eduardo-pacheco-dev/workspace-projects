@@ -11,7 +11,7 @@ export const signUpSchema = z
     lastName: z.string().min(1, 'Informe seu sobrenome.'),
     email: z.string().min(1, 'Informe seu email.').email('Email inválido.'),
     phone: z.string().min(1, 'Informe seu telefone.'),
-    password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+    password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
     confirmPassword: z.string().min(1, 'Confirme sua senha.'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -25,7 +25,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+    password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
     confirmPassword: z.string().min(1, 'Confirme sua senha.'),
   })
   .refine((data) => data.password === data.confirmPassword, {

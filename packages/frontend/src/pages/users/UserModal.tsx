@@ -31,7 +31,7 @@ const baseUserSchema = z.object({
   lastName: z.string().min(1, 'Informe o sobrenome.'),
   email: z.string().min(1, 'Informe o email.').email('Email inválido.'),
   phone: z.string().min(1, 'Informe o telefone.'),
-  password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
   confirmPassword: z.string().min(1, 'Confirme a senha.'),
   role: z.enum(['master', 'admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']),
   companyId: z.number().nullable(),

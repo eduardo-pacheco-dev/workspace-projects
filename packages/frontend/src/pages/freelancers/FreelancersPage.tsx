@@ -25,8 +25,6 @@ export default function FreelancersPage() {
     <Box>
       <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Todos" />
-        <Tab label="Freelancers" />
-        <Tab label="Colaboradores" />
         <Tab label="Equipe" />
         <Tab label="LPU" />
       </Tabs>
@@ -36,26 +34,12 @@ export default function FreelancersPage() {
           onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
         />
       )}
-      {tab === 1 && (
-        <CollaboratorsPage
-          isFreelancer={true}
-          onNew={() => setFreelancerModal({ open: true, editId: null })}
-          onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
-        />
-      )}
-      {tab === 2 && (
-        <CollaboratorsPage
-          isFreelancer={false}
-          onNew={() => setFreelancerModal({ open: true, editId: null })}
-          onEdit={(id) => setFreelancerModal({ open: true, editId: id })}
-        />
-      )}
-      {tab === 3 && <TeamsTab />}
-      {tab === 4 && <LpuList />}
+      {tab === 1 && <TeamsTab />}
+      {tab === 2 && <LpuList />}
       <FreelancerModal
         open={freelancerModal.open}
         editId={freelancerModal.editId}
-        defaultType={tab === 2 ? 'colaborador' : 'freelancer'}
+        defaultType="freelancer"
         onClose={() => setFreelancerModal({ open: false, editId: null })}
         onSaved={refresh}
       />

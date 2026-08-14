@@ -189,6 +189,7 @@ export default function LpuList() {
         open={modalOpen}
         editId={editId}
         freelancerId={selectedFreelancer ? Number(selectedFreelancer) : null}
+        freelancers={freelancers}
         onClose={() => setModalOpen(false)}
         onSaved={fetchLpus}
       />

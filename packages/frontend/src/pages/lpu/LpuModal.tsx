@@ -13,15 +13,29 @@ import {
 } from '@mui/material'
 import api from '../../services/api'
 
+interface FreelancerOption {
+  id: number
+  firstName: string
+  lastName: string
+}
+
 interface LpuModalProps {
   open: boolean
   editId?: number | null
   freelancerId?: number | null
+  freelancers?: FreelancerOption[]
   onClose: () => void
   onSaved: () => void
 }
 
-export default function LpuModal({ open, editId, freelancerId, onClose, onSaved }: LpuModalProps) {
+export default function LpuModal({
+  open,
+  editId,
+  freelancerId,
+  freelancers = [],
+  onClose,
+  onSaved,
+}: LpuModalProps) {
   const isEdit = Boolean(editId)
 
   const [nome, setNome] = useState('')
@@ -29,8 +43,13 @@ export default function LpuModal({ open, editId, freelancerId, onClose, onSaved 
   const [valor, setValor] = useState('')
   const [data, setData] = useState('')
   const [status, setStatus] = useState('ativo')
+  const [selectedFreelancer, setSelectedFreelancer] = useState<number | ''>(freelancerId ?? '')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (open) setSelectedFreelancer(freelancerId ?? '')
+  }, [open, freelancerId])
 
   useEffect(() => {
     if (open && editId) {
@@ -42,6 +61,7 @@ export default function LpuModal({ open, editId, freelancerId, onClose, onSaved 
           setValor(d.valor ? String(d.valor) : '')
           setData(d.data || '')
           setStatus(d.status || 'ativo')
+          setSelectedFreelancer(d.freelancerId ?? '')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
@@ -50,11 +70,15 @@ export default function LpuModal({ open, editId, freelancerId, onClose, onSaved 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!isEdit && !selectedFreelancer) {
+      setError('Selecione o freelancer.')
+      return
+    }
     setLoading(true)
 
     const payload: any = { nome, descricao, data, status }
     if (valor) payload.valor = Number(valor)
-    if (!isEdit) payload.freelancerId = freelancerId
+    if (!isEdit) payload.freelancerId = Number(selectedFreelancer)
 
     try {
       if (isEdit) {
@@ -79,6 +103,7 @@ export default function LpuModal({ open, editId, freelancerId, onClose, onSaved 
     setValor('')
     setData('')
     setStatus('ativo')
+    setSelectedFreelancer(freelancerId ?? '')
     onClose()
   }
 
@@ -88,6 +113,22 @@ export default function LpuModal({ open, editId, freelancerId, onClose, onSaved 
         <DialogTitle>{isEdit ? 'Editar LPU' : 'Nova LPU'}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {!isEdit && (
+            <TextField
+              fullWidth
+              select
+              label="Freelancer"
+              value={selectedFreelancer}
+              onChange={(e) => setSelectedFreelancer(e.target.value ? Number(e.target.value) : '')}
+              margin="normal"
+              required
+            >
+              <MenuItem value="">Selecione um freelancer</MenuItem>
+              {freelancers.map((f) => (
+                <MenuItem key={f.id} value={f.id}>{f.firstName} {f.lastName}</MenuItem>
+              ))}
+            </TextField>
+          )}
           <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
           <TextField fullWidth label="Descrição" multiline rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} margin="normal" />
           <TextField fullWidth label="Valor" type="number" value={valor} onChange={(e) => setValor(e.target.value)} margin="normal" />

@@ -32,6 +32,7 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications'
 import CorporateFareIcon from '@mui/icons-material/CorporateFare'
 import LoopIcon from '@mui/icons-material/Loop'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
@@ -67,6 +68,7 @@ const allItems: MenuItem[] = [
   { label: 'Projetos', path: '/projects', icon: <FolderIcon />, module: '/projects' },
   { label: 'PDCA', path: '/pdca', icon: <LoopIcon />, module: '/pdca' },
   { label: 'Clientes', path: '/clients', icon: <BusinessIcon />, module: '/clients' },
+  { label: 'LPUs', path: '/lpus', icon: <ReceiptLongIcon />, module: '/lpus' },
   { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon />, masterOnly: true },
   { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon />, module: '/settings' },
 ]

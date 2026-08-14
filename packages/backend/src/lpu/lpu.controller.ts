@@ -7,6 +7,8 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
+  Request,
 } from '@nestjs/common';
 import { LpuService } from './lpu.service';
 import { CreateLpuDto } from './dto/create-lpu.dto';
@@ -19,6 +21,33 @@ export class LpuController {
   @Post()
   create(@Body() dto: CreateLpuDto) {
     return this.lpuService.create(dto);
+  }
+
+  @Get()
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('freelancerId') freelancerId?: string,
+    @Request() req?: any,
+  ) {
+    const companyId =
+      req?.user && req.user.role !== 'master' ? (req.user.companyId ?? -1) : undefined;
+    return this.lpuService.findAll(
+      {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        search,
+        status,
+        freelancerId: freelancerId ? Number(freelancerId) : undefined,
+      },
+      companyId,
+    );
   }
 
   @Get('freelancer/:freelancerId')

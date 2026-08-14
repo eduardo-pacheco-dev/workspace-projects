@@ -45,6 +45,7 @@ import SettingsPage from './pages/settings/SettingsPage'
 import CompaniesPage from './pages/companies/CompaniesPage'
 import CompanyDetailPage from './pages/companies/CompanyDetailPage'
 import ProfilePage from './pages/users/ProfilePage'
+import LpuPage from './pages/lpu/LpuPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -134,6 +135,7 @@ export default function App() {
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/lpus" element={<LpuPage />} />
           <Route path="/companies" element={<MasterOnlyRoute><CompaniesPage /></MasterOnlyRoute>} />
           <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
           <Route path="/profile" element={<ProfilePage />} />

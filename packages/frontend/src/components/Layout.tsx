@@ -37,12 +37,39 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
+import { DEFAULT_ROLE_MODULES } from '../pages/settings/roleModules'
 
 interface ProjectOption {
   id: number
   nome: string
   codigo: string | null
 }
+
+interface MenuItem {
+  label: string
+  path: string
+  icon: React.ReactNode
+  module?: string
+  masterOnly?: boolean
+}
+
+const allItems: MenuItem[] = [
+  { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+  { label: 'Agenda', path: '/schedule', icon: <EventIcon />, masterOnly: true },
+  { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon />, module: '/tasks' },
+  { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon />, masterOnly: true },
+  { label: 'Usuários', path: '/users', icon: <GroupIcon />, module: '/users' },
+  { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon />, module: '/service-orders' },
+  { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon />, module: '/collaborators' },
+  { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon />, masterOnly: true },
+  { label: 'Estações', path: '/stations', icon: <CellTowerIcon />, module: '/stations' },
+  { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon />, module: '/radio-links' },
+  { label: 'Projetos', path: '/projects', icon: <FolderIcon />, module: '/projects' },
+  { label: 'PDCA', path: '/pdca', icon: <LoopIcon />, module: '/pdca' },
+  { label: 'Clientes', path: '/clients', icon: <BusinessIcon />, module: '/clients' },
+  { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon />, masterOnly: true },
+  { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon />, module: '/settings' },
+]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth()
@@ -51,6 +78,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null)
   const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [roleModules, setRoleModules] = useState<string[]>(
+    DEFAULT_ROLE_MODULES[user?.role ?? 'user'] ?? [],
+  )
+
+  useEffect(() => {
+    if (!user || user.role === 'master') return
+    api
+      .get('/settings')
+      .then((res) => {
+        const role = user.role
+        const raw = res.data?.[`role_modules_${role}`]
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed)) setRoleModules(parsed)
+          } catch {
+            // mantém o padrão em caso de valor inválido
+          }
+        }
+      })
+      .catch(() => {})
+  }, [user])
 
   useEffect(() => {
     api.get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
@@ -91,38 +140,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ? user.name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     : '?'
 
-  const masterItems = [
-    { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-    { label: 'Agenda', path: '/schedule', icon: <EventIcon /> },
-    { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
-    { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon /> },
-    { label: 'Usuários', path: '/users', icon: <GroupIcon /> },
-    { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
-    { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon /> },
-    { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon /> },
-    { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
-    { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
-    { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
-    { label: 'PDCA', path: '/pdca', icon: <LoopIcon /> },
-    { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
-    { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon /> },
-    { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
-  ]
-
-  const userItems = [
-    { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-    { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon /> },
-    { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon /> },
-    { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon /> },
-    { label: 'Estações', path: '/stations', icon: <CellTowerIcon /> },
-    { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon /> },
-    { label: 'Projetos', path: '/projects', icon: <FolderIcon /> },
-    { label: 'PDCA', path: '/pdca', icon: <LoopIcon /> },
-    { label: 'Clientes', path: '/clients', icon: <BusinessIcon /> },
-    { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon /> },
-  ]
-
-  const items = user?.role === 'master' ? masterItems : userItems
+  const items =
+    user?.role === 'master'
+      ? allItems
+      : allItems.filter(
+          (item) => !item.masterOnly && (!item.module || roleModules.includes(item.module)),
+        )
 
   return (
     <>

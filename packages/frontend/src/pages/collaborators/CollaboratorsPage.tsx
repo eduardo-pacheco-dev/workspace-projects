@@ -57,9 +57,10 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
   const { showToast } = useToast()
   const navigate = useNavigate()
   const isFreelancerList = isFreelancer === true
+  const isAllList = isFreelancer === undefined
   const entityLabel = isFreelancerList ? 'Freelancer' : 'Colaborador'
   const entityLabelLower = entityLabel.toLowerCase()
-  const entityLabelPlural = isFreelancerList ? 'Freelancers' : 'Colaboradores'
+  const entityLabelPlural = isFreelancerList ? 'Freelancers' : (isAllList ? 'Pessoal' : 'Colaboradores')
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -177,6 +178,7 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
                   </TableSortLabel>
                 </TableCell>
               ))}
+              {isAllList && <TableCell>Tipo</TableCell>}
               {showCompany && <TableCell>Empresa</TableCell>}
               <TableCell align="center">Ações</TableCell>
             </TableRow>
@@ -197,6 +199,16 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
                     color={c.status === 'ativo' ? 'success' : 'default'}
                   />
                 </TableCell>
+                {isAllList && (
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={c.isFreelancer ? 'Freelancer' : 'Colaborador'}
+                      color={c.isFreelancer ? 'secondary' : 'default'}
+                    />
+                  </TableCell>
+                )}
                 {showCompany && <TableCell>{c.company?.nome || '-'}</TableCell>}
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
@@ -212,7 +224,7 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
             ))}
             {collaborators.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={columns.length + (showCompany ? 1 : 0) + (isAllList ? 1 : 0) + 1} align="center">
                   Nenhum {entityLabelLower} encontrado.
                 </TableCell>
               </TableRow>

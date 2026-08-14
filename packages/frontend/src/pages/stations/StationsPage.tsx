@@ -21,8 +21,15 @@ import {
   MenuItem,
   Tabs,
   Tab,
+  Avatar,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
-import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt } from '@mui/icons-material'
+import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt, TableView, GridView } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
@@ -63,6 +70,7 @@ export default function StationsPage() {
   const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [tab, setTab] = useState(0)
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
 
   const fetchData = useCallback(async () => {
     try {
@@ -132,6 +140,11 @@ export default function StationsPage() {
     { id: 'status', label: 'Status' },
   ]
 
+  const getInitials = (siteId: string) =>
+    siteId.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'
+
+  const endIdLabel = (s: Station) => (s.mobileCarrier === 'TIM' ? s.endId : '-')
+
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -146,7 +159,7 @@ export default function StationsPage() {
         </Box>
       </Box>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
         <TextField
           size="small"
           label="Buscar"
@@ -189,6 +202,24 @@ export default function StationsPage() {
           <MenuItem value="VIVO">VIVO</MenuItem>
           <MenuItem value="Outras">Outras</MenuItem>
         </TextField>
+        {tab === 0 && (
+          <>
+            <Box sx={{ flexGrow: 1 }} />
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={viewMode}
+              onChange={(_, v) => v && setViewMode(v)}
+            >
+              <ToggleButton value="table" aria-label="Visualizar em tabela">
+                <TableView fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="cards" aria-label="Visualizar em cartões">
+                <GridView fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </>
+        )}
       </Stack>
 
       <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
@@ -202,73 +233,150 @@ export default function StationsPage() {
         <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {stations.map((s) => (
-              <TableRow
-                key={s.id}
-                hover
-                onClick={() => navigate(`/stations/${s.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{s.siteId}</TableCell>
-                <TableCell>{s.mobileCarrier === 'TIM' ? s.endId : '-'}</TableCell>
-                <TableCell>{s.mobileCarrier || '-'}</TableCell>
-                <TableCell>{s.address || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={s.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={s.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModal({ open: true, editId: s.id })
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setStationToDelete(s)
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {stations.length === 0 && (
+      {viewMode === 'table' ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Nenhuma estação encontrada.
-                </TableCell>
+                {columns.map((col) => (
+                  <TableCell key={col.id}>
+                    <TableSortLabel
+                      active={sortBy === col.id}
+                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
+                      onClick={() => handleSort(col.id)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+                <TableCell>Ações</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {stations.map((s) => (
+                <TableRow
+                  key={s.id}
+                  hover
+                  onClick={() => navigate(`/stations/${s.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>{s.siteId}</TableCell>
+                  <TableCell>{s.mobileCarrier === 'TIM' ? s.endId : '-'}</TableCell>
+                  <TableCell>{s.mobileCarrier || '-'}</TableCell>
+                  <TableCell>{s.address || '-'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={s.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      color={s.status === 'ativo' ? 'success' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setModal({ open: true, editId: s.id })
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setStationToDelete(s)
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {stations.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    Nenhuma estação encontrada.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Box>
+          {stations.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">Nenhuma estação encontrada.</Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={2}>
+              {stations.map((s) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={s.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+                    onClick={() => navigate(`/stations/${s.id}`)}
+                  >
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 18 }}>
+                          {getInitials(s.siteId)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                            {s.siteId}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {endIdLabel(s)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                        <Chip size="small" variant="outlined" label={s.mobileCarrier || '-'} />
+                        <Chip
+                          size="small"
+                          label={s.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                          color={s.status === 'ativo' ? 'success' : 'default'}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Endereço: {s.address || '-'}
+                      </Typography>
+                      {s.latitude != null && s.longitude != null && (
+                        <Typography variant="body2" color="text.secondary">
+                          Coordenadas: {s.latitude.toFixed(5)}, {s.longitude.toFixed(5)}
+                        </Typography>
+                      )}
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        startIcon={<Edit />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setModal({ open: true, editId: s.id })
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setStationToDelete(s)
+                        }}
+                      >
+                        Excluir
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
 
       <TablePagination
         component="div"

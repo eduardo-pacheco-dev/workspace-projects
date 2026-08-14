@@ -55,13 +55,13 @@ interface MenuItem {
 
 const allItems: MenuItem[] = [
   { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-  { label: 'Agenda', path: '/schedule', icon: <EventIcon />, masterOnly: true },
+  { label: 'Agenda', path: '/schedule', icon: <EventIcon />, module: '/schedule' },
   { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon />, module: '/tasks' },
-  { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon />, masterOnly: true },
+  { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon />, module: '/ms-project' },
   { label: 'Usuários', path: '/users', icon: <GroupIcon />, module: '/users' },
   { label: 'Ordens de Serviço', path: '/service-orders', icon: <AssignmentIcon />, module: '/service-orders' },
   { label: 'Colaboradores', path: '/collaborators', icon: <PersonIcon />, module: '/collaborators' },
-  { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon />, masterOnly: true },
+  { label: 'Finanças', path: '/finance', icon: <AttachMoneyIcon />, module: '/finance' },
   { label: 'Estações', path: '/stations', icon: <CellTowerIcon />, module: '/stations' },
   { label: 'Enlaces de Rádio', path: '/radio-links', icon: <SettingsInputAntennaIcon />, module: '/radio-links' },
   { label: 'Projetos', path: '/projects', icon: <FolderIcon />, module: '/projects' },

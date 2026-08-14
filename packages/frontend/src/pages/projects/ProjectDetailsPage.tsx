@@ -36,6 +36,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile'
 import SendIcon from '@mui/icons-material/Send'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useUserModules } from '../../hooks/useUserModules'
 import { formatDateTime } from '../../utils/format'
 import ProjectModal from './ProjectModal'
 import ProjectDocumentModal from './ProjectDocumentModal'
@@ -97,6 +98,7 @@ export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const modules = useUserModules()
   const projectId = Number(id)
   const [project, setProject] = useState<Project | null>(null)
   const [error, setError] = useState('')
@@ -322,6 +324,26 @@ export default function ProjectDetailsPage() {
       ]
     : []
 
+  const tabDefs = [
+    { label: 'Overview', value: 0 },
+    { label: 'Estações', value: 1, module: '/stations' },
+    { label: 'Enlaces de Rádio', value: 2, module: '/radio-links' },
+    { label: 'Documentos', value: 3 },
+    { label: 'Anexos', value: 4, module: '/attachments' },
+    { label: 'PDCA', value: 5, module: '/pdca' },
+    { label: 'Comentários', value: 6, module: '/comments' },
+  ]
+
+  const canAccessModule = (module?: string) =>
+    !module || user?.role === 'master' || modules.includes(module)
+
+  const visibleTabs = tabDefs.filter((t) => canAccessModule(t.module))
+
+  useEffect(() => {
+    const current = tabDefs.find((t) => t.value === tab)
+    if (current && !canAccessModule(current.module)) setTab(0)
+  }, [tab, modules, user?.role])
+
   return (
     <Container sx={{ mt: 4 }}>
       <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/projects')} sx={{ mb: 2 }}>
@@ -365,13 +387,9 @@ export default function ProjectDetailsPage() {
 
           <Paper sx={{ mb: 3 }}>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
-              <Tab label="Overview" />
-              <Tab label="Estações" />
-              <Tab label="Enlaces de Rádio" />
-              <Tab label="Documentos" />
-              <Tab label="Anexos" />
-              <Tab label="PDCA" />
-              <Tab label="Comentários" />
+              {visibleTabs.map((t) => (
+                <Tab key={t.value} label={t.label} />
+              ))}
             </Tabs>
           </Paper>
 

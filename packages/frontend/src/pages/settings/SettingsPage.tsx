@@ -22,22 +22,20 @@ import GroupIcon from '@mui/icons-material/Group'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import ProfileForm from '../users/ProfileForm'
-import { settingsFields, emptySettings, Settings, SettingsField } from './settingsTypes'
+import {
+  settingsFields,
+  companyFields,
+  emptySettings,
+  emptyCompany,
+  Settings,
+  CompanyForm,
+  SettingsField,
+} from './settingsTypes'
 import {
   ALL_ROLE_MODULES,
   DEFAULT_ROLE_MODULES,
   roleLabels,
 } from './roleModules'
-
-const companyKeys: (keyof Settings)[] = [
-  'companyName',
-  'companyCnpj',
-  'companyPhone',
-  'companyEmail',
-  'companyAddress',
-]
-
-const systemKeys: (keyof Settings)[] = ['timezone', 'language', 'currency']
 
 const configurableRoles = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
 
@@ -45,8 +43,10 @@ export default function SettingsPage() {
   const { user } = useAuth()
   const isMaster = user?.role === 'master'
   const canEditSystem = isMaster || user?.role === 'admin'
+  const canEditCompany = user?.role === 'admin'
   const [tab, setTab] = useState(0)
   const [form, setForm] = useState<Settings>(emptySettings)
+  const [company, setCompany] = useState<CompanyForm>(emptyCompany)
   const [selectedRole, setSelectedRole] = useState('user')
   const [roleModules, setRoleModules] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(true)
@@ -55,11 +55,14 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let active = true
-    api
-      .get('/settings')
-      .then((res) => {
+    const load = async () => {
+      try {
+        const [settingsRes, companyRes] = await Promise.all([
+          api.get('/settings'),
+          user?.companyId ? api.get('/companies/me').catch(() => null) : Promise.resolve(null),
+        ])
         if (!active) return
-        const data = res.data ?? {}
+        const data = settingsRes.data ?? {}
         setForm({ ...emptySettings, ...data })
         const map: Record<string, string[]> = {}
         for (const role of configurableRoles) {
@@ -74,13 +77,14 @@ export default function SettingsPage() {
           }
         }
         setRoleModules(map)
-      })
-      .catch(() => {
+        if (companyRes?.data) setCompany({ ...emptyCompany, ...companyRes.data })
+      } catch {
         if (active) setMessage({ type: 'error', text: 'Não foi possível carregar as configurações.' })
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false)
-      })
+      }
+    }
+    load()
     return () => {
       active = false
     }
@@ -98,13 +102,46 @@ export default function SettingsPage() {
     try {
       const payload: Partial<Settings> = {}
       for (const field of settingsFields) {
-        payload[field.key] = form[field.key]
+        payload[field.key as keyof Settings] = form[field.key as keyof Settings]
       }
       await api.put('/settings', payload)
       setMessage({ type: 'success', text: 'Configurações salvas com sucesso.' })
     } catch (err: any) {
       const msg = err.response?.data?.message
       setMessage({ type: 'error', text: Array.isArray(msg) ? msg.join(', ') : (msg || 'Não foi possível salvar as configurações.') })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCompanyChange = (key: keyof CompanyForm, value: string) => {
+    setCompany((prev) => ({ ...prev, [key]: value }))
+    setMessage(null)
+  }
+
+  const handleCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setMessage(null)
+    try {
+      const res = await api.patch('/companies/me', company)
+      setCompany({ ...emptyCompany, ...res.data })
+      if (res.data?.nome) {
+        const stored = localStorage.getItem('user')
+        if (stored) {
+          try {
+            const storedUser = JSON.parse(stored)
+            storedUser.companyName = res.data.nome
+            localStorage.setItem('user', JSON.stringify(storedUser))
+          } catch {
+            // ignora falha ao atualizar cache do usuário
+          }
+        }
+      }
+      setMessage({ type: 'success', text: 'Dados da empresa salvos com sucesso.' })
+    } catch (err: any) {
+      const msg = err.response?.data?.message
+      setMessage({ type: 'error', text: Array.isArray(msg) ? msg.join(', ') : (msg || 'Não foi possível salvar os dados da empresa.') })
     } finally {
       setSaving(false)
     }
@@ -136,14 +173,20 @@ export default function SettingsPage() {
     }
   }
 
-  const renderField = (key: keyof Settings, field: SettingsField, disabled = false) => {
+  const renderField = (
+    key: string,
+    field: SettingsField,
+    value: string,
+    onChange: (key: string, value: string) => void,
+    disabled = false,
+  ) => {
     const common = {
       fullWidth: true,
       size: 'small' as const,
       label: field.label,
-      value: form[key],
+      value,
       disabled,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleChange(key, e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange(key, e.target.value),
     }
 
     if (field.type === 'select') {
@@ -167,10 +210,6 @@ export default function SettingsPage() {
 
   const showPerfis = isMaster && tab === 2
   const showPerfil = isMaster ? tab === 3 : tab === 2
-  const formLocked = tab <= 1 && !canEditSystem
-  const activeKeys = tab === 0 ? systemKeys : tab === 1 ? companyKeys : []
-  const activeFields = settingsFields.filter((f) => activeKeys.includes(f.key))
-  const activeTitle = tab === 0 ? 'Configuração Geral do Sistema' : tab === 1 ? 'Configuração da Empresa' : 'Perfis de Acesso'
 
   if (loading) {
     return (
@@ -253,12 +292,52 @@ export default function SettingsPage() {
         </Paper>
       ) : showPerfil ? (
         <ProfileForm />
+      ) : tab === 1 ? (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Configuração da Empresa
+          </Typography>
+          {!user?.companyId ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Seu usuário não está vinculado a uma empresa. Gerencie as empresas no módulo de Empresas.
+            </Alert>
+          ) : (
+            <>
+              {!canEditCompany && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Apenas administradores podem alterar os dados da empresa.
+                </Alert>
+              )}
+              <Divider sx={{ mb: 3 }} />
+              <Box component="form" onSubmit={handleCompanySubmit}>
+                <Grid container spacing={2}>
+                  {companyFields.map((field) => (
+                    <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.key}>
+                      {renderField(
+                        field.key,
+                        field,
+                        company[field.key as keyof CompanyForm],
+                        (k, v) => handleCompanyChange(k as keyof CompanyForm, v),
+                        !canEditCompany,
+                      )}
+                    </Grid>
+                  ))}
+                </Grid>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || !canEditCompany}>
+                    {saving ? 'Salvando...' : 'Salvar alterações'}
+                  </Button>
+                </Box>
+              </Box>
+            </>
+          )}
+        </Paper>
       ) : (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            {activeTitle}
+            Configuração Geral do Sistema
           </Typography>
-          {formLocked && (
+          {!canEditSystem && (
             <Alert severity="info" sx={{ mb: 2 }}>
               Apenas administradores podem alterar estas configurações.
             </Alert>
@@ -266,14 +345,14 @@ export default function SettingsPage() {
           <Divider sx={{ mb: 3 }} />
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={2}>
-              {activeFields.map((field) => (
+              {settingsFields.map((field) => (
                 <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.key}>
-                  {renderField(field.key, field, formLocked)}
+                  {renderField(field.key, field, form[field.key as keyof Settings], (k, v) => handleChange(k as keyof Settings, v), !canEditSystem)}
                 </Grid>
               ))}
             </Grid>
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || formLocked}>
+              <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || !canEditSystem}>
                 {saving ? 'Salvando...' : 'Salvar alterações'}
               </Button>
             </Box>

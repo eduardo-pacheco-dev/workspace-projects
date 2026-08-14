@@ -21,8 +21,15 @@ import {
   MenuItem,
   Tabs,
   Tab,
+  Avatar,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
-import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt } from '@mui/icons-material'
+import { Edit, Delete, Add, Upload, Map as MapIcon, ListAlt, TableView, GridView } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
@@ -65,6 +72,7 @@ export default function RadioLinksPage() {
   const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [tab, setTab] = useState(0)
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
 
   const fetchData = useCallback(async () => {
     try {
@@ -126,13 +134,17 @@ export default function RadioLinksPage() {
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [    { id: 'nome', label: 'Nome' },
+  const columns: { id: SortBy; label: string }[] = [
+    { id: 'nome', label: 'Nome' },
     { id: 'frequencia', label: 'Frequência' },
     { id: 'capacidade', label: 'Capacidade' },
     { id: 'siteIdA', label: 'Estação A' },
     { id: 'siteIdB', label: 'Estação B' },
     { id: 'status', label: 'Status' },
   ]
+
+  const getInitials = (nome: string) =>
+    nome.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'
 
   return (
     <Container sx={{ mt: 4 }}>
@@ -148,7 +160,7 @@ export default function RadioLinksPage() {
         </Box>
       </Box>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
         <TextField
           size="small"
           label="Buscar"
@@ -191,6 +203,24 @@ export default function RadioLinksPage() {
           <MenuItem value="VIVO">VIVO</MenuItem>
           <MenuItem value="Outras">Outras</MenuItem>
         </TextField>
+        {tab === 0 && (
+          <>
+            <Box sx={{ flexGrow: 1 }} />
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={viewMode}
+              onChange={(_, v) => v && setViewMode(v)}
+            >
+              <ToggleButton value="table" aria-label="Visualizar em tabela">
+                <TableView fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="cards" aria-label="Visualizar em cartões">
+                <GridView fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </>
+        )}
       </Stack>
 
       <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
@@ -204,74 +234,153 @@ export default function RadioLinksPage() {
         <>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {radioLinks.map((r) => (
-              <TableRow
-                key={r.id}
-                hover
-                onClick={() => navigate(`/radio-links/${r.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{r.nome}</TableCell>
-                <TableCell>{r.frequencia || '-'}</TableCell>
-                <TableCell>{r.capacidade || '-'}</TableCell>
-                <TableCell>{r.siteIdA || '-'}</TableCell>
-                <TableCell>{r.siteIdB || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={r.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={r.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModal({ open: true, editId: r.id })
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setLinkToDelete(r)
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {radioLinks.length === 0 && (
+      {viewMode === 'table' ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Nenhum enlace de rádio encontrado.
-                </TableCell>
+                {columns.map((col) => (
+                  <TableCell key={col.id}>
+                    <TableSortLabel
+                      active={sortBy === col.id}
+                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
+                      onClick={() => handleSort(col.id)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+                <TableCell>Ações</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {radioLinks.map((r) => (
+                <TableRow
+                  key={r.id}
+                  hover
+                  onClick={() => navigate(`/radio-links/${r.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>{r.nome}</TableCell>
+                  <TableCell>{r.frequencia || '-'}</TableCell>
+                  <TableCell>{r.capacidade || '-'}</TableCell>
+                  <TableCell>{r.siteIdA || '-'}</TableCell>
+                  <TableCell>{r.siteIdB || '-'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={r.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      color={r.status === 'ativo' ? 'success' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setModal({ open: true, editId: r.id })
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setLinkToDelete(r)
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {radioLinks.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    Nenhum enlace de rádio encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Box>
+          {radioLinks.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">Nenhum enlace de rádio encontrado.</Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={2}>
+              {radioLinks.map((r) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={r.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+                    onClick={() => navigate(`/radio-links/${r.id}`)}
+                  >
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 18 }}>
+                          {getInitials(r.nome)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                            {r.nome}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {r.frequencia || 'Sem frequência'}
+                            {r.capacidade ? ` · ${r.capacidade}` : ''}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Chip
+                          size="small"
+                          label={r.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                          color={r.status === 'ativo' ? 'success' : 'default'}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Estação A: {r.siteIdA || '-'}
+                        {r.endIdA ? ` · ${r.endIdA}` : ''}
+                        {r.operadoraA ? ` (${r.operadoraA})` : ''}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Estação B: {r.siteIdB || '-'}
+                        {r.endIdB ? ` · ${r.endIdB}` : ''}
+                        {r.operadoraB ? ` (${r.operadoraB})` : ''}
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        startIcon={<Edit />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setModal({ open: true, editId: r.id })
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setLinkToDelete(r)
+                        }}
+                      >
+                        Excluir
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
 
       <TablePagination
         component="div"

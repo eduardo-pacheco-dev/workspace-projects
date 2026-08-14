@@ -59,18 +59,9 @@ function ProtectedLayout() {
   useEffect(() => {
     if (!isAuthenticated) return
     api
-      .get('/settings')
+      .get('/settings/my-modules')
       .then((res) => {
-        const role = user?.role || 'user'
-        const raw = res.data?.[`role_modules_${role}`]
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed)) setUserModules(parsed)
-          } catch {
-            setUserModules(DEFAULT_USER_MODULES)
-          }
-        }
+        if (Array.isArray(res.data)) setUserModules(res.data)
       })
       .catch(() => {})
   }, [isAuthenticated, user])

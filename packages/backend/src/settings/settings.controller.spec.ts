@@ -49,6 +49,27 @@ describe('SettingsController (integration)', () => {
     });
   });
 
+  describe('GET /settings/my-modules', () => {
+    it('should return the default modules for an unconfigured role', async () => {
+      currentRole = 'technician';
+      const res = await request(app.getHttpServer()).get('/settings/my-modules').expect(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toContain('/tasks');
+    });
+
+    it('should return the modules configured for the role', async () => {
+      currentRole = 'master';
+      await request(app.getHttpServer())
+        .put('/settings')
+        .send({ role_modules_user: JSON.stringify(['/tasks', '/clients']) })
+        .expect(200);
+
+      currentRole = 'user';
+      const res = await request(app.getHttpServer()).get('/settings/my-modules').expect(200);
+      expect(res.body).toEqual(['/tasks', '/clients']);
+    });
+  });
+
   describe('PUT /settings', () => {
     it('should upsert settings and return the full record', async () => {
       const res = await request(app.getHttpServer())

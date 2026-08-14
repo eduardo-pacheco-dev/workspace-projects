@@ -19,8 +19,15 @@ import {
   Stack,
   Chip,
   MenuItem,
+  Avatar,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, TableView, GridView } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import ProjectModal from './ProjectModal'
@@ -52,6 +59,7 @@ export default function ProjectsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
 
@@ -132,6 +140,9 @@ export default function ProjectsPage() {
 
   const terminoLabel = (dataFim: string | null) => (dataFim ? formatDate(dataFim) : 'Indeterminado')
 
+  const getInitials = (nome: string) =>
+    nome.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'
+
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -141,7 +152,7 @@ export default function ProjectsPage() {
         </Button>
       </Box>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
         <TextField
           size="small"
           label="Buscar"
@@ -167,83 +178,177 @@ export default function ProjectsPage() {
           <MenuItem value="ativo">Ativo</MenuItem>
           <MenuItem value="inativo">Inativo</MenuItem>
         </TextField>
+        <Box sx={{ flexGrow: 1 }} />
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={viewMode}
+          onChange={(_, v) => v && setViewMode(v)}
+        >
+          <ToggleButton value="table" aria-label="Visualizar em tabela">
+            <TableView fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="cards" aria-label="Visualizar em cartões">
+            <GridView fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Empresa</TableCell>
-              <TableCell>Responsável</TableCell>
-              <TableCell>Término</TableCell>
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {projects.map((p) => (
-              <TableRow
-                key={p.id}
-                hover
-                onClick={() => navigate(`/projects/${p.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{p.nome}</TableCell>
-                <TableCell>{p.codigo || '-'}</TableCell>
-                <TableCell>{p.cliente || '-'}</TableCell>
-                <TableCell>{formatDate(p.dataInicio)}</TableCell>
-                <TableCell>{terminoLabel(p.dataFim)}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={p.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{companyLabel(p)}</TableCell>
-                <TableCell>{p.responsavel || '-'}</TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModal({ open: true, editId: p.id })
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(p.id)
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {projects.length === 0 && (
+      {viewMode === 'table' ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={9} align="center">
-                  Nenhum projeto encontrado.
-                </TableCell>
+                {columns.map((col) => (
+                  <TableCell key={col.id}>
+                    <TableSortLabel
+                      active={sortBy === col.id}
+                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
+                      onClick={() => handleSort(col.id)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+                <TableCell>Empresa</TableCell>
+                <TableCell>Responsável</TableCell>
+                <TableCell>Término</TableCell>
+                <TableCell>Ações</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {projects.map((p) => (
+                <TableRow
+                  key={p.id}
+                  hover
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>{p.nome}</TableCell>
+                  <TableCell>{p.codigo || '-'}</TableCell>
+                  <TableCell>{p.cliente || '-'}</TableCell>
+                  <TableCell>{formatDate(p.dataInicio)}</TableCell>
+                  <TableCell>{terminoLabel(p.dataFim)}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      color={p.status === 'ativo' ? 'success' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{companyLabel(p)}</TableCell>
+                  <TableCell>{p.responsavel || '-'}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setModal({ open: true, editId: p.id })
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(p.id)
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {projects.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} align="center">
+                    Nenhum projeto encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Box>
+          {projects.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">Nenhum projeto encontrado.</Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={2}>
+              {projects.map((p) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={p.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                  >
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 18 }}>
+                          {getInitials(p.nome)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                            {p.nome}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {p.codigo || 'Sem código'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                        <Chip
+                          size="small"
+                          label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                          color={p.status === 'ativo' ? 'success' : 'default'}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Cliente: {p.cliente || '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Empresa: {companyLabel(p)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Responsável: {p.responsavel || '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Início: {formatDate(p.dataInicio)} · Término: {terminoLabel(p.dataFim)}
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        startIcon={<Edit />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setModal({ open: true, editId: p.id })
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(p.id)
+                        }}
+                      >
+                        Excluir
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
 
       <TablePagination
         component="div"

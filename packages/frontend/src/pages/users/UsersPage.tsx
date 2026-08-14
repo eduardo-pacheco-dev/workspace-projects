@@ -24,7 +24,8 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material'
-import { Edit, Delete, PersonAdd } from '@mui/icons-material'
+import { Edit, Delete, PersonAdd, FileDownload } from '@mui/icons-material'
+import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { roleLabels } from '../settings/roleModules'
 import UserModal from './UserModal'
@@ -122,6 +123,51 @@ export default function UsersPage() {
     setPage(0)
   }
 
+  const handleExport = async () => {
+    try {
+      const params: any = {
+        page: 1,
+        limit: 10000,
+        sortBy,
+        sortOrder,
+      }
+      if (search) params.search = search
+
+      const res = await api.get('/users', { params })
+      const list: User[] = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+
+      const rows = list.map((u) => ({
+        Nome: u.name,
+        Sobrenome: u.lastName || '',
+        Email: u.email,
+        Telefone: u.phone || '',
+        Perfil: u.role ? (roleLabels[u.role] || u.role) : '',
+        Empresa: u.role === 'master' ? '' : (u.companyName || ''),
+        Status: u.status === 'active' ? 'Ativo' : 'Inativo',
+        'Criado em': new Date(u.createdAt).toLocaleDateString('pt-BR'),
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(rows)
+      ws['!cols'] = [
+        { wch: 22 },
+        { wch: 22 },
+        { wch: 30 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 24 },
+        { wch: 10 },
+        { wch: 12 },
+      ]
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Usuários')
+      XLSX.writeFile(wb, `usuarios-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      showToast('Lista de usuários exportada com sucesso.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')
+    }
+  }
+
   const columns: { id: SortBy; label: string }[] = [
     { id: 'name', label: 'Nome' },
     { id: 'lastName', label: 'Sobrenome' },
@@ -135,9 +181,14 @@ export default function UsersPage() {
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Usuários</Typography>
-        <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Usuário
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExport}>
+            Exportar Excel
+          </Button>
+          <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setModal({ open: true, editId: null })}>
+            Novo Usuário
+          </Button>
+        </Box>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>

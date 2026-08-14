@@ -193,9 +193,6 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     onClose()
   }
 
-  const passwordHelperText =
-    fieldErrors.password || (isEdit && !password ? 'Deixe em branco para manter a senha atual.' : '')
-
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
@@ -290,60 +287,64 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               ),
             }}
           />
-          <TextField
-            fullWidth
-            label={isEdit ? 'Nova Senha' : 'Senha'}
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              clearFieldError('password')
-            }}
-            margin="normal"
-            required={!isEdit}
-            error={!!fieldErrors.password}
-            helperText={passwordHelperText}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Confirmar Senha"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value)
-              clearFieldError('confirmPassword')
-            }}
-            margin="normal"
-            required={!isEdit}
-            error={!!fieldErrors.confirmPassword}
-            helperText={fieldErrors.confirmPassword}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          {!isEdit && (
+            <>
+              <TextField
+                fullWidth
+                label="Senha"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  clearFieldError('password')
+                }}
+                margin="normal"
+                required
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Confirmar Senha"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  clearFieldError('confirmPassword')
+                }}
+                margin="normal"
+                required
+                error={!!fieldErrors.confirmPassword}
+                helperText={fieldErrors.confirmPassword}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </>
+          )}
           <TextField
             fullWidth
             select

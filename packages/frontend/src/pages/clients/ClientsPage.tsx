@@ -20,9 +20,11 @@ import {
   Chip,
   MenuItem,
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, FileDownload } from '@mui/icons-material'
+import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
 import ClientModal from './ClientModal'
 
 interface Client {
@@ -43,6 +45,7 @@ type SortOrder = 'ASC' | 'DESC'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -110,6 +113,54 @@ export default function ClientsPage() {
     setPage(0)
   }
 
+  const handleExport = async () => {
+    try {
+      const params: any = {
+        page: 1,
+        limit: 10000,
+        sortBy,
+        sortOrder,
+      }
+      if (search) params.search = search
+      if (statusFilter) params.status = statusFilter
+
+      const res = await api.get('/clients', { params })
+      const list: Client[] = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+
+      const rows = list.map((c) => ({
+        Nome: c.nome,
+        CNPJ: c.documento || '',
+        Email: c.email || '',
+        Telefone: c.telefone || '',
+        Endereço: c.endereco || '',
+        Cidade: c.cidade || '',
+        UF: c.uf || '',
+        Observações: c.observacoes || '',
+        Status: c.status === 'ativo' ? 'Ativo' : 'Inativo',
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(rows)
+      ws['!cols'] = [
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 18 },
+        { wch: 34 },
+        { wch: 18 },
+        { wch: 6 },
+        { wch: 34 },
+        { wch: 10 },
+      ]
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Clientes')
+      XLSX.writeFile(wb, `clientes-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      showToast('Lista de clientes exportada com sucesso.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')
+    }
+  }
+
   const columns: { id: SortBy; label: string }[] = [
     { id: 'nome', label: 'Nome' },
     { id: 'documento', label: 'CNPJ' },
@@ -123,9 +174,14 @@ export default function ClientsPage() {
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Clientes</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Cliente
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExport}>
+            Exportar Excel
+          </Button>
+          <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
+            Novo Cliente
+          </Button>
+        </Box>
       </Box>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>

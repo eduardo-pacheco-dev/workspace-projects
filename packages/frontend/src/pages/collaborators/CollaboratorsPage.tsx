@@ -25,7 +25,8 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material'
-import { Edit, Delete, PersonAdd } from '@mui/icons-material'
+import { Edit, Delete, PersonAdd, FileDownload } from '@mui/icons-material'
+import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 
@@ -133,6 +134,54 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
     setPage(0)
   }
 
+  const handleExport = async () => {
+    try {
+      const params: any = {
+        page: 1,
+        limit: 10000,
+        sortBy,
+        sortOrder,
+      }
+      if (search) params.search = search
+      if (isFreelancer !== undefined) params.isFreelancer = isFreelancer
+
+      const res = await api.get('/collaborators', { params })
+      const list: Collaborator[] = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+
+      const rows = list.map((c) => ({
+        Código: c.codigo || '',
+        Nome: c.nome,
+        CPF: c.cpf || '',
+        Cargo: c.cargo || '',
+        Email: c.email || '',
+        Telefone: c.telefone || '',
+        Tipo: c.isFreelancer ? 'Freelancer' : 'Colaborador',
+        Status: c.status === 'ativo' ? 'Ativo' : 'Inativo',
+        Empresa: c.company?.nome || '',
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(rows)
+      ws['!cols'] = [
+        { wch: 12 },
+        { wch: 30 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 30 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 28 },
+      ]
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores')
+      XLSX.writeFile(wb, `colaboradores-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      showToast(`${entityLabelPlural} exportados com sucesso.`)
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')
+    }
+  }
+
   const columns: { id: SortBy; label: string }[] = [
     { id: 'codigo', label: 'Código' },
     { id: 'nome', label: 'Nome' },
@@ -147,9 +196,14 @@ export default function CollaboratorsPage({ isFreelancer, onNew, onEdit }: Props
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">{entityLabelPlural}</Typography>
-        <Button variant="contained" startIcon={<PersonAdd />} onClick={onNew}>
-          Novo {entityLabel}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExport}>
+            Exportar Excel
+          </Button>
+          <Button variant="contained" startIcon={<PersonAdd />} onClick={onNew}>
+            Novo {entityLabel}
+          </Button>
+        </Box>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>

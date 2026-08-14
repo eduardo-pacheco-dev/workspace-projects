@@ -23,8 +23,22 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Avatar,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
-import { Edit, Delete, PersonAdd, FileDownload } from '@mui/icons-material'
+import {
+  Edit,
+  Delete,
+  PersonAdd,
+  FileDownload,
+  TableView,
+  GridView,
+} from '@mui/icons-material'
 import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { roleLabels } from '../settings/roleModules'
@@ -58,6 +72,7 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState<SortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null)
@@ -177,6 +192,9 @@ export default function UsersPage() {
     { id: 'createdAt', label: 'Criado em' },
   ]
 
+  const getInitials = (name: string) =>
+    name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'
+
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -191,7 +209,7 @@ export default function UsersPage() {
         </Box>
       </Box>
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
         <TextField
           size="small"
           label="Buscar"
@@ -201,79 +219,163 @@ export default function UsersPage() {
             setPage(0)
           }}
         />
+        <Box sx={{ flexGrow: 1 }} />
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={viewMode}
+          onChange={(_, v) => v && setViewMode(v)}
+        >
+          <ToggleButton value="table" aria-label="Visualizar em tabela">
+            <TableView fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="cards" aria-label="Visualizar em cartões">
+            <GridView fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Perfil</TableCell>
-              <TableCell>Empresa</TableCell>
-              <TableCell align="center">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.id} hover>
-                <TableCell>{u.name}</TableCell>
-                <TableCell>{u.lastName || '-'}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.phone || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={u.status === 'active' ? 'Ativo' : 'Inativo'}
-                    color={u.status === 'active' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={u.role ? (roleLabels[u.role] || u.role) : '-'}
-                    color={u.role === 'master' ? 'primary' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{u.role === 'master' ? '-' : (u.companyName || '-')}</TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
-                      disabled={currentUser != null && String(currentUser.id) === String(u.id)}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-            {users.length === 0 && (
+      {viewMode === 'table' ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={9} align="center">
-                  Nenhum usuário encontrado.
-                </TableCell>
+                {columns.map((col) => (
+                  <TableCell key={col.id}>
+                    <TableSortLabel
+                      active={sortBy === col.id}
+                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
+                      onClick={() => handleSort(col.id)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+                <TableCell>Perfil</TableCell>
+                <TableCell>Empresa</TableCell>
+                <TableCell align="center">Ações</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow key={u.id} hover>
+                  <TableCell>{u.name}</TableCell>
+                  <TableCell>{u.lastName || '-'}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>{u.phone || '-'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={u.status === 'active' ? 'Ativo' : 'Inativo'}
+                      color={u.status === 'active' ? 'success' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={u.role ? (roleLabels[u.role] || u.role) : '-'}
+                      color={u.role === 'master' ? 'primary' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{u.role === 'master' ? '-' : (u.companyName || '-')}</TableCell>
+                  <TableCell align="center">
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
+                      <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
+                        <Edit />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
+                        disabled={currentUser != null && String(currentUser.id) === String(u.id)}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {users.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} align="center">
+                    Nenhum usuário encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Box>
+          {users.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">Nenhum usuário encontrado.</Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={2}>
+              {users.map((u) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={u.id}>
+                  <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 18 }}>
+                          {getInitials(u.name)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+                            {u.name} {u.lastName || ''}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {u.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          label={u.role ? (roleLabels[u.role] || u.role) : '-'}
+                          color={u.role === 'master' ? 'primary' : 'default'}
+                        />
+                        <Chip
+                          size="small"
+                          label={u.status === 'active' ? 'Ativo' : 'Inativo'}
+                          color={u.status === 'active' ? 'success' : 'default'}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Telefone: {u.phone || '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Empresa: {u.role === 'master' ? '-' : (u.companyName || '-')}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Criado em: {new Date(u.createdAt).toLocaleDateString('pt-BR')}
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+                      <Button size="small" startIcon={<Edit />} onClick={() => setModal({ open: true, editId: u.id })}>
+                        Editar
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
+                        disabled={currentUser != null && String(currentUser.id) === String(u.id)}
+                      >
+                        Excluir
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
 
       <TablePagination
         component="div"

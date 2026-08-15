@@ -12,6 +12,9 @@ const MODERN_STYLE = {
   py: 0.9,
   px: 2.5,
   transition: 'all 0.15s ease',
+  '&:hover': {
+    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+  },
   '&:active': {
     transform: 'translateY(0)',
     boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
@@ -24,7 +27,6 @@ const MODERN_STYLE = {
 
 const HOVER_LIFT = {
   boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-  transform: 'translateY(-1px)',
 }
 
 function primaryStyle(variant: NonNullable<ButtonProps['variant']>) {

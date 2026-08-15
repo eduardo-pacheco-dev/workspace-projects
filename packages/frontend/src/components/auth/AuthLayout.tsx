@@ -3,7 +3,7 @@ import { Avatar, Box, Paper, Typography } from '@mui/material'
 interface AuthLayoutProps {
   headline?: string
   headlineSubtitle?: string
-  icon: React.ReactNode
+  icon?: React.ReactNode
   title: string
   subtitle: string
   children: React.ReactNode
@@ -49,7 +49,9 @@ export default function AuthLayout({ headline, headlineSubtitle, icon, title, su
         <Box sx={{ width: '100%', maxWidth: 420 }}>
           <Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-              <Avatar sx={{ bgcolor: 'primary.main', width: 52, height: 52, mb: 2 }}>{icon}</Avatar>
+              {icon && (
+                <Avatar sx={{ bgcolor: 'primary.main', width: 52, height: 52, mb: 2 }}>{icon}</Avatar>
+              )}
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {title}
               </Typography>

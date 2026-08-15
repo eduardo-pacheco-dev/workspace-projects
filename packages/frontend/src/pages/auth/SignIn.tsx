@@ -1,5 +1,4 @@
 import { Divider, Typography } from '@mui/material'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import AuthLayout from '../../components/auth/AuthLayout'
 import SignInForm from '../../components/auth/SignInForm'
 import GoogleButton from '../../components/auth/GoogleButton'
@@ -8,9 +7,8 @@ import AuthFooter from '../../components/auth/AuthFooter'
 export default function SignIn() {
   return (
     <AuthLayout
-      icon={<LockOutlinedIcon />}
-      title="Bem-vindo de volta"
-      subtitle="Entre com suas credenciais"
+      title="Login"
+      subtitle="Acesse sua conta para gerenciar seus projetos"
     >
       <SignInForm />
 

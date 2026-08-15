@@ -119,8 +119,11 @@ export default function CommentsPanel({ resource, resourceId, onError }: Comment
   }
 
   return (
-    <Paper sx={{ p: 3, mt: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper', height: '100%' }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>Comentários</Typography>
       <Divider sx={{ mb: 2 }} />
       {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
       {!commentsError && comments.length === 0 ? (

@@ -32,9 +32,12 @@ export default function StationMapPanel({ station }: StationMapPanelProps) {
   }
 
   return (
-    <Paper sx={{ p: 3, mt: 3 }}>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}
+    >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Localização no Mapa</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Localização no Mapa</Typography>
         {hasCoords && (
           <Button variant="outlined" startIcon={<ShareIcon />} onClick={handleShare}>
             Compartilhar Localização

@@ -133,3 +133,21 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
 }
 
 export const DEFAULT_USER_MODULES = DEFAULT_ROLE_MODULES.user
+
+export const CONFIGURABLE_ROLES = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
+
+export function parseRoleModules(data: Record<string, unknown>): Record<string, string[]> {
+  const map: Record<string, string[]> = {}
+  for (const role of CONFIGURABLE_ROLES) {
+    const raw = data[`role_modules_${role}`]
+    if (raw) {
+      try {
+        const parsed = JSON.parse(String(raw))
+        if (Array.isArray(parsed)) map[role] = parsed
+      } catch {
+        map[role] = [...(DEFAULT_ROLE_MODULES[role] ?? [])]
+      }
+    }
+  }
+  return map
+}

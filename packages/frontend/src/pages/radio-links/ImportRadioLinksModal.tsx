@@ -15,9 +15,9 @@ import {
   ListItemText,
 } from '@mui/material'
 import { Download, UploadFile, FileUpload } from '@mui/icons-material'
-import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { downloadRadioLinkTemplate, parseRadioLinkFile } from './radioLinkImport'
 
 interface ImportResult {
   imported: number
@@ -32,8 +32,6 @@ interface ImportRadioLinksModalProps {
   onImported: () => void
 }
 
-const exampleNome = 'ENLACE-EXEMPLO'
-
 export default function ImportRadioLinksModal({ open, onClose, onImported }: ImportRadioLinksModalProps) {
   const { showToast } = useToast()
   const [fileName, setFileName] = useState('')
@@ -43,85 +41,6 @@ export default function ImportRadioLinksModal({ open, onClose, onImported }: Imp
   const [result, setResult] = useState<ImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDownloadTemplate = () => {
-    const rows = [
-      {
-        Nome: exampleNome,
-        Frequência: '23 GHz',
-        Capacidade: '1 Gbps',
-        'Operadora A': 'TIM',
-        'Site ID A': 'SITE-001',
-        'End ID A': 'END-001',
-        'Endereço A': 'Av. Exemplo, 100',
-        'Latitude A': -23.5505,
-        'Longitude A': -46.6333,
-        'Operadora B': 'CLARO',
-        'Site ID B': 'SITE-002',
-        'End ID B': 'END-002',
-        'Endereço B': 'Rua Exemplo, 200',
-        'Latitude B': -23.555,
-        'Longitude B': -46.64,
-        Observações: 'Exemplo de preenchimento',
-        Status: 'ativo',
-      },
-      {
-        Nome: '',
-        Frequência: '',
-        Capacidade: '',
-        'Operadora A': 'VIVO',
-        'Site ID A': '',
-        'End ID A': '',
-        'Endereço A': '',
-        'Latitude A': '',
-        'Longitude A': '',
-        'Operadora B': 'TIM',
-        'Site ID B': '',
-        'End ID B': '',
-        'Endereço B': '',
-        'Latitude B': '',
-        'Longitude B': '',
-        Observações: '',
-        Status: 'ativo',
-      },
-    ]
-    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false })
-    ws['!cols'] = [
-      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-      { wch: 32 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-      { wch: 32 }, { wch: 12 }, { wch: 12 }, { wch: 40 }, { wch: 10 },
-    ]
-
-    const border = {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
-    }
-    const cellAddresses = XLSX.utils.decode_range(ws['!ref'] || 'A1')
-    for (let r = cellAddresses.s.r; r <= cellAddresses.e.r; r++) {
-      for (let c = cellAddresses.s.c; c <= cellAddresses.e.c; c++) {
-        const addr = XLSX.utils.encode_cell({ r, c })
-        if (!ws[addr]) ws[addr] = { t: 's', v: '' }
-        ws[addr].s = { border }
-        if (r === 0) {
-          ws[addr].s = {
-            ...ws[addr].s,
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '1976D2' } },
-            alignment: { horizontal: 'center' },
-          }
-        }
-      }
-    }
-    ws['!freeze'] = { xSplit: 0, ySplit: 1 }
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Enlaces de Rádio')
-    XLSX.writeFile(wb, 'template-enlaces-de-radio.xlsx')
-  }
-
-  const str = (value: unknown) => (value != null ? String(value).trim() : '')
-
   const handleFile = (file: File) => {
     setError('')
     setResult(null)
@@ -129,32 +48,7 @@ export default function ImportRadioLinksModal({ open, onClose, onImported }: Imp
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const wb = XLSX.read(data, { type: 'array' })
-        const ws = wb.Sheets[wb.SheetNames[0]]
-        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' })
-
-        const radioLinks = raw
-          .map((r) => ({
-            nome: str(r['Nome']),
-            frequencia: str(r['Frequência']),
-            capacidade: str(r['Capacidade']),
-            operadoraA: str(r['Operadora A']),
-            siteIdA: str(r['Site ID A']),
-            endIdA: str(r['End ID A']),
-            enderecoA: str(r['Endereço A']),
-            latitudeA: r['Latitude A'],
-            longitudeA: r['Longitude A'],
-            operadoraB: str(r['Operadora B']),
-            siteIdB: str(r['Site ID B']),
-            endIdB: str(r['End ID B']),
-            enderecoB: str(r['Endereço B']),
-            latitudeB: r['Latitude B'],
-            longitudeB: r['Longitude B'],
-            observacoes: str(r['Observações']),
-            status: str(r['Status']).toLowerCase(),
-          }))
-          .filter((r) => r.nome !== exampleNome)
+        const radioLinks = parseRadioLinkFile(e.target?.result as ArrayBuffer)
 
         if (radioLinks.length === 0) {
           setError('Nenhuma linha válida para importar. Verifique o template.')
@@ -212,7 +106,7 @@ export default function ImportRadioLinksModal({ open, onClose, onImported }: Imp
           Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). Enlaces que já existem (mesmo Nome) serão atualizados. As estações A e B são identificadas pelo Site ID.
         </Typography>
 
-        <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate} sx={{ mb: 2 }}>
+        <Button variant="outlined" startIcon={<Download />} onClick={downloadRadioLinkTemplate} sx={{ mb: 2 }}>
           Baixar Template
         </Button>
 

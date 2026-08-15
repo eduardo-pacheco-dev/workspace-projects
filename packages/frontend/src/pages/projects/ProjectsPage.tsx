@@ -1,87 +1,43 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-  Chip,
-  MenuItem,
-  Avatar,
-  Card,
-  CardContent,
-  CardActions,
-  Grid,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material'
-import { Edit, Delete, Add, TableView, GridView } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import ProjectModal from './ProjectModal'
-
-interface Project {
-  id: number
-  nome: string
-  codigo: string | null
-  descricao: string | null
-  cliente: string | null
-  responsavel: string | null
-  dataInicio: string | null
-  dataFim: string | null
-  observacoes: string | null
-  status: string
-  companies?: { id: number; nome: string }[]
-}
-
-type SortBy = 'id' | 'nome' | 'codigo' | 'cliente' | 'dataInicio' | 'status'
-type SortOrder = 'ASC' | 'DESC'
+import ProjectsToolbar from '../../components/projects/ProjectsToolbar'
+import ProjectsFilters, { ProjectViewMode } from '../../components/projects/ProjectsFilters'
+import ProjectsTable from '../../components/projects/ProjectsTable'
+import ProjectsCards from '../../components/projects/ProjectsCards'
+import { Project, ProjectSortBy, SortOrder } from './projectsTypes'
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [projects, setProjects] = useState<Project[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortBy, setSortBy] = useState<SortBy>('id')
+  const [sortBy, setSortBy] = useState<ProjectSortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [viewMode, setViewMode] = useState<ProjectViewMode>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<Project | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
 
       const res = await api.get('/projects', { params })
-      if (Array.isArray(res.data)) {
-        setProjects(res.data)
-        setTotal(res.data.length)
-      } else {
-        setProjects(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<Project>(res.data)
+      setProjects(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -91,7 +47,7 @@ export default function ProjectsPage() {
     fetchData()
   }, [fetchData])
 
-  const handleSort = (col: SortBy) => {
+  const handleSort = (col: ProjectSortBy) => {
     if (sortBy === col) {
       setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))
     } else {
@@ -101,12 +57,16 @@ export default function ProjectsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este projeto?')) return
     try {
       await api.delete(`/projects/${id}`)
       fetchData()
+      showToast('Projeto excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
@@ -119,235 +79,46 @@ export default function ProjectsPage() {
     setPage(0)
   }
 
-  const formatDate = (value: string | null) => {
-    if (!value) return '-'
-    const date = new Date(`${value}T00:00:00`)
-    return isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR')
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'codigo', label: 'Código' },
-    { id: 'cliente', label: 'Cliente' },
-    { id: 'dataInicio', label: 'Início' },
-    { id: 'status', label: 'Status' },
-  ]
-
-  const companyLabel = (p: Project) => {
-    const names = (p.companies ?? []).map((c) => c.nome).filter(Boolean)
-    return names.length ? names.join(', ') : '-'
-  }
-
-  const terminoLabel = (dataFim: string | null) => (dataFim ? formatDate(dataFim) : 'Indeterminado')
-
-  const getInitials = (nome: string) =>
-    nome.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?'
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (project: Project) => setModal({ open: true, editId: project.id })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Projetos</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Projeto
-        </Button>
-      </Box>
+      <ProjectsToolbar onNew={openCreate} />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 250 }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="ativo">Ativo</MenuItem>
-          <MenuItem value="inativo">Inativo</MenuItem>
-        </TextField>
-        <Box sx={{ flexGrow: 1 }} />
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={viewMode}
-          onChange={(_, v) => v && setViewMode(v)}
-        >
-          <ToggleButton value="table" aria-label="Visualizar em tabela">
-            <TableView fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="cards" aria-label="Visualizar em cartões">
-            <GridView fontSize="small" />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Stack>
+      <ProjectsFilters
+        search={search}
+        status={statusFilter}
+        viewMode={viewMode}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+        onViewModeChange={setViewMode}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {viewMode === 'table' ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                {columns.map((col) => (
-                  <TableCell key={col.id}>
-                    <TableSortLabel
-                      active={sortBy === col.id}
-                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                      onClick={() => handleSort(col.id)}
-                    >
-                      {col.label}
-                    </TableSortLabel>
-                  </TableCell>
-                ))}
-                <TableCell>Empresa</TableCell>
-                <TableCell>Responsável</TableCell>
-                <TableCell>Término</TableCell>
-                <TableCell>Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {projects.map((p) => (
-                <TableRow
-                  key={p.id}
-                  hover
-                  onClick={() => navigate(`/projects/${p.id}`)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell>{p.nome}</TableCell>
-                  <TableCell>{p.codigo || '-'}</TableCell>
-                  <TableCell>{p.cliente || '-'}</TableCell>
-                  <TableCell>{formatDate(p.dataInicio)}</TableCell>
-                  <TableCell>{terminoLabel(p.dataFim)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                      color={p.status === 'ativo' ? 'success' : 'default'}
-                    />
-                  </TableCell>
-                  <TableCell>{companyLabel(p)}</TableCell>
-                  <TableCell>{p.responsavel || '-'}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setModal({ open: true, editId: p.id })
-                      }}
-                    >
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(p.id)
-                      }}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {projects.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    Nenhum projeto encontrado.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ProjectsTable
+          projects={projects}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+          onOpen={(project) => navigate(`/projects/${project.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
       ) : (
-        <Box>
-          {projects.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">Nenhum projeto encontrado.</Typography>
-            </Paper>
-          ) : (
-            <Grid container spacing={2}>
-              {projects.map((p) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={p.id}>
-                  <Card
-                    variant="outlined"
-                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
-                    onClick={() => navigate(`/projects/${p.id}`)}
-                  >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 18 }}>
-                          {getInitials(p.nome)}
-                        </Avatar>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
-                            {p.nome}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" noWrap>
-                            {p.codigo || 'Sem código'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                        <Chip
-                          size="small"
-                          label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                          color={p.status === 'ativo' ? 'success' : 'default'}
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        Cliente: {p.cliente || '-'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        Empresa: {companyLabel(p)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        Responsável: {p.responsavel || '-'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Início: {formatDate(p.dataInicio)} · Término: {terminoLabel(p.dataFim)}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
-                      <Button
-                        size="small"
-                        startIcon={<Edit />}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setModal({ open: true, editId: p.id })
-                        }}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        startIcon={<Delete />}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(p.id)
-                        }}
-                      >
-                        Excluir
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </Box>
+        <ProjectsCards
+          projects={projects}
+          onOpen={(project) => navigate(`/projects/${project.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
       )}
 
       <TablePagination
@@ -366,6 +137,14 @@ export default function ProjectsPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir projeto"
+        message={`Tem certeza que deseja excluir o projeto "${toDelete?.nome}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

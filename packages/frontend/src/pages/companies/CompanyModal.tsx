@@ -17,24 +17,11 @@ import {
   MenuItem,
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
-import { z } from 'zod'
 import api from '../../services/api'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { createCompanySchema, updateCompanySchema } from './companySchemas'
 import { Company, ufOptions } from './companiesTypes'
-
-const baseSchema = z.object({
-  nome: z.string().min(1, 'Informe o nome.'),
-  cnpj: z.string().optional(),
-  email: z.string().email('Informe um e-mail válido.').optional().or(z.literal('')),
-  telefone: z.string().optional(),
-  endereco: z.string().optional(),
-  cidade: z.string().optional(),
-  uf: z.string().optional(),
-  ativa: z.boolean().optional(),
-  observacoes: z.string().optional(),
-})
-
-const createSchema = baseSchema
-const editSchema = baseSchema.partial()
 
 interface CompanyModalProps {
   open: boolean
@@ -43,22 +30,38 @@ interface CompanyModalProps {
   onSaved: () => void
 }
 
+interface CompanyFormState {
+  nome: string
+  cnpj: string
+  email: string
+  telefone: string
+  endereco: string
+  cidade: string
+  uf: string
+  ativa: boolean
+  observacoes: string
+}
+
+const initialForm: CompanyFormState = {
+  nome: '',
+  cnpj: '',
+  email: '',
+  telefone: '',
+  endereco: '',
+  cidade: '',
+  uf: '',
+  ativa: true,
+  observacoes: '',
+}
+
 export default function CompanyModal({ open, editId, onClose, onSaved }: CompanyModalProps) {
   const isEdit = Boolean(editId)
-
-  const [nome, setNome] = useState('')
-  const [cnpj, setCnpj] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [cidade, setCidade] = useState('')
-  const [uf, setUf] = useState('')
-  const [ativa, setAtiva] = useState(true)
-  const [observacoes, setObservacoes] = useState('')
+  const [form, setForm] = useState<CompanyFormState>(initialForm)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (open && editId) {
@@ -67,41 +70,27 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
         .get(`/companies/${editId}`)
         .then((res) => {
           const d: Company = res.data
-          setNome(d.nome)
-          setCnpj(d.cnpj || '')
-          setEmail(d.email || '')
-          setTelefone(d.telefone || '')
-          setEndereco(d.endereco || '')
-          setCidade(d.cidade || '')
-          setUf(d.uf || '')
-          setAtiva(d.ativa)
-          setObservacoes(d.observacoes || '')
+          setForm({
+            nome: d.nome,
+            cnpj: d.cnpj || '',
+            email: d.email || '',
+            telefone: d.telefone || '',
+            endereco: d.endereco || '',
+            cidade: d.cidade || '',
+            uf: d.uf || '',
+            ativa: d.ativa,
+            observacoes: d.observacoes || '',
+          })
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
     }
   }, [open, editId])
 
-  const reset = () => {
-    setNome('')
-    setCnpj('')
-    setEmail('')
-    setTelefone('')
-    setEndereco('')
-    setCidade('')
-    setUf('')
-    setAtiva(true)
-    setObservacoes('')
-    setError('')
-    setFieldErrors({})
-    setDeleting(false)
+  const handleChange = (key: keyof CompanyFormState, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
   }
-
-  const getFieldErrors = (error: z.ZodError) =>
-    Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
-
-  const clearFieldError = (field: string) =>
-    setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -109,18 +98,18 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
     setFieldErrors({})
 
     const payload = {
-      nome,
-      cnpj: cnpj || undefined,
-      email: email || undefined,
-      telefone: telefone || undefined,
-      endereco: endereco || undefined,
-      cidade: cidade || undefined,
-      uf: uf || undefined,
-      ativa,
-      observacoes: observacoes || undefined,
+      nome: form.nome,
+      cnpj: form.cnpj || undefined,
+      email: form.email || undefined,
+      telefone: form.telefone || undefined,
+      endereco: form.endereco || undefined,
+      cidade: form.cidade || undefined,
+      uf: form.uf || undefined,
+      ativa: form.ativa,
+      observacoes: form.observacoes || undefined,
     }
 
-    const schema = isEdit ? editSchema : createSchema
+    const schema = isEdit ? updateCompanySchema : createCompanySchema
     const result = schema.safeParse(payload)
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error))
@@ -134,9 +123,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
       } else {
         await api.post('/companies', payload)
       }
-      reset()
       onSaved()
-      onClose()
+      handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -146,13 +134,11 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
 
   const handleDelete = async () => {
     if (!editId) return
-    if (!confirm('Tem certeza que deseja excluir esta empresa?')) return
     setDeleting(true)
     try {
       await api.delete(`/companies/${editId}`)
-      reset()
       onSaved()
-      onClose()
+      handleClose()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
     } finally {
@@ -162,7 +148,10 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
 
   const handleClose = () => {
     if (loading || deleting) return
-    reset()
+    setError('')
+    setFieldErrors({})
+    setForm(initialForm)
+    setConfirmDelete(false)
     onClose()
   }
 
@@ -175,11 +164,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
           <TextField
             fullWidth
             label="Nome"
-            value={nome}
-            onChange={(e) => {
-              setNome(e.target.value)
-              clearFieldError('nome')
-            }}
+            value={form.nome}
+            onChange={(e) => handleChange('nome', e.target.value)}
             margin="normal"
             required
             autoFocus
@@ -191,11 +177,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
               <TextField
                 fullWidth
                 label="CNPJ"
-                value={cnpj}
-                onChange={(e) => {
-                  setCnpj(e.target.value)
-                  clearFieldError('cnpj')
-                }}
+                value={form.cnpj}
+                onChange={(e) => handleChange('cnpj', e.target.value)}
                 margin="normal"
                 error={!!fieldErrors.cnpj}
                 helperText={fieldErrors.cnpj}
@@ -205,11 +188,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
               <TextField
                 fullWidth
                 label="Telefone"
-                value={telefone}
-                onChange={(e) => {
-                  setTelefone(e.target.value)
-                  clearFieldError('telefone')
-                }}
+                value={form.telefone}
+                onChange={(e) => handleChange('telefone', e.target.value)}
                 margin="normal"
                 error={!!fieldErrors.telefone}
                 helperText={fieldErrors.telefone}
@@ -220,11 +200,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
             fullWidth
             label="E-mail"
             type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              clearFieldError('email')
-            }}
+            value={form.email}
+            onChange={(e) => handleChange('email', e.target.value)}
             margin="normal"
             error={!!fieldErrors.email}
             helperText={fieldErrors.email}
@@ -232,11 +209,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
           <TextField
             fullWidth
             label="Endereço"
-            value={endereco}
-            onChange={(e) => {
-              setEndereco(e.target.value)
-              clearFieldError('endereco')
-            }}
+            value={form.endereco}
+            onChange={(e) => handleChange('endereco', e.target.value)}
             margin="normal"
             error={!!fieldErrors.endereco}
             helperText={fieldErrors.endereco}
@@ -246,11 +220,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
               <TextField
                 fullWidth
                 label="Cidade"
-                value={cidade}
-                onChange={(e) => {
-                  setCidade(e.target.value)
-                  clearFieldError('cidade')
-                }}
+                value={form.cidade}
+                onChange={(e) => handleChange('cidade', e.target.value)}
                 margin="normal"
                 error={!!fieldErrors.cidade}
                 helperText={fieldErrors.cidade}
@@ -261,11 +232,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
                 fullWidth
                 select
                 label="UF"
-                value={uf}
-                onChange={(e) => {
-                  setUf(e.target.value)
-                  clearFieldError('uf')
-                }}
+                value={form.uf}
+                onChange={(e) => handleChange('uf', e.target.value)}
                 margin="normal"
                 error={!!fieldErrors.uf}
                 helperText={fieldErrors.uf}
@@ -280,8 +248,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
             </Grid>
           </Grid>
           <FormControlLabel
-            control={<Switch checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />}
-            label={ativa ? 'Empresa ativa' : 'Empresa inativa'}
+            control={<Switch checked={form.ativa} onChange={(e) => handleChange('ativa', e.target.checked)} />}
+            label={form.ativa ? 'Empresa ativa' : 'Empresa inativa'}
             sx={{ mt: 1 }}
           />
           <TextField
@@ -289,11 +257,8 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
             label="Observações"
             multiline
             rows={3}
-            value={observacoes}
-            onChange={(e) => {
-              setObservacoes(e.target.value)
-              clearFieldError('observacoes')
-            }}
+            value={form.observacoes}
+            onChange={(e) => handleChange('observacoes', e.target.value)}
             margin="normal"
             error={!!fieldErrors.observacoes}
             helperText={fieldErrors.observacoes}
@@ -302,7 +267,7 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (
             <Tooltip title="Excluir empresa">
-              <IconButton color="error" onClick={handleDelete} disabled={loading || deleting} sx={{ mr: 'auto' }}>
+              <IconButton color="error" onClick={() => setConfirmDelete(true)} disabled={loading || deleting} sx={{ mr: 'auto' }}>
                 <Delete />
               </IconButton>
             </Tooltip>
@@ -313,6 +278,14 @@ export default function CompanyModal({ open, editId, onClose, onSaved }: Company
           </Button>
         </DialogActions>
       </Box>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir empresa"
+        message="Tem certeza que deseja excluir esta empresa?"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Dialog>
   )
 }

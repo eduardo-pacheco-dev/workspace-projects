@@ -1,57 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from '@mui/material'
-import { Edit, Delete, GroupAdd } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
-import TeamModal from './TeamModal'
 import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import { Team, SortBy, SortOrder } from './teamsTypes'
+import TeamModal from './TeamModal'
+import TeamsToolbar from '../../components/teams/TeamsToolbar'
+import TeamsFilters from '../../components/teams/TeamsFilters'
+import TeamsTable from '../../components/teams/TeamsTable'
+import DeleteTeamDialog from '../../components/teams/DeleteTeamDialog'
 
-interface TeamMember {
-  id: number
-  collaboratorId: number
-  collaborator?: {
-    id: number
-    nome: string | null
-    firstName?: string | null
-    lastName?: string | null
-    isFreelancer: boolean
-  }
-}
-
-interface Team {
+interface DeleteTarget {
   id: number
   nome: string
-  descricao: string | null
-  status: string
-  members: TeamMember[]
-  createdAt: string
 }
-
-type SortBy = 'id' | 'nome' | 'status' | 'createdAt'
-type SortOrder = 'ASC' | 'DESC'
 
 export default function TeamsTab() {
   const { showToast } = useToast()
@@ -64,27 +26,17 @@ export default function TeamsTab() {
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; nome: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
-
       const res = await api.get('/teams', { params })
-      if (Array.isArray(res.data)) {
-        setTeams(res.data)
-        setTotal(res.data.length)
-      } else {
-        setTeams(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<Team>(res.data)
+      setTeams(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -127,109 +79,31 @@ export default function TeamsTab() {
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'status', label: 'Status' },
-  ]
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(0)
+  }
+
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (team: Team) => setModal({ open: true, editId: team.id })
+  const requestDelete = (team: Team) => setDeleteTarget({ id: team.id, nome: team.nome })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Equipes</Typography>
-        <Button variant="contained" startIcon={<GroupAdd />} onClick={() => setModal({ open: true, editId: null })}>
-          Nova Equipe
-        </Button>
-      </Box>
+      <TeamsToolbar onNew={openCreate} />
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-        />
-      </Stack>
+      <TeamsFilters search={search} onSearchChange={handleSearchChange} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Membros</TableCell>
-              <TableCell align="center">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {teams.map((t) => (
-              <TableRow key={t.id} hover>
-                <TableCell sx={{ fontWeight: 600 }}>{t.nome}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={t.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={t.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                    {t.members?.length ? (
-                      t.members.slice(0, 4).map((m) => {
-                        const c = m.collaborator
-                        const name = c
-                          ? c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
-                          : `#${m.collaboratorId}`
-                        return (
-                          <Chip
-                            key={m.id}
-                            size="small"
-                            label={name}
-                            color={c?.isFreelancer ? 'primary' : 'default'}
-                            variant="outlined"
-                          />
-                        )
-                      })
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">Sem membros</Typography>
-                    )}
-                    {(t.members?.length ?? 0) > 4 && (
-                      <Chip size="small" label={`+${t.members.length - 4}`} variant="outlined" />
-                    )}
-                  </Stack>
-                </TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <IconButton onClick={() => setModal({ open: true, editId: t.id })}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton onClick={() => setDeleteTarget({ id: t.id, nome: t.nome })}>
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-            {teams.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Nenhuma equipe encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <TeamsTable
+        teams={teams}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        onEdit={openEdit}
+        onDelete={requestDelete}
+      />
 
       <TablePagination
         component="div"
@@ -249,23 +123,12 @@ export default function TeamsTab() {
         onSaved={() => fetchData()}
       />
 
-      <Dialog
-        open={!!deleteTarget}
-        onClose={() => { if (!deleting) setDeleteTarget(null) }}
-      >
-        <DialogTitle>Excluir Equipe</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir a equipe <strong>{deleteTarget?.nome}</strong>? Esta ação não pode ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
-            {deleting ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteTeamDialog
+        team={deleteTarget}
+        deleting={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </Container>
   )
 }

@@ -160,3 +160,24 @@ export const formatDate = (value: string | null) => {
 }
 
 export const todayString = () => toDateString(new Date())
+
+export function taskName(tasks: MsTask[], taskId: number): string {
+  return tasks.find((t) => t.id === taskId)?.name || `#${taskId}`
+}
+
+export function resourceName(resources: MsResource[], resourceId: number): string {
+  return resources.find((r) => r.id === resourceId)?.name || `#${resourceId}`
+}
+
+export function taskAssignments(
+  assignments: MsAssignment[],
+  resources: MsResource[],
+  taskId: number,
+): string {
+  return (
+    assignments
+      .filter((a) => a.taskId === taskId)
+      .map((a) => `${resourceName(resources, a.resourceId)} (${a.units}%)`)
+      .join(', ') || '-'
+  )
+}

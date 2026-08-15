@@ -1,6 +1,7 @@
-import { Box, Button, Chip, IconButton, Paper, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Button, IconButton, Paper, Stack, Tooltip, Typography } from '@mui/material'
 import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material'
 import { ScheduleEvent, statusCalendarColors, statusLabels, toDateString, capitalize } from './scheduleTypes'
+import CalendarDayCell from '../../components/schedule/CalendarDayCell'
 
 interface ScheduleCalendarProps {
   events: ScheduleEvent[]
@@ -92,60 +93,15 @@ export default function ScheduleCalendar({
           if (!day) {
             return <Box key={`empty-${index}`} sx={{ minHeight: 110, borderRadius: 1 }} />
           }
-          const dateStr = toDateString(day)
-          const dayEvents = eventsByDate.get(dateStr) ?? []
-          const visible = dayEvents.slice(0, 3)
-          const extra = dayEvents.length - visible.length
-          const isToday = dateStr === today
-
           return (
-            <Box
-              key={dateStr}
-              onClick={() => onCreateEvent(dateStr)}
-              sx={{
-                minHeight: 110,
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: 1,
-                p: 0.5,
-                cursor: 'pointer',
-                bgcolor: isToday ? 'primary.main' : 'background.paper',
-                color: isToday ? 'common.white' : 'text.primary',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.25,
-                '&:hover': { bgcolor: isToday ? 'primary.dark' : 'action.hover' },
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                {day.getDate()}
-              </Typography>
-              {visible.map((event) => (
-                <Tooltip key={event.id} title={statusLabels[event.status] || event.status}>
-                  <Chip
-                    size="small"
-                    label={event.title}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEditEvent(event.id)
-                    }}
-                    sx={{
-                      height: 20,
-                      fontSize: '0.7rem',
-                      color: '#fff',
-                      bgcolor: statusCalendarColors[event.status] || '#78909c',
-                      cursor: 'pointer',
-                      '& .MuiChip-label': { px: 1 },
-                    }}
-                  />
-                </Tooltip>
-              ))}
-              {extra > 0 && (
-                <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                  +{extra} mais
-                </Typography>
-              )}
-            </Box>
+            <CalendarDayCell
+              key={toDateString(day)}
+              day={day}
+              events={eventsByDate.get(toDateString(day)) ?? []}
+              isToday={toDateString(day) === today}
+              onCreateEvent={(date) => onCreateEvent(date)}
+              onEditEvent={onEditEvent}
+            />
           )
         })}
       </Box>

@@ -13,15 +13,13 @@ import {
   Grid,
   IconButton,
   Tooltip,
-  Tabs,
-  Tab,
-  Paper,
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
-import { z } from 'zod'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import Markdown from '../../components/Markdown'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import useTaskOptions from '../../hooks/useTaskOptions'
+import MarkdownField from '../../components/tasks/MarkdownField'
 import {
   Task,
   statusOptions,
@@ -29,21 +27,9 @@ import {
   splitDateTime,
   joinDateTime,
   toDateString,
+  collaboratorName,
 } from './tasksTypes'
-
-const baseSchema = z.object({
-  title: z.string().min(1, 'Informe o título.'),
-  description: z.string().optional(),
-  status: z.string().optional(),
-  priority: z.string().optional(),
-  dueAt: z.string().optional(),
-  project: z.string().optional(),
-  client: z.string().optional(),
-  assignedTo: z.string().optional(),
-})
-
-const createSchema = baseSchema
-const editSchema = baseSchema.partial()
+import { createTaskSchema, updateTaskSchema } from './taskSchemas'
 
 interface TaskModalProps {
   open: boolean
@@ -52,25 +38,10 @@ interface TaskModalProps {
   onSaved: () => void
 }
 
-interface ProjectOption {
-  id: number
-  nome: string
-  cliente: string | null
-}
-
-interface CollaboratorOption {
-  id: number
-  nome: string | null
-  firstName?: string | null
-  lastName?: string | null
-}
-
-const collaboratorName = (c: CollaboratorOption) =>
-  c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
-
 export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalProps) {
   const isEdit = Boolean(editId)
   const { showToast } = useToast()
+  const { projects, clients, collaborators } = useTaskOptions(open)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -81,35 +52,10 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   const [project, setProject] = useState('')
   const [client, setClient] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
-  const [projects, setProjects] = useState<ProjectOption[]>([])
-  const [clients, setClients] = useState<string[]>([])
-  const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
-  const [previewMode, setPreviewMode] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    api
-      .get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setProjects(d)
-        const clientSet = new Set<string>()
-        d.forEach((p: any) => { if (p.cliente) clientSet.add(p.cliente) })
-        setClients(Array.from(clientSet))
-      })
-      .catch(() => {})
-    api
-      .get('/collaborators', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const d = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setCollaborators(d)
-      })
-      .catch(() => {})
-  }, [open])
 
   useEffect(() => {
     if (open && editId) {
@@ -117,17 +63,17 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
       api
         .get(`/tasks/${editId}`)
         .then((res) => {
-          const d: Task = res.data
-          setTitle(d.title)
-          setDescription(d.description || '')
-          setStatus(d.status || 'pending')
-          setPriority(d.priority || 'medium')
-          const due = splitDateTime(d.dueAt)
+          const data: Task = res.data
+          setTitle(data.title)
+          setDescription(data.description || '')
+          setStatus(data.status || 'pending')
+          setPriority(data.priority || 'medium')
+          const due = splitDateTime(data.dueAt)
           setDueDate(due.date)
           setDueTime(due.time)
-          setProject(d.project || '')
-          setClient(d.client || '')
-          setAssignedTo(d.assignedTo || '')
+          setProject(data.project || '')
+          setClient(data.client || '')
+          setAssignedTo(data.assignedTo || '')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
@@ -144,17 +90,12 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
     setProject('')
     setClient('')
     setAssignedTo('')
-    setPreviewMode(false)
     setError('')
     setFieldErrors({})
     setDeleting(false)
   }
 
-  const getFieldErrors = (error: z.ZodError) =>
-    Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
-
-  const clearFieldError = (field: string) =>
-    setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+  const clearFieldError = (field: string) => setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -174,7 +115,7 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
       assignedTo,
     }
 
-    const schema = isEdit ? editSchema : createSchema
+    const schema = isEdit ? updateTaskSchema : createTaskSchema
     const result = schema.safeParse(payload)
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error))
@@ -193,8 +134,9 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
       onSaved()
       onClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
+      const message = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -242,34 +184,14 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
             error={!!fieldErrors.title}
             helperText={fieldErrors.title}
           />
-          <Tabs
-            value={previewMode ? 1 : 0}
-            onChange={(_, v) => setPreviewMode(v === 1)}
-            sx={{ mt: 1, mb: 0.5, minHeight: 32 }}
-          >
-            <Tab label="Editar" sx={{ minHeight: 32, p: 0.5 }} />
-            <Tab label="Preview" sx={{ minHeight: 32, p: 0.5 }} />
-          </Tabs>
-          {previewMode ? (
-            <Paper variant="outlined" sx={{ p: 2, minHeight: 100, bgcolor: 'background.default' }}>
-              <Markdown>{description}</Markdown>
-            </Paper>
-          ) : (
-            <TextField
-              fullWidth
-              label="Descrição"
-              multiline
-              rows={3}
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value)
-                clearFieldError('description')
-              }}
-              margin="normal"
-              error={!!fieldErrors.description}
-              helperText={fieldErrors.description || 'Suporta Markdown'}
-            />
-          )}
+          <MarkdownField
+            value={description}
+            onChange={(value) => {
+              setDescription(value)
+              clearFieldError('description')
+            }}
+            error={fieldErrors.description}
+          />
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <TextField

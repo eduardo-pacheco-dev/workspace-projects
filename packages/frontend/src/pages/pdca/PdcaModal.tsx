@@ -11,13 +11,15 @@ import {
   MenuItem,
   CircularProgress,
   Grid,
-  Typography,
-  Divider,
   Autocomplete,
 } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import { tecnicaOptions, statusValidacaoOptions } from './pdcaTypes'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import usePdcaOptions from '../../hooks/usePdcaOptions'
+import FormSection from '../../components/pdca/FormSection'
+import { pdcaSchema } from './pdcaSchemas'
+import { tecnicaOptions, statusValidacaoOptions, ProjectOption } from './pdcaTypes'
 
 interface PdcaModalProps {
   open: boolean
@@ -27,47 +29,57 @@ interface PdcaModalProps {
   onSaved: () => void
 }
 
-interface ProjectOption {
-  id: number
-  nome: string
+interface PdcaFormState {
+  titulo: string
+  problema: string
+  impacto: string
+  areaSetor: string
+  responsavelCiclo: string
+  tecnicaAnalise: string
+  causaRaiz: string
+  meta: string
+  resultadoCheck: string
+  kpi: string
+  resultadoMedicao: string
+  statusValidacao: string
+  dataVerificacao: string
+  responsavelValidacao: string
+  decisoesAct: string
+  pop: string
+  licaoAprendida: string
+  observacoes: string
+}
+
+const initialForm: PdcaFormState = {
+  titulo: '',
+  problema: '',
+  impacto: '',
+  areaSetor: '',
+  responsavelCiclo: '',
+  tecnicaAnalise: '',
+  causaRaiz: '',
+  meta: '',
+  resultadoCheck: '',
+  kpi: '',
+  resultadoMedicao: '',
+  statusValidacao: '',
+  dataVerificacao: '',
+  responsavelValidacao: '',
+  decisoesAct: '',
+  pop: '',
+  licaoAprendida: '',
+  observacoes: '',
 }
 
 export default function PdcaModal({ open, editId, defaultProjectId, onClose, onSaved }: PdcaModalProps) {
   const isEdit = Boolean(editId)
   const { showToast } = useToast()
-
-  const [titulo, setTitulo] = useState('')
+  const projects = usePdcaOptions(open)
+  const [form, setForm] = useState<PdcaFormState>(initialForm)
   const [project, setProject] = useState<ProjectOption | null>(null)
-  const [problema, setProblema] = useState('')
-  const [impacto, setImpacto] = useState('')
-  const [areaSetor, setAreaSetor] = useState('')
-  const [responsavelCiclo, setResponsavelCiclo] = useState('')
-  const [tecnicaAnalise, setTecnicaAnalise] = useState('')
-  const [causaRaiz, setCausaRaiz] = useState('')
-  const [meta, setMeta] = useState('')
-  const [resultadoCheck, setResultadoCheck] = useState('')
-  const [kpi, setKpi] = useState('')
-  const [resultadoMedicao, setResultadoMedicao] = useState('')
-  const [statusValidacao, setStatusValidacao] = useState('')
-  const [dataVerificacao, setDataVerificacao] = useState('')
-  const [responsavelValidacao, setResponsavelValidacao] = useState('')
-  const [decisoesAct, setDecisoesAct] = useState('')
-  const [pop, setPop] = useState('')
-  const [licaoAprendida, setLicaoAprendida] = useState('')
-  const [observacoes, setObservacoes] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const [projects, setProjects] = useState<ProjectOption[]>([])
-
-  useEffect(() => {
-    if (!open) return
-    api.get('/projects', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setProjects(data.map((p: any) => ({ id: p.id, nome: p.nome })))
-      })
-      .catch(() => {})
-  }, [open])
 
   useEffect(() => {
     if (open && editId) {
@@ -75,25 +87,27 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
       api.get(`/pdca/${editId}`)
         .then((res) => {
           const d = res.data
-          setTitulo(d.titulo || '')
+          setForm({
+            titulo: d.titulo || '',
+            problema: d.problema || '',
+            impacto: d.impacto || '',
+            areaSetor: d.areaSetor || '',
+            responsavelCiclo: d.responsavelCiclo || '',
+            tecnicaAnalise: d.tecnicaAnalise || '',
+            causaRaiz: d.causaRaiz || '',
+            meta: d.meta || '',
+            resultadoCheck: d.resultadoCheck || '',
+            kpi: d.kpi || '',
+            resultadoMedicao: d.resultadoMedicao || '',
+            statusValidacao: d.statusValidacao || '',
+            dataVerificacao: d.dataVerificacao || '',
+            responsavelValidacao: d.responsavelValidacao || '',
+            decisoesAct: d.decisoesAct || '',
+            pop: d.pop || '',
+            licaoAprendida: d.licaoAprendida || '',
+            observacoes: d.observacoes || '',
+          })
           setProject(d.projectId ? { id: d.projectId, nome: '' } : null)
-          setProblema(d.problema || '')
-          setImpacto(d.impacto || '')
-          setAreaSetor(d.areaSetor || '')
-          setResponsavelCiclo(d.responsavelCiclo || '')
-          setTecnicaAnalise(d.tecnicaAnalise || '')
-          setCausaRaiz(d.causaRaiz || '')
-          setMeta(d.meta || '')
-          setResultadoCheck(d.resultadoCheck || '')
-          setKpi(d.kpi || '')
-          setResultadoMedicao(d.resultadoMedicao || '')
-          setStatusValidacao(d.statusValidacao || '')
-          setDataVerificacao(d.dataVerificacao || '')
-          setResponsavelValidacao(d.responsavelValidacao || '')
-          setDecisoesAct(d.decisoesAct || '')
-          setPop(d.pop || '')
-          setLicaoAprendida(d.licaoAprendida || '')
-          setObservacoes(d.observacoes || '')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setLoading(false))
@@ -102,33 +116,25 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
     }
   }, [open, editId, defaultProjectId])
 
+  const handleChange = (key: keyof PdcaFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setFieldErrors({})
 
-    const payload: any = {
-      titulo,
-      projectId: project?.id ?? null,
-      problema,
-      impacto,
-      areaSetor,
-      responsavelCiclo,
-      tecnicaAnalise,
-      causaRaiz,
-      meta,
-      resultadoCheck,
-      kpi,
-      resultadoMedicao,
-      statusValidacao,
-      dataVerificacao,
-      responsavelValidacao,
-      decisoesAct,
-      pop,
-      licaoAprendida,
-      observacoes,
+    const result = pdcaSchema.safeParse(form)
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
     }
 
+    const payload: any = { ...form, projectId: project?.id ?? null }
+
+    setLoading(true)
     try {
       if (isEdit) {
         await api.patch(`/pdca/${editId}`, payload)
@@ -139,8 +145,9 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
+      const message = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -149,25 +156,9 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
   const handleClose = () => {
     if (loading) return
     setError('')
-    setTitulo('')
+    setFieldErrors({})
+    setForm(initialForm)
     setProject(null)
-    setProblema('')
-    setImpacto('')
-    setAreaSetor('')
-    setResponsavelCiclo('')
-    setTecnicaAnalise('')
-    setCausaRaiz('')
-    setMeta('')
-    setResultadoCheck('')
-    setKpi('')
-    setResultadoMedicao('')
-    setStatusValidacao('')
-    setDataVerificacao('')
-    setResponsavelValidacao('')
-    setDecisoesAct('')
-    setPop('')
-    setLicaoAprendida('')
-    setObservacoes('')
     onClose()
   }
 
@@ -185,7 +176,16 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
             <>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={8}>
-                  <TextField fullWidth label="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} margin="normal" required />
+                  <TextField
+                    fullWidth
+                    label="Título"
+                    value={form.titulo}
+                    onChange={(e) => handleChange('titulo', e.target.value)}
+                    margin="normal"
+                    required
+                    error={!!fieldErrors.titulo}
+                    helperText={fieldErrors.titulo}
+                  />
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Autocomplete
@@ -202,87 +202,81 @@ export default function PdcaModal({ open, editId, defaultProjectId, onClose, onS
                 </Grid>
               </Grid>
 
-              <Typography variant="subtitle2" color="primary" sx={{ mt: 2, mb: 0.5 }}>
-                Plan (Planejar)
-              </Typography>
-              <Divider sx={{ mb: 1 }} />
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField fullWidth label="Problema (descrição detalhada)" multiline rows={2} value={problema} onChange={(e) => setProblema(e.target.value)} margin="normal" />
+              <FormSection title="Plan (Planejar)">
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField fullWidth label="Problema (descrição detalhada)" multiline rows={2} value={form.problema} onChange={(e) => handleChange('problema', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField fullWidth label="Impacto" value={form.impacto} onChange={(e) => handleChange('impacto', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField fullWidth label="Área / Setor" value={form.areaSetor} onChange={(e) => handleChange('areaSetor', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField fullWidth label="Responsável" value={form.responsavelCiclo} onChange={(e) => handleChange('responsavelCiclo', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth select label="Técnica de análise de causa" value={form.tecnicaAnalise} onChange={(e) => handleChange('tecnicaAnalise', e.target.value)} margin="normal">
+                      <MenuItem value="">Selecione</MenuItem>
+                      {tecnicaOptions.map((o) => (
+                        <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Meta planejada" value={form.meta} onChange={(e) => handleChange('meta', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField fullWidth label="Análise da causa raiz" multiline rows={2} value={form.causaRaiz} onChange={(e) => handleChange('causaRaiz', e.target.value)} margin="normal" />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth label="Impacto" value={impacto} onChange={(e) => setImpacto(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth label="Área / Setor" value={areaSetor} onChange={(e) => setAreaSetor(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth label="Responsável" value={responsavelCiclo} onChange={(e) => setResponsavelCiclo(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth select label="Técnica de análise de causa" value={tecnicaAnalise} onChange={(e) => setTecnicaAnalise(e.target.value)} margin="normal">
-                    <MenuItem value="">Selecione</MenuItem>
-                    {tecnicaOptions.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Meta planejada" value={meta} onChange={(e) => setMeta(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField fullWidth label="Análise da causa raiz" multiline rows={2} value={causaRaiz} onChange={(e) => setCausaRaiz(e.target.value)} margin="normal" />
-                </Grid>
-              </Grid>
+              </FormSection>
 
-              <Typography variant="subtitle2" color="primary" sx={{ mt: 2, mb: 0.5 }}>
-                Check (Checar / Verificar)
-              </Typography>
-              <Divider sx={{ mb: 1 }} />
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Avaliação de resultados" multiline rows={2} value={resultadoCheck} onChange={(e) => setResultadoCheck(e.target.value)} margin="normal" />
+              <FormSection title="Check (Checar / Verificar)">
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Avaliação de resultados" multiline rows={2} value={form.resultadoCheck} onChange={(e) => handleChange('resultadoCheck', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="KPI / Indicador" value={form.kpi} onChange={(e) => handleChange('kpi', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Medição qualitativa/quantitativa" value={form.resultadoMedicao} onChange={(e) => handleChange('resultadoMedicao', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth select label="Status da validação" value={form.statusValidacao} onChange={(e) => handleChange('statusValidacao', e.target.value)} margin="normal">
+                      <MenuItem value="">Selecione</MenuItem>
+                      {statusValidacaoOptions.map((o) => (
+                        <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Data de verificação" type="date" value={form.dataVerificacao} onChange={(e) => handleChange('dataVerificacao', e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Responsável pela validação" value={form.responsavelValidacao} onChange={(e) => handleChange('responsavelValidacao', e.target.value)} margin="normal" />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="KPI / Indicador" value={kpi} onChange={(e) => setKpi(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Medição qualitativa/quantitativa" value={resultadoMedicao} onChange={(e) => setResultadoMedicao(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth select label="Status da validação" value={statusValidacao} onChange={(e) => setStatusValidacao(e.target.value)} margin="normal">
-                    <MenuItem value="">Selecione</MenuItem>
-                    {statusValidacaoOptions.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Data de verificação" type="date" value={dataVerificacao} onChange={(e) => setDataVerificacao(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Responsável pela validação" value={responsavelValidacao} onChange={(e) => setResponsavelValidacao(e.target.value)} margin="normal" />
-                </Grid>
-              </Grid>
+              </FormSection>
 
-              <Typography variant="subtitle2" color="primary" sx={{ mt: 2, mb: 0.5 }}>
-                Act (Agir / Padronizar)
-              </Typography>
-              <Divider sx={{ mb: 1 }} />
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField fullWidth label="Decisão / Tomada de ação" multiline rows={2} value={decisoesAct} onChange={(e) => setDecisoesAct(e.target.value)} margin="normal" />
+              <FormSection title="Act (Agir / Padronizar)">
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField fullWidth label="Decisão / Tomada de ação" multiline rows={2} value={form.decisoesAct} onChange={(e) => handleChange('decisoesAct', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Procedimento Operacional Padrão (POP)" multiline rows={2} value={form.pop} onChange={(e) => handleChange('pop', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Lição aprendida / Padronização" multiline rows={2} value={form.licaoAprendida} onChange={(e) => handleChange('licaoAprendida', e.target.value)} margin="normal" />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField fullWidth label="Observações" multiline rows={2} value={form.observacoes} onChange={(e) => handleChange('observacoes', e.target.value)} margin="normal" />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Procedimento Operacional Padrão (POP)" multiline rows={2} value={pop} onChange={(e) => setPop(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Lição aprendida / Padronização" multiline rows={2} value={licaoAprendida} onChange={(e) => setLicaoAprendida(e.target.value)} margin="normal" />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField fullWidth label="Observações" multiline rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} margin="normal" />
-                </Grid>
-              </Grid>
+              </FormSection>
             </>
           )}
         </DialogContent>

@@ -11,6 +11,18 @@ export interface ScheduleEvent {
 }
 
 export type ScheduleStatus = 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+export type ScheduleSortBy = 'id' | 'title' | 'startAt' | 'endAt' | 'status' | 'client' | 'location'
+export type SortOrder = 'ASC' | 'DESC'
+
+export const SCHEDULE_COLUMNS: { id: ScheduleSortBy | 'description'; label: string; sortable?: boolean }[] = [
+  { id: 'title', label: 'Título' },
+  { id: 'startAt', label: 'Início' },
+  { id: 'endAt', label: 'Fim' },
+  { id: 'client', label: 'Cliente' },
+  { id: 'location', label: 'Local' },
+  { id: 'assignedTo' as ScheduleSortBy, label: 'Responsável' },
+  { id: 'status', label: 'Status' },
+]
 
 export const statusOptions: { value: ScheduleStatus; label: string }[] = [
   { value: 'scheduled', label: 'Agendado' },

@@ -13,10 +13,14 @@ import {
   Grid,
   Checkbox,
   FormControlLabel,
-  Autocomplete,
 } from '@mui/material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import useProjectOptions from '../../hooks/useProjectOptions'
+import FreeSoloAutocomplete from '../../components/projects/FreeSoloAutocomplete'
+import { projectSchema } from './projectSchemas'
+import { OPERADORAS } from './projectsTypes'
 
 interface ProjectModalProps {
   open: boolean
@@ -25,76 +29,82 @@ interface ProjectModalProps {
   onSaved: () => void
 }
 
+interface ProjectFormState {
+  nome: string
+  descricao: string
+  cliente: string
+  operadora: string
+  responsavel: string
+  dataInicio: string
+  dataFim: string
+  observacoes: string
+  status: string
+}
+
+const initialForm: ProjectFormState = {
+  nome: '',
+  descricao: '',
+  cliente: '',
+  operadora: '',
+  responsavel: '',
+  dataInicio: '',
+  dataFim: '',
+  observacoes: '',
+  status: 'ativo',
+}
+
 export default function ProjectModal({ open, editId, onClose, onSaved }: ProjectModalProps) {
   const isEdit = Boolean(editId)
   const { user } = useAuth()
-
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [cliente, setCliente] = useState('')
-  const [operadora, setOperadora] = useState('')
-  const [responsavel, setResponsavel] = useState('')
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
+  const { clients, users } = useProjectOptions(open, user?.name)
+  const [form, setForm] = useState<ProjectFormState>(initialForm)
   const [indeterminado, setIndeterminado] = useState(false)
-  const [observacoes, setObservacoes] = useState('')
-  const [status, setStatus] = useState('ativo')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const [clientOptions, setClientOptions] = useState<string[]>([])
-  const [userOptions, setUserOptions] = useState<string[]>([])
-
-  useEffect(() => {
-    if (!open) return
-    api.get('/clients', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setClientOptions(data.map((c: any) => c.nome).filter(Boolean))
-      })
-      .catch(() => {})
-    api.get('/users', { params: { limit: 1000, sortBy: 'name', sortOrder: 'ASC' } })
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        const options = data
-          .map((u: any) => [u.name, u.lastName].filter(Boolean).join(' '))
-          .filter(Boolean)
-        const currentName = user?.name?.trim()
-        if (currentName && !options.includes(currentName)) {
-          options.push(currentName)
-        }
-        setUserOptions(options)
-      })
-      .catch(() => {})
-  }, [open, user])
 
   useEffect(() => {
     if (open && editId) {
       api.get(`/projects/${editId}`)
         .then((res) => {
           const d = res.data
-          setNome(d.nome || '')
-          setDescricao(d.descricao || '')
-          setCliente(d.cliente || '')
-          setOperadora(d.operadora || '')
-          setResponsavel(d.responsavel || '')
-          setDataInicio(d.dataInicio || '')
-          setDataFim(d.dataFim || '')
+          setForm({
+            nome: d.nome || '',
+            descricao: d.descricao || '',
+            cliente: d.cliente || '',
+            operadora: d.operadora || '',
+            responsavel: d.responsavel || '',
+            dataInicio: d.dataInicio || '',
+            dataFim: d.dataFim || '',
+            observacoes: d.observacoes || '',
+            status: d.status || 'ativo',
+          })
           setIndeterminado(!d.dataFim)
-          setObservacoes(d.observacoes || '')
-          setStatus(d.status || 'ativo')
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [open, editId])
 
+  const handleChange = (key: keyof ProjectFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
+
+    const result = projectSchema.safeParse(form)
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
+    }
+
+    const payload: any = { ...form }
+    payload.dataFim = indeterminado ? '' : form.dataFim
+
     setLoading(true)
-
-    const payload: any = { nome, descricao, cliente, operadora, responsavel, dataInicio, observacoes, status }
-    payload.dataFim = indeterminado ? '' : dataFim
-
     try {
       if (isEdit) {
         await api.patch(`/projects/${editId}`, payload)
@@ -113,16 +123,9 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
   const handleClose = () => {
     if (loading) return
     setError('')
-    setNome('')
-    setDescricao('')
-    setCliente('')
-    setOperadora('')
-    setResponsavel('')
-    setDataInicio('')
-    setDataFim('')
+    setFieldErrors({})
+    setForm(initialForm)
     setIndeterminado(false)
-    setObservacoes('')
-    setStatus('ativo')
     onClose()
   }
 
@@ -134,32 +137,33 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Autocomplete
+              <TextField
                 fullWidth
-                freeSolo
-                options={clientOptions}
-                value={cliente}
-                onChange={(_, v) => setCliente(v ?? '')}
-                onInputChange={(_, v) => setCliente(v)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Cliente" margin="normal" placeholder="Selecione ou digite um cliente" />
-                )}
+                label="Nome"
+                value={form.nome}
+                onChange={(e) => handleChange('nome', e.target.value)}
+                margin="normal"
+                required
+                error={!!fieldErrors.nome}
+                helperText={fieldErrors.nome}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Autocomplete
-                fullWidth
-                freeSolo
-                options={userOptions}
-                value={responsavel}
-                onChange={(_, v) => setResponsavel(v ?? '')}
-                onInputChange={(_, v) => setResponsavel(v)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Responsável" margin="normal" placeholder="Selecione um usuário da empresa" />
-                )}
+              <FreeSoloAutocomplete
+                label="Cliente"
+                options={clients}
+                value={form.cliente}
+                onChange={(value) => handleChange('cliente', value)}
+                placeholder="Selecione ou digite um cliente"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FreeSoloAutocomplete
+                label="Responsável"
+                options={users}
+                value={form.responsavel}
+                onChange={(value) => handleChange('responsavel', value)}
+                placeholder="Selecione um usuário da empresa"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -167,27 +171,34 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
                 fullWidth
                 select
                 label="Operadora"
-                value={operadora}
-                onChange={(e) => setOperadora(e.target.value)}
+                value={form.operadora}
+                onChange={(e) => handleChange('operadora', e.target.value)}
                 margin="normal"
               >
                 <MenuItem value="">Selecione</MenuItem>
-                <MenuItem value="TIM">TIM</MenuItem>
-                <MenuItem value="CLARO">CLARO</MenuItem>
-                <MenuItem value="VIVO">VIVO</MenuItem>
-                <MenuItem value="Outras">Outras</MenuItem>
+                {OPERADORAS.map((operadora) => (
+                  <MenuItem key={operadora} value={operadora}>{operadora}</MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Data de Início" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
+              <TextField
+                fullWidth
+                label="Data de Início"
+                type="date"
+                value={form.dataInicio}
+                onChange={(e) => handleChange('dataInicio', e.target.value)}
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Data de Término"
                 type="date"
-                value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
+                value={form.dataFim}
+                onChange={(e) => handleChange('dataFim', e.target.value)}
                 margin="normal"
                 disabled={indeterminado}
                 InputLabelProps={{ shrink: true }}
@@ -198,7 +209,7 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
                     checked={indeterminado}
                     onChange={(e) => {
                       setIndeterminado(e.target.checked)
-                      if (e.target.checked) setDataFim('')
+                      if (e.target.checked) handleChange('dataFim', '')
                     }}
                   />
                 }
@@ -206,16 +217,40 @@ export default function ProjectModal({ open, editId, onClose, onSaved }: Project
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField fullWidth label="Descrição" multiline rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} margin="normal" />
+              <TextField
+                fullWidth
+                label="Descrição"
+                multiline
+                rows={2}
+                value={form.descricao}
+                onChange={(e) => handleChange('descricao', e.target.value)}
+                margin="normal"
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal" required>
+              <TextField
+                fullWidth
+                select
+                label="Status"
+                value={form.status}
+                onChange={(e) => handleChange('status', e.target.value)}
+                margin="normal"
+                required
+              >
                 <MenuItem value="ativo">Ativo</MenuItem>
                 <MenuItem value="inativo">Inativo</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12}>
-              <TextField fullWidth label="Observações" multiline rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} margin="normal" />
+              <TextField
+                fullWidth
+                label="Observações"
+                multiline
+                rows={3}
+                value={form.observacoes}
+                onChange={(e) => handleChange('observacoes', e.target.value)}
+                margin="normal"
+              />
             </Grid>
           </Grid>
         </DialogContent>

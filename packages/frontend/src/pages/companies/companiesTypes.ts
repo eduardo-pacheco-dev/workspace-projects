@@ -78,3 +78,30 @@ export interface ProjectSummary {
   dataFim: string | null
   status: string
 }
+
+export type CompanySortBy = 'id' | 'nome' | 'cnpj' | 'email' | 'cidade' | 'uf' | 'ativa'
+export type SortOrder = 'ASC' | 'DESC'
+
+export const COMPANY_COLUMNS: { id: CompanySortBy; label: string }[] = [
+  { id: 'nome', label: 'Nome' },
+  { id: 'cnpj', label: 'CNPJ' },
+  { id: 'email', label: 'E-mail' },
+  { id: 'cidade', label: 'Cidade' },
+  { id: 'uf', label: 'UF' },
+  { id: 'ativa', label: 'Status' },
+]
+
+export interface CompanyAttachment {
+  id: number
+  filename: string
+  originalName: string
+  mimetype: string
+  size: number
+}
+
+export interface CompanyComment {
+  id: number
+  content: string
+  author: string
+  createdAt: string
+}

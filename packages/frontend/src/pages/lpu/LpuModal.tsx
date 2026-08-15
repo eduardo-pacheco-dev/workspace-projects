@@ -12,12 +12,9 @@ import {
   CircularProgress,
 } from '@mui/material'
 import api from '../../services/api'
-
-interface FreelancerOption {
-  id: number
-  firstName: string
-  lastName: string
-}
+import { getFieldErrors } from '../../schemas/authSchemas'
+import { lpuSchema } from './lpuSchemas'
+import { FreelancerOption, freelancerFullName } from './lpuTypes'
 
 interface LpuModalProps {
   open: boolean
@@ -45,6 +42,7 @@ export default function LpuModal({
   const [status, setStatus] = useState('ativo')
   const [selectedFreelancer, setSelectedFreelancer] = useState<number | ''>(freelancerId ?? '')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -70,12 +68,19 @@ export default function LpuModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
     if (!isEdit && !selectedFreelancer) {
-      setError('Selecione o freelancer.')
+      setFieldErrors((prev) => ({ ...prev, freelancer: 'Selecione o freelancer.' }))
       return
     }
-    setLoading(true)
 
+    const result = lpuSchema.safeParse({ nome, descricao, valor, data, status })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
+    }
+
+    setLoading(true)
     const payload: any = { nome, descricao, data, status }
     if (valor) payload.valor = Number(valor)
     if (!isEdit) payload.freelancerId = Number(selectedFreelancer)
@@ -98,6 +103,7 @@ export default function LpuModal({
   const handleClose = () => {
     if (loading) return
     setError('')
+    setFieldErrors({})
     setNome('')
     setDescricao('')
     setValor('')
@@ -122,14 +128,28 @@ export default function LpuModal({
               onChange={(e) => setSelectedFreelancer(e.target.value ? Number(e.target.value) : '')}
               margin="normal"
               required
+              error={!!fieldErrors.freelancer}
+              helperText={fieldErrors.freelancer}
             >
               <MenuItem value="">Selecione um freelancer</MenuItem>
               {freelancers.map((f) => (
-                <MenuItem key={f.id} value={f.id}>{f.firstName} {f.lastName}</MenuItem>
+                <MenuItem key={f.id} value={f.id}>{freelancerFullName(f)}</MenuItem>
               ))}
             </TextField>
           )}
-          <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
+          <TextField
+            fullWidth
+            label="Nome"
+            value={nome}
+            onChange={(e) => {
+              setNome(e.target.value)
+              setFieldErrors((prev) => ({ ...prev, nome: '' }))
+            }}
+            margin="normal"
+            required
+            error={!!fieldErrors.nome}
+            helperText={fieldErrors.nome}
+          />
           <TextField fullWidth label="Descrição" multiline rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} margin="normal" />
           <TextField fullWidth label="Valor" type="number" value={valor} onChange={(e) => setValor(e.target.value)} margin="normal" />
           <TextField fullWidth label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />

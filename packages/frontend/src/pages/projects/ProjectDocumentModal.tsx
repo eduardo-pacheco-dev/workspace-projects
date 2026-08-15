@@ -13,6 +13,8 @@ import {
   Grid,
 } from '@mui/material'
 import api from '../../services/api'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import { projectDocumentSchema } from './projectSchemas'
 
 interface ProjectDocumentModalProps {
   open: boolean
@@ -32,12 +34,12 @@ export default function ProjectDocumentModal({
   onSaved,
 }: ProjectDocumentModalProps) {
   const isEdit = Boolean(editId)
-
   const [nome, setNome] = useState('')
   const [tipo, setTipo] = useState('')
   const [quantidade, setQuantidade] = useState('1')
   const [observacoes, setObservacoes] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -59,11 +61,18 @@ export default function ProjectDocumentModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setFieldErrors({})
+
+    const result = projectDocumentSchema.safeParse({ nome, tipo, quantidade, observacoes })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
+    }
 
     const payload: any = { nome, tipo, observacoes }
     if (quantidade) payload.quantidade = Number(quantidade)
 
+    setLoading(true)
     try {
       if (isEdit) {
         await api.patch(`/projects/${projectId}/documents/${editId}`, payload)
@@ -82,6 +91,7 @@ export default function ProjectDocumentModal({
   const handleClose = () => {
     if (loading) return
     setError('')
+    setFieldErrors({})
     setNome('')
     setTipo('')
     setQuantidade('1')
@@ -97,7 +107,20 @@ export default function ProjectDocumentModal({
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={7}>
-              <TextField fullWidth label="Documento" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required placeholder="Ex.: Contrato assinado" />
+              <TextField
+                fullWidth
+                label="Documento"
+                value={nome}
+                onChange={(e) => {
+                  setNome(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, nome: '' }))
+                }}
+                margin="normal"
+                required
+                placeholder="Ex.: Contrato assinado"
+                error={!!fieldErrors.nome}
+                helperText={fieldErrors.nome}
+              />
             </Grid>
             <Grid item xs={12} sm={5}>
               <TextField fullWidth select label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} margin="normal">
@@ -116,6 +139,8 @@ export default function ProjectDocumentModal({
                 onChange={(e) => setQuantidade(e.target.value)}
                 margin="normal"
                 inputProps={{ min: 1 }}
+                error={!!fieldErrors.quantidade}
+                helperText={fieldErrors.quantidade}
               />
             </Grid>
             <Grid item xs={12} sm={8}>

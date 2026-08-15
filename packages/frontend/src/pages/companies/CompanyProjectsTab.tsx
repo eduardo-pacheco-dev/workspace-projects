@@ -24,7 +24,7 @@ import AddIcon from '@mui/icons-material/Add'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import AddProjectDialog from './AddProjectDialog'
 import { ProjectSummary } from './companiesTypes'
 

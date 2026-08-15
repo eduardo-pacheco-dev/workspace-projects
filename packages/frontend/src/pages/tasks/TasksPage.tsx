@@ -1,44 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  MenuItem,
-  Stack,
-  Chip,
-} from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import TaskModal from './TaskModal'
-import {
-  Task,
-  statusOptions,
-  statusLabels,
-  statusColors,
-  priorityOptions,
-  priorityLabels,
-  priorityColors,
-  formatDateTime,
-} from './tasksTypes'
-
-type SortBy = 'id' | 'title' | 'status' | 'priority' | 'dueAt' | 'project' | 'client' | 'assignedTo'
-type SortOrder = 'ASC' | 'DESC'
+import TasksToolbar from '../../components/tasks/TasksToolbar'
+import TasksFilters from '../../components/tasks/TasksFilters'
+import TasksTable from '../../components/tasks/TasksTable'
+import { Task, TaskSortBy, SortOrder } from './tasksTypes'
 
 export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -50,7 +21,7 @@ export default function TasksPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortBy, setSortBy] = useState<SortBy>('dueAt')
+  const [sortBy, setSortBy] = useState<TaskSortBy>('dueAt')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -69,24 +40,15 @@ export default function TasksPage() {
   const fetchTasks = useCallback(async () => {
     setError('')
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
       if (priorityFilter) params.priority = priorityFilter
 
       const res = await api.get('/tasks', { params })
-      if (Array.isArray(res.data)) {
-        setTasks(res.data)
-        setTotal(res.data.length)
-      } else {
-        setTasks(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<Task>(res.data)
+      setTasks(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar as tarefas.')
     }
@@ -96,7 +58,7 @@ export default function TasksPage() {
     fetchTasks()
   }, [fetchTasks])
 
-  const handleSort = (col: SortBy) => {
+  const handleSort = (col: TaskSortBy) => {
     if (sortBy === col) {
       setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))
     } else {
@@ -112,8 +74,9 @@ export default function TasksPage() {
       showToast('Tarefa excluída com sucesso.')
       setTaskToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.', 'error')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
       setTaskToDelete(null)
     }
   }
@@ -127,140 +90,41 @@ export default function TasksPage() {
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'title', label: 'Título' },
-    { id: 'status', label: 'Status' },
-    { id: 'priority', label: 'Prioridade' },
-    { id: 'dueAt', label: 'Vencimento' },
-    { id: 'project', label: 'Projeto' },
-    { id: 'client', label: 'Cliente' },
-    { id: 'assignedTo', label: 'Responsável' },
-  ]
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
+  }
 
   const isOpen = (task: Task) => task.status !== 'completed' && task.status !== 'cancelled'
+  const openCount = tasks.filter(isOpen).length
 
-  const countOpen = tasks.filter((task) => isOpen(task)).length
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (task: Task) => setModal({ open: true, editId: task.id })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box>
-          <Typography variant="h4">Tarefas</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {total} tarefa(s) · {countOpen} abertas
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Nova Tarefa
-        </Button>
-      </Box>
+      <TasksToolbar total={total} openCount={openCount} onNew={openCreate} />
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }} flexWrap="wrap">
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          {statusOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          size="small"
-          select
-          label="Prioridade"
-          value={priorityFilter}
-          onChange={(e) => {
-            setPriorityFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Todas</MenuItem>
-          {priorityOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+      <TasksFilters
+        search={search}
+        status={statusFilter}
+        priority={priorityFilter}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+        onPriorityChange={resetFilterAndPage(setPriorityFilter)}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell align="right">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tasks.map((task) => (
-              <TableRow key={task.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/tasks/${task.id}`)}>
-                <TableCell sx={{ fontWeight: 600 }}>{task.title}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={statusLabels[task.status] || task.status}
-                    color={statusColors[task.status] || 'default'}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={priorityLabels[task.priority] || task.priority}
-                    color={priorityColors[task.priority] || 'default'}
-                  />
-                </TableCell>
-                <TableCell>{formatDateTime(task.dueAt)}</TableCell>
-                <TableCell>{task.project || '-'}</TableCell>
-                <TableCell>{task.client || '-'}</TableCell>
-                <TableCell>{task.assignedTo || '-'}</TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: task.id }) }}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={(e) => { e.stopPropagation(); setTaskToDelete(task) }}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {tasks.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  Nenhuma tarefa encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <TasksTable
+        tasks={tasks}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        onOpen={(task) => navigate(`/tasks/${task.id}`)}
+        onEdit={openEdit}
+        onDelete={setTaskToDelete}
+      />
 
       <TablePagination
         component="div"
@@ -281,7 +145,7 @@ export default function TasksPage() {
       />
 
       <ConfirmDialog
-        open={!!taskToDelete}
+        open={Boolean(taskToDelete)}
         title="Excluir tarefa"
         message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"?`}
         onClose={() => setTaskToDelete(null)}

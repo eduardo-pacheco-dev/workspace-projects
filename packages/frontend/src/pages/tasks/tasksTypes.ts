@@ -16,6 +16,42 @@ export interface Task {
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type TaskSortBy = 'id' | 'title' | 'status' | 'priority' | 'dueAt' | 'project' | 'client' | 'assignedTo'
+export type SortOrder = 'ASC' | 'DESC'
+
+export const TASK_COLUMNS: { id: TaskSortBy; label: string }[] = [
+  { id: 'title', label: 'Título' },
+  { id: 'status', label: 'Status' },
+  { id: 'priority', label: 'Prioridade' },
+  { id: 'dueAt', label: 'Vencimento' },
+  { id: 'project', label: 'Projeto' },
+  { id: 'client', label: 'Cliente' },
+  { id: 'assignedTo', label: 'Responsável' },
+]
+
+export interface ProjectOption {
+  id: number
+  nome: string
+  cliente: string | null
+}
+
+export interface CollaboratorOption {
+  id: number
+  nome: string | null
+  firstName?: string | null
+  lastName?: string | null
+}
+
+export interface Attachment {
+  id: number
+  filename: string
+  originalName: string
+  mimetype: string
+  size: number
+}
+
+export const collaboratorName = (c: CollaboratorOption) =>
+  c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
 
 export const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'pending', label: 'Pendente' },

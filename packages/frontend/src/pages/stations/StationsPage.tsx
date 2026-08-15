@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Container, TablePagination, Tabs, Tab } from '@mui/material'
+import { Alert, Container, TablePagination, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import { ListAlt, Map as MapIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
@@ -96,7 +96,7 @@ export default function StationsPage() {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <StationsToolbar onImport={() => setImportOpen(true)} onNew={openCreate} />
+      <StationsToolbar total={total} onImport={() => setImportOpen(true)} onNew={openCreate} />
 
       <StationsFilters
         search={search}
@@ -110,10 +110,22 @@ export default function StationsPage() {
         showViewToggle={tab === 0}
       />
 
-      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
-        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
-        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
-      </Tabs>
+      <ToggleButtonGroup
+        value={tab}
+        exclusive
+        size="small"
+        onChange={(_, value) => value != null && setTab(value)}
+        sx={{ mb: 2 }}
+      >
+        <ToggleButton value={0} sx={{ textTransform: 'none', px: 2.5 }}>
+          <ListAlt fontSize="small" sx={{ mr: 0.75 }} />
+          Lista
+        </ToggleButton>
+        <ToggleButton value={1} sx={{ textTransform: 'none', px: 2.5 }}>
+          <MapIcon fontSize="small" sx={{ mr: 0.75 }} />
+          Mapa
+        </ToggleButton>
+      </ToggleButtonGroup>
 
       {tab === 1 ? (
         <StationsMapTab search={search} status={statusFilter} mobileCarrier={mobileCarrierFilter} />

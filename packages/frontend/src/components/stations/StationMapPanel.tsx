@@ -7,7 +7,13 @@ interface StationMapPanelProps {
 }
 
 const stationUrl = (station: Station) =>
-  `https://maps.google.com/maps?q=${station.latitude},${station.longitude}`
+  `https://www.openstreetmap.org/?mlat=${station.latitude}&mlon=${station.longitude}#map=17/${station.latitude}/${station.longitude}`
+
+const stationEmbedUrl = (station: Station) => {
+  const delta = 0.008
+  const bbox = `${station.longitude! - delta},${station.latitude! - delta},${station.longitude! + delta},${station.latitude! + delta}`
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${station.latitude},${station.longitude}`
+}
 
 export default function StationMapPanel({ station }: StationMapPanelProps) {
   const hasCoords = station.latitude != null && station.longitude != null
@@ -32,9 +38,12 @@ export default function StationMapPanel({ station }: StationMapPanelProps) {
   }
 
   return (
-    <Paper sx={{ p: 3, mt: 3 }}>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}
+    >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Localização no Mapa</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Localização no Mapa</Typography>
         {hasCoords && (
           <Button variant="outlined" startIcon={<ShareIcon />} onClick={handleShare}>
             Compartilhar Localização
@@ -45,7 +54,7 @@ export default function StationMapPanel({ station }: StationMapPanelProps) {
         <Box
           component="iframe"
           title={`Mapa da estação ${station.siteId}`}
-          src={`${stationUrl(station)}&z=16&output=embed`}
+          src={stationEmbedUrl(station)}
           loading="lazy"
           sx={{
             width: '100%',

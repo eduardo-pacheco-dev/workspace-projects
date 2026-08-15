@@ -113,9 +113,12 @@ export default function AttachmentsPanel({ resource, resourceId, onError }: Atta
   }
 
   return (
-    <Paper sx={{ p: 3, mt: 3 }}>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper', height: '100%' }}
+    >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Anexos</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Anexos</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant="caption" color="text.secondary">
             Máx. 50MB por arquivo

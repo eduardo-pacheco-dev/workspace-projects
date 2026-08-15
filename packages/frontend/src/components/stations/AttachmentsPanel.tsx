@@ -1,5 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Box, Button, Divider, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemSecondaryAction,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Stack,
+  TablePagination,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { AttachFile, Delete, Download, PictureAsPdf, Visibility } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
@@ -8,24 +24,42 @@ import FilePreviewDialog from '../FilePreviewDialog'
 import { Attachment } from '../../pages/tasks/tasksTypes'
 import { formatSize } from '../../utils/format'
 
-interface AttachmentsSectionProps {
-  taskId: number
+const MAX_FILE_SIZE = 50 * 1024 * 1024
+
+interface AttachmentsPanelProps {
+  stationId: number
   onError: (message: string) => void
 }
 
-export default function AttachmentsSection({ taskId, onError }: AttachmentsSectionProps) {
+export default function AttachmentsPanel({ stationId, onError }: AttachmentsPanelProps) {
   const { showToast } = useToast()
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  const [page, setPage] = useState(0)
+  const [total, setTotal] = useState(0)
+  const [perPage, setPerPage] = useState(5)
+  const [search, setSearch] = useState('')
+  const [type, setType] = useState('')
   const [toDelete, setToDelete] = useState<Attachment | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
-    api.get(`/attachments/task/${taskId}`)
-      .then((res) => setAttachments(res.data ?? []))
+    api
+      .get(`/attachments/station/${stationId}`, {
+        params: {
+          page: page + 1,
+          limit: perPage,
+          search: search || undefined,
+          type: type || undefined,
+        },
+      })
+      .then((res) => {
+        setAttachments(res.data.data ?? [])
+        setTotal(res.data.total ?? 0)
+      })
       .catch(() => {})
-  }, [taskId])
+  }, [stationId, page, perPage, search, type])
 
   useEffect(() => {
     load()
@@ -34,13 +68,18 @@ export default function AttachmentsSection({ taskId, onError }: AttachmentsSecti
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      showToast('O arquivo excede o limite de 50MB.', 'error')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
     setUploading(true)
     try {
       const form = new FormData()
       form.append('file', file)
-      await api.post(`/attachments/upload/task/${taskId}`, form)
+      await api.post(`/attachments/upload/station/${stationId}`, form)
+      setPage(0)
       load()
-      showToast('Anexo adicionado com sucesso.')
     } catch (err: any) {
       const message = err.response?.data?.message || 'Não foi possível enviar o arquivo.'
       onError(message)
@@ -54,6 +93,7 @@ export default function AttachmentsSection({ taskId, onError }: AttachmentsSecti
   const handleDelete = async (attachmentId: number) => {
     try {
       await api.delete(`/attachments/${attachmentId}`)
+      setPage(0)
       load()
       showToast('Anexo excluído com sucesso.')
       setToDelete(null)
@@ -70,27 +110,56 @@ export default function AttachmentsSection({ taskId, onError }: AttachmentsSecti
   }
 
   return (
-    <Paper sx={{ p: 4, mb: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Anexos ({attachments.length})
-        </Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<AttachFile />}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? 'Enviando...' : 'Adicionar Anexo'}
-        </Button>
+    <Paper sx={{ p: 3, mt: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h6">Anexos</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Máx. 50MB por arquivo
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AttachFile />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Enviando...' : 'Adicionar Anexo'}
+          </Button>
+        </Box>
         <input ref={fileInputRef} type="file" hidden onChange={handleUpload} />
       </Box>
       <Divider sx={{ mb: 2 }} />
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <TextField
+          size="small"
+          label="Buscar anexo"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 220 }}
+        />
+        <TextField
+          size="small"
+          select
+          label="Tipo"
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 150 }}
+        >
+          <MenuItem value="">Todos</MenuItem>
+          <MenuItem value="image">Imagens</MenuItem>
+          <MenuItem value="pdf">PDF</MenuItem>
+          <MenuItem value="document">Documentos</MenuItem>
+        </TextField>
+      </Stack>
       {attachments.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          Nenhum anexo cadastrado.
-        </Typography>
+        <Typography variant="body2" color="text.secondary">Nenhum anexo encontrado.</Typography>
       ) : (
         <List dense disablePadding>
           {attachments.map((attachment) => {
@@ -129,6 +198,22 @@ export default function AttachmentsSection({ taskId, onError }: AttachmentsSecti
             )
           })}
         </List>
+      )}
+      {total > perPage && (
+        <TablePagination
+          component="div"
+          count={total}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={perPage}
+          onRowsPerPageChange={(e) => {
+            setPerPage(parseInt(e.target.value, 10))
+            setPage(0)
+          }}
+          rowsPerPageOptions={[5, 10, 25]}
+          labelRowsPerPage="Por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+        />
       )}
 
       <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />

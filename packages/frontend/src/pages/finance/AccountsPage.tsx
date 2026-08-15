@@ -1,41 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-} from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Alert, Box, Button, Container, Stack, TablePagination, Typography } from '@mui/material'
+import { Add } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
 import { formatCurrency } from '../../utils/format'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import AccountModal from './AccountModal'
-
-interface BankAccount {
-  id: number
-  name: string
-  bank: string | null
-  balance: number
-}
+import AccountsTable from '../../components/finance/AccountsTable'
+import SearchField from '../../components/finance/SearchField'
+import { BankAccount, SortOrder } from './financeTypes'
 
 type SortBy = 'id' | 'name' | 'bank' | 'balance'
-type SortOrder = 'ASC' | 'DESC'
 
 export default function AccountsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [accounts, setAccounts] = useState<BankAccount[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -45,25 +26,17 @@ export default function AccountsPage() {
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<BankAccount | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
 
       const res = await api.get('/finance/accounts', { params })
-      if (Array.isArray(res.data)) {
-        setAccounts(res.data)
-        setTotal(res.data.length)
-      } else {
-        setAccounts(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<BankAccount>(res.data)
+      setAccounts(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar as contas.')
     }
@@ -83,18 +56,20 @@ export default function AccountsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta conta?')) return
     try {
       await api.delete(`/finance/accounts/${id}`)
       fetchData()
+      showToast('Conta excluída com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage)
-  }
+  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
@@ -103,35 +78,17 @@ export default function AccountsPage() {
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'name', label: 'Nome' },
-    { id: 'bank', label: 'Banco' },
-    { id: 'balance', label: 'Saldo' },
-  ]
-
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Contas</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setModal({ open: true, editId: null })}
-        >
+        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
           Nova Conta
         </Button>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }} alignItems="center">
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
+        <SearchField value={search} onChange={(value) => { setSearch(value); setPage(0) }} />
         <Typography variant="body1">
           Saldo total: <strong>{formatCurrency(totalBalance)}</strong>
         </Typography>
@@ -139,55 +96,15 @@ export default function AccountsPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {accounts.map((account) => (
-              <TableRow
-                key={account.id}
-                hover
-                onClick={() => navigate(`/finance/accounts/${account.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{account.name}</TableCell>
-                <TableCell>{account.bank || '-'}</TableCell>
-                <TableCell>{formatCurrency(account.balance)}</TableCell>
-                <TableCell>
-                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: account.id }) }}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(account.id) }}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {accounts.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Nenhuma conta encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <AccountsTable
+        accounts={accounts}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        onOpen={(account) => navigate(`/finance/accounts/${account.id}`)}
+        onEdit={(account) => setModal({ open: true, editId: account.id })}
+        onDelete={setToDelete}
+      />
 
       <TablePagination
         component="div"
@@ -205,6 +122,14 @@ export default function AccountsPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir conta"
+        message={`Tem certeza que deseja excluir a conta "${toDelete?.name}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

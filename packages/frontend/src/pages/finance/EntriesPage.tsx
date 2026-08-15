@@ -1,82 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  MenuItem,
-  Stack,
-  Chip,
-} from '@mui/material'
-import { Edit, Delete, Add, Repeat, AttachFile, CreditCard } from '@mui/icons-material'
+import { Alert, Box, Button, Container, MenuItem, Stack, TablePagination, TextField, Typography } from '@mui/material'
+import { Add } from '@mui/icons-material'
 import api from '../../services/api'
-import { formatCurrency, formatDate, monthNames } from '../../utils/format'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import { monthNames } from '../../utils/format'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import EntryModal from './EntryModal'
-
-interface FinanceEntry {
-  id: number
-  type: string
-  description: string
-  category: string
-  amount: number
-  date: string
-  paymentMethod: string | null
-  status: string
-  notes: string | null
-  accountId: number | null
-  account?: { id: number; name: string } | null
-  cardId: number | null
-  card?: { id: number; name: string } | null
-  recurrence: string | null
-  tags: string | null
-  attachment: string | null
-}
-
-interface AccountOption {
-  id: number
-  name: string
-}
+import EntriesTable from '../../components/finance/EntriesTable'
+import SearchField from '../../components/finance/SearchField'
+import { FinanceEntry, SortOrder, entryTypeLabels, entryStatusLabels } from './financeTypes'
 
 type SortBy = 'id' | 'date' | 'type' | 'category' | 'amount' | 'status' | 'description'
-type SortOrder = 'ASC' | 'DESC'
-
-const typeColors: Record<string, 'success' | 'error' | 'info' | 'default'> = {
-  income: 'success',
-  expense: 'error',
-  transfer: 'info',
-}
-
-const typeLabels: Record<string, string> = {
-  income: 'Receita',
-  expense: 'Despesa',
-  transfer: 'Transferência',
-}
-
-const statusColors: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
-  pending: 'warning',
-  paid: 'success',
-  canceled: 'error',
-}
-
-const statusLabels: Record<string, string> = {
-  pending: 'Pendente',
-  paid: 'Pago',
-  canceled: 'Cancelado',
-}
 
 export default function EntriesPage() {
+  const { showToast } = useToast()
   const today = new Date()
   const [entries, setEntries] = useState<FinanceEntry[]>([])
   const [total, setTotal] = useState(0)
@@ -88,35 +26,25 @@ export default function EntriesPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [accountFilter, setAccountFilter] = useState('')
-  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [accounts, setAccounts] = useState<{ id: number; name: string }[]>([])
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [year, setYear] = useState(today.getFullYear())
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<FinanceEntry | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder, month, year }
       if (search) params.search = search
       if (typeFilter) params.type = typeFilter
       if (statusFilter) params.status = statusFilter
       if (accountFilter) params.accountId = accountFilter
-      params.month = month
-      params.year = year
 
       const res = await api.get('/finance/entries', { params })
-      if (Array.isArray(res.data)) {
-        setEntries(res.data)
-        setTotal(res.data.length)
-      } else {
-        setEntries(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<FinanceEntry>(res.data)
+      setEntries(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -127,12 +55,8 @@ export default function EntriesPage() {
   }, [fetchData])
 
   useEffect(() => {
-    api
-      .get('/finance/accounts', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setAccounts(data)
-      })
+    api.get('/finance/accounts', { params: { limit: 100, sortBy: 'name', sortOrder: 'ASC' } })
+      .then((res) => setAccounts(normalizeList<{ id: number; name: string }>(res.data).data))
       .catch(() => {})
   }, [])
 
@@ -146,101 +70,79 @@ export default function EntriesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este lançamento?')) return
     try {
       await api.delete(`/finance/entries/${id}`)
       fetchData()
+      showToast('Lançamento excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage)
-  }
+  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'date', label: 'Data' },
-    { id: 'type', label: 'Tipo' },
-    { id: 'description', label: 'Descrição' },
-    { id: 'category', label: 'Categoria' },
-    { id: 'amount', label: 'Valor' },
-    { id: 'status', label: 'Status' },
-  ]
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Lançamentos</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setModal({ open: true, editId: null })}
-        >
+        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
           Novo Lançamento
         </Button>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
+        <SearchField value={search} onChange={resetFilterAndPage(setSearch)} />
         <TextField
           size="small"
           select
           label="Tipo"
           value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value)
-            setPage(0)
-          }}
+          onChange={(e) => resetFilterAndPage(setTypeFilter)(e.target.value)}
           sx={{ minWidth: 140 }}
         >
           <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="income">Receita</MenuItem>
-          <MenuItem value="expense">Despesa</MenuItem>
-          <MenuItem value="transfer">Transferência</MenuItem>
+          {Object.entries(entryTypeLabels).map(([value, label]) => (
+            <MenuItem key={value} value={value}>{label}</MenuItem>
+          ))}
         </TextField>
         <TextField
           size="small"
           select
           label="Status"
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
+          onChange={(e) => resetFilterAndPage(setStatusFilter)(e.target.value)}
           sx={{ minWidth: 140 }}
         >
           <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="pending">Pendente</MenuItem>
-          <MenuItem value="paid">Pago</MenuItem>
-          <MenuItem value="canceled">Cancelado</MenuItem>
+          {Object.entries(entryStatusLabels).map(([value, label]) => (
+            <MenuItem key={value} value={value}>{label}</MenuItem>
+          ))}
         </TextField>
         <TextField
           size="small"
           select
           label="Conta"
           value={accountFilter}
-          onChange={(e) => {
-            setAccountFilter(e.target.value)
-            setPage(0)
-          }}
+          onChange={(e) => resetFilterAndPage(setAccountFilter)(e.target.value)}
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todas</MenuItem>
-          {accounts.map((acc) => (
-            <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
+          {accounts.map((account) => (
+            <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>
           ))}
         </TextField>
         <TextField
@@ -248,10 +150,7 @@ export default function EntriesPage() {
           select
           label="Mês"
           value={month}
-          onChange={(e) => {
-            setMonth(Number(e.target.value))
-            setPage(0)
-          }}
+          onChange={(e) => { setMonth(Number(e.target.value)); setPage(0) }}
           sx={{ minWidth: 130 }}
         >
           {monthNames.map((name, i) => (
@@ -263,109 +162,21 @@ export default function EntriesPage() {
           label="Ano"
           type="number"
           value={year}
-          onChange={(e) => {
-            setYear(Number(e.target.value))
-            setPage(0)
-          }}
+          onChange={(e) => { setYear(Number(e.target.value)); setPage(0) }}
           sx={{ width: 90 }}
         />
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Conta / Cartão</TableCell>
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id} hover>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {formatDate(entry.date)}
-                    {entry.recurrence && (
-                      <Repeat fontSize="small" color="primary" titleAccess={`Repete ${typeLabels[entry.recurrence] || entry.recurrence}`} />
-                    )}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Chip size="small" label={typeLabels[entry.type] || entry.type} color={typeColors[entry.type] || 'default'} />
-                </TableCell>
-                <TableCell>
-                  <Box>
-                    <Box>{entry.description}</Box>
-                    {entry.tags && (
-                      <Typography variant="caption" color="text.secondary">
-                        {entry.tags.split(',').map((t) => t.trim()).filter(Boolean).map((tag) => `#${tag}`).join(' ')}
-                      </Typography>
-                    )}
-                  </Box>
-                </TableCell>
-                <TableCell>{entry.category}</TableCell>
-                <TableCell>{formatCurrency(entry.amount)}</TableCell>
-                <TableCell>
-                  <Chip size="small" label={statusLabels[entry.status] || entry.status} color={statusColors[entry.status] || 'default'} />
-                </TableCell>
-                <TableCell>
-                  <Box>
-                    {entry.account?.name && <Box>{entry.account.name}</Box>}
-                    {entry.card?.name && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <CreditCard fontSize="small" color="action" />
-                        <Typography variant="caption" color="text.secondary">
-                          {entry.card.name}
-                        </Typography>
-                      </Box>
-                    )}
-                    {!entry.account?.name && !entry.card?.name && '-'}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  {entry.attachment && (
-                    <IconButton
-                      component="a"
-                      href={entry.attachment}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Abrir anexo"
-                    >
-                      <AttachFile />
-                    </IconButton>
-                  )}
-                  <IconButton onClick={() => setModal({ open: true, editId: entry.id })}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(entry.id)}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {entries.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  Nenhum lançamento encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <EntriesTable
+        entries={entries}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        onEdit={(entry) => setModal({ open: true, editId: entry.id })}
+        onDelete={setToDelete}
+      />
 
       <TablePagination
         component="div"
@@ -384,6 +195,14 @@ export default function EntriesPage() {
         defaultDate={`${year}-${String(month).padStart(2, '0')}-01`}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir lançamento"
+        message={`Tem certeza que deseja excluir o lançamento "${toDelete?.description}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

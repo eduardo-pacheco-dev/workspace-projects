@@ -4,15 +4,26 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Button,
   Alert,
   Box,
-  MenuItem,
   CircularProgress,
   Grid,
+  Stepper,
+  Step,
+  StepLabel,
+  Typography,
 } from '@mui/material'
 import api from '../../services/api'
+import StationFormField from '../../components/stations/StationFormField'
+import Button from '../../components/ui/Button'
+import { useToast } from '../../contexts/ToastContext'
+import {
+  initialStationForm,
+  stationFormFields,
+  stationFormSteps,
+  buildStationPayload,
+  StationFormState,
+} from './stationFormConfig'
 
 interface StationModalProps {
   open: boolean
@@ -21,108 +32,109 @@ interface StationModalProps {
   onSaved: (record?: any) => void
 }
 
-const mobileCarriers = ['TIM', 'CLARO', 'VIVO', 'Outras']
-
 export default function StationModal({ open, editId, onClose, onSaved }: StationModalProps) {
   const isEdit = Boolean(editId)
-
-  const [siteId, setSiteId] = useState('')
-  const [endId, setEndId] = useState('')
-  const [elementType, setElementType] = useState('')
-  const [technology, setTechnology] = useState('')
-  const [areaHolder, setAreaHolder] = useState('')
-  const [infraContractType, setInfraContractType] = useState('')
-  const [infraHolder, setInfraHolder] = useState('')
-  const [infraType, setInfraType] = useState('')
-  const [evType, setEvType] = useState('')
-  const [evSupplier, setEvSupplier] = useState('')
-  const [address, setAddress] = useState('')
-  const [regional, setRegional] = useState('')
-  const [latitude, setLatitude] = useState('')
-  const [longitude, setLongitude] = useState('')
-  const [mobileCarrier, setMobileCarrier] = useState('')
-  const [towerType, setTowerType] = useState('')
-  const [nominalAev, setNominalAev] = useState('')
-  const [groundArea, setGroundArea] = useState('')
-  const [structureHeight, setStructureHeight] = useState('')
-  const [stationId, setStationId] = useState('')
-  const [notes, setNotes] = useState('')
-  const [status, setStatus] = useState('ativo')
+  const { showToast } = useToast()
+  const [form, setForm] = useState<StationFormState>(initialStationForm)
   const [error, setError] = useState('')
+  const [stepError, setStepError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
+
+  const stepFields = stationFormSteps[activeStep].fields
+  const isLastStep = activeStep === stationFormSteps.length - 1
 
   useEffect(() => {
     if (open && editId) {
       api.get(`/stations/${editId}`)
         .then((res) => {
-          const d = res.data
-          setSiteId(d.siteId || '')
-          setEndId(d.endId || '')
-          setElementType(d.elementType || '')
-          setTechnology(d.technology || '')
-          setAreaHolder(d.areaHolder || '')
-          setInfraContractType(d.infraContractType || '')
-          setInfraHolder(d.infraHolder || '')
-          setInfraType(d.infraType || '')
-          setEvType(d.evType || '')
-          setEvSupplier(d.evSupplier || '')
-          setAddress(d.address || '')
-          setRegional(d.regional || '')
-          setLatitude(d.latitude != null ? String(d.latitude) : '')
-          setLongitude(d.longitude != null ? String(d.longitude) : '')
-          setMobileCarrier(d.mobileCarrier || '')
-          setTowerType(d.towerType || '')
-          setNominalAev(d.nominalAev != null ? String(d.nominalAev) : '')
-          setGroundArea(d.groundArea != null ? String(d.groundArea) : '')
-          setStructureHeight(d.structureHeight != null ? String(d.structureHeight) : '')
-          setStationId(d.stationId || '')
-          setNotes(d.notes || '')
-          setStatus(d.status || 'ativo')
+          const data = res.data
+          setForm({
+            siteId: data.siteId || '',
+            endId: data.endId || '',
+            elementType: data.elementType || '',
+            technology: data.technology || '',
+            areaHolder: data.areaHolder || '',
+            infraContractType: data.infraContractType || '',
+            infraHolder: data.infraHolder || '',
+            infraType: data.infraType || '',
+            evType: data.evType || '',
+            evSupplier: data.evSupplier || '',
+            address: data.address || '',
+            regional: data.regional || '',
+            latitude: data.latitude != null ? String(data.latitude) : '',
+            longitude: data.longitude != null ? String(data.longitude) : '',
+            mobileCarrier: data.mobileCarrier || '',
+            towerType: data.towerType || '',
+            nominalAev: data.nominalAev != null ? String(data.nominalAev) : '',
+            groundArea: data.groundArea != null ? String(data.groundArea) : '',
+            structureHeight: data.structureHeight != null ? String(data.structureHeight) : '',
+            stationId: data.stationId || '',
+            notes: data.notes || '',
+            status: data.status || 'ativo',
+          })
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
     }
   }, [open, editId])
 
+  useEffect(() => {
+    if (open) {
+      setActiveStep(0)
+      setStepError('')
+    }
+  }, [open])
+
+  const handleChange = (name: string, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const validateStep = () => {
+    const missing = stationFormFields
+      .filter(
+        (config) =>
+          stepFields.includes(config.name) &&
+          config.required &&
+          !String(form[config.name as keyof StationFormState]).trim()
+      )
+      .map((config) => config.label)
+
+    if (missing.length) {
+      setStepError(`Preencha os campos obrigatórios: ${missing.join(', ')}.`)
+      return false
+    }
+    setStepError('')
+    return true
+  }
+
+  const handleNext = () => {
+    if (validateStep()) setActiveStep((prev) => prev + 1)
+  }
+
+  const handleBack = () => {
+    setStepError('')
+    setActiveStep((prev) => Math.max(0, prev - 1))
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!isLastStep) {
+      handleNext()
+      return
+    }
+    if (!validateStep()) return
+
     setError('')
     setLoading(true)
 
-    const isTim = !mobileCarrier || mobileCarrier === 'TIM'
-    const payload: any = {
-      siteId,
-      endId: isTim ? endId : '',
-      elementType,
-      technology,
-      areaHolder,
-      infraContractType,
-      infraHolder,
-      infraType,
-      evType,
-      evSupplier,
-      address,
-      regional,
-      mobileCarrier,
-      towerType,
-      stationId,
-      notes,
-      status,
-    }
-    if (latitude) payload.latitude = Number(latitude)
-    if (longitude) payload.longitude = Number(longitude)
-    if (nominalAev) payload.nominalAev = Number(nominalAev)
-    if (groundArea) payload.groundArea = Number(groundArea)
-    if (structureHeight) payload.structureHeight = Number(structureHeight)
-
     try {
-      let saved: any
-      if (isEdit) {
-        saved = await api.patch(`/stations/${editId}`, payload)
-      } else {
-        saved = await api.post('/stations', payload)
-      }
+      const saved = isEdit
+        ? await api.patch(`/stations/${editId}`, buildStationPayload(form))
+        : await api.post('/stations', buildStationPayload(form))
       onSaved(saved.data)
       handleClose()
+      showToast(isEdit ? 'Estação atualizada com sucesso.' : 'Estação criada com sucesso.')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -133,121 +145,75 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
   const handleClose = () => {
     if (loading) return
     setError('')
-    setSiteId('')
-    setEndId('')
-    setElementType('')
-    setTechnology('')
-    setAreaHolder('')
-    setInfraContractType('')
-    setInfraHolder('')
-    setInfraType('')
-    setEvType('')
-    setEvSupplier('')
-    setAddress('')
-    setRegional('')
-    setLatitude('')
-    setLongitude('')
-    setMobileCarrier('')
-    setTowerType('')
-    setNominalAev('')
-    setGroundArea('')
-    setStructureHeight('')
-    setStationId('')
-    setNotes('')
-    setStatus('ativo')
+    setStepError('')
+    setActiveStep(0)
+    setForm(initialStationForm)
     onClose()
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogTitle>{isEdit ? 'Editar Estação' : 'Nova Estação'}</DialogTitle>
         <DialogContent>
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel
+            sx={{
+              my: 2,
+              '& .MuiStepConnector-line': { borderColor: 'divider' },
+              '& .MuiStepLabel-label': { fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 },
+              '& .MuiStepLabel-label.Mui-active': { fontWeight: 700, color: 'rgb(0, 21, 68)' },
+              '& .MuiStepLabel-label.Mui-completed': { fontWeight: 600, color: 'text.primary' },
+              '& .MuiStepIcon-root.Mui-active': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-root.Mui-completed': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-text': { fontWeight: 600 },
+            }}
+          >
+            {stationFormSteps.map((step) => (
+              <Step key={step.label}>
+                <StepLabel>{step.label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
+            Passo {activeStep + 1} de {stationFormSteps.length} — {stationFormSteps[activeStep].label}
+          </Typography>
+
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {stepError && <Alert severity="warning" sx={{ mb: 2 }}>{stepError}</Alert>}
+
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Site ID" value={siteId} onChange={(e) => setSiteId(e.target.value)} margin="normal" required />
-            </Grid>
-            {(!mobileCarrier || mobileCarrier === 'TIM') && (
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="End ID" value={endId} onChange={(e) => setEndId(e.target.value)} margin="normal" required />
-              </Grid>
-            )}
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tipo de elemento" value={elementType} onChange={(e) => setElementType(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tecnologia" value={technology} onChange={(e) => setTechnology(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth select label="Operadora" value={mobileCarrier} onChange={(e) => setMobileCarrier(e.target.value)} margin="normal">
-                <MenuItem value="">Selecione</MenuItem>
-                {mobileCarriers.map((op) => (
-                  <MenuItem key={op} value={op}>{op}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal" required>
-                <MenuItem value="ativo">Ativo</MenuItem>
-                <MenuItem value="inativo">Inativo</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Detentor da Área" value={areaHolder} onChange={(e) => setAreaHolder(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Detentor de Infra" value={infraHolder} onChange={(e) => setInfraHolder(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tipo de contrato Infra" value={infraContractType} onChange={(e) => setInfraContractType(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tipo de Infra" value={infraType} onChange={(e) => setInfraType(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tipo de EV" value={evType} onChange={(e) => setEvType(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Fornecedor de EV" value={evSupplier} onChange={(e) => setEvSupplier(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Regional" value={regional} onChange={(e) => setRegional(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Tipo da torre" value={towerType} onChange={(e) => setTowerType(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth label="Endereço" value={address} onChange={(e) => setAddress(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Latitude" type="number" value={latitude} onChange={(e) => setLatitude(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Longitude" type="number" value={longitude} onChange={(e) => setLongitude(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="AEV Nominal" type="number" value={nominalAev} onChange={(e) => setNominalAev(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Área de solo" type="number" value={groundArea} onChange={(e) => setGroundArea(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Altura da estrutura" type="number" value={structureHeight} onChange={(e) => setStructureHeight(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Station ID (id da detentora)" value={stationId} onChange={(e) => setStationId(e.target.value)} margin="normal" />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth label="Observações" multiline rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} margin="normal" />
-            </Grid>
+            {stationFormFields
+              .filter((config) => stepFields.includes(config.name) && (config.visible?.(form) ?? true))
+              .map((config) => (
+                <Grid item xs={12} sm={config.size ?? 12} key={config.name}>
+                  <StationFormField
+                    config={config}
+                    value={form[config.name as keyof StationFormState]}
+                    onChange={(value) => handleChange(config.name, value)}
+                  />
+                </Grid>
+              ))}
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
           <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0 || loading}>
+              Voltar
+            </Button>
+            {isLastStep ? (
+              <Button type="submit" variant="contained" disabled={loading}>
+                {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
+              </Button>
+            ) : (
+              <Button type="submit" variant="contained" disabled={loading}>
+                Próximo
+              </Button>
+            )}
+          </Box>
         </DialogActions>
       </Box>
     </Dialog>

@@ -1,19 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { Box, Alert, CircularProgress, Typography } from '@mui/material'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { useEffect, useState } from 'react'
+import { Alert, Box, CircularProgress, Typography } from '@mui/material'
 import api from '../../services/api'
-
-interface StationMapItem {
-  id: number
-  siteId: string
-  endId: string
-  latitude: number | null
-  longitude: number | null
-  address: string | null
-  status: string
-  mobileCarrier: string | null
-}
+import StationMap from '../../components/stations/StationMap'
+import { Station } from './stationsTypes'
 
 interface StationsMapTabProps {
   search?: string
@@ -22,8 +11,7 @@ interface StationsMapTabProps {
 }
 
 export default function StationsMapTab({ search = '', status = '', mobileCarrier = '' }: StationsMapTabProps) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const [stations, setStations] = useState<StationMapItem[]>([])
+  const [stations, setStations] = useState<Station[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -52,48 +40,6 @@ export default function StationsMapTab({ search = '', status = '', mobileCarrier
     }
   }, [search, status, mobileCarrier])
 
-  useEffect(() => {
-    if (!mapRef.current || loading) return
-
-    const map = L.map(mapRef.current)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map)
-
-    const withCoords = stations.filter((s) => s.latitude != null && s.longitude != null)
-    const points: [number, number][] = []
-    withCoords.forEach((s) => {
-      const lat = Number(s.latitude)
-      const lng = Number(s.longitude)
-      points.push([lat, lng])
-      const inativo = s.status === 'inativo'
-      const endIdLine = s.mobileCarrier === 'TIM' ? `<br/>End ID: ${s.endId}` : ''
-      L.circleMarker([lat, lng], {
-        radius: 8,
-        color: inativo ? '#9e9e9e' : '#1565c0',
-        fillColor: inativo ? '#9e9e9e' : '#1565c0',
-        fillOpacity: 0.9,
-      })
-        .addTo(map)
-        .bindPopup(
-          `<b>${s.siteId}</b>${endIdLine}<br/>Operadora: ${s.mobileCarrier || '-'}<br/>Status: ${inativo ? 'Inativo' : 'Ativo'}`,
-        )
-    })
-
-    if (points.length === 0) {
-      map.setView([-15.7942, -47.8822], 4)
-    } else if (points.length === 1) {
-      map.setView(points[0], 12)
-    } else {
-      map.fitBounds(L.latLngBounds(points), { padding: [30, 30] })
-    }
-
-    return () => {
-      map.remove()
-    }
-  }, [stations, loading])
-
   const withCoordsCount = stations.filter((s) => s.latitude != null && s.longitude != null).length
 
   return (
@@ -106,16 +52,7 @@ export default function StationsMapTab({ search = '', status = '', mobileCarrier
         </Box>
       ) : (
         <>
-          <Box
-            ref={mapRef}
-            sx={{
-              width: '100%',
-              height: 520,
-              borderRadius: 1,
-              overflow: 'hidden',
-              zIndex: 0,
-            }}
-          />
+          <StationMap stations={stations} />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
             Exibindo {withCoordsCount} de {stations.length} estação(ões) com coordenadas.
           </Typography>

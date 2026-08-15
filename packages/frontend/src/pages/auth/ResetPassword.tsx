@@ -1,19 +1,9 @@
 import { useState, FormEvent } from 'react'
 import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom'
-import {
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Box,
-  Link,
-  CircularProgress,
-} from '@mui/material'
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Container, Link, Typography } from '@mui/material'
 import api from '../../services/api'
 import { resetPasswordSchema, getFieldErrors } from '../../schemas/authSchemas'
+import PasswordField from '../../components/ui/PasswordField'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -22,9 +12,12 @@ export default function ResetPassword() {
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const clearFieldError = (field: string) => setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -52,56 +45,38 @@ export default function ResetPassword() {
     <Container maxWidth="xs" sx={{ mt: 8 }}>
       <Card>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            Redefinir Senha
-          </Typography>
+          <Typography variant="h5" align="center" gutterBottom>Redefinir Senha</Typography>
           {!token && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Token inválido ou ausente.
-            </Alert>
+            <Alert severity="error" sx={{ mb: 2 }}>Token inválido ou ausente.</Alert>
           )}
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
+            <PasswordField
               label="Nova Senha"
-              type="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                setFieldErrors((prev) => ({ ...prev, password: '' }))
+              onChange={(value) => {
+                setPassword(value)
+                clearFieldError('password')
               }}
-              margin="normal"
+              showPassword={showPassword}
+              onToggleShow={() => setShowPassword((prev) => !prev)}
               required
-              error={!!fieldErrors.password}
-              helperText={fieldErrors.password}
+              error={fieldErrors.password}
             />
-            <TextField
-              fullWidth
+            <PasswordField
               label="Confirmar Nova Senha"
-              type="password"
               value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value)
-                setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }))
+              onChange={(value) => {
+                setConfirmPassword(value)
+                clearFieldError('confirmPassword')
               }}
-              margin="normal"
+              showPassword={showPassword}
+              onToggleShow={() => setShowPassword((prev) => !prev)}
               required
-              error={!!fieldErrors.confirmPassword}
-              helperText={fieldErrors.confirmPassword}
+              error={fieldErrors.confirmPassword}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading || !token}
-              sx={{ mt: 2, mb: 1, py: 1.2 }}
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                'Redefinir senha'
-              )}
+            <Button type="submit" fullWidth variant="contained" disabled={loading || !token} sx={{ mt: 2, mb: 1, py: 1.2 }}>
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Redefinir senha'}
             </Button>
           </Box>
           <Box sx={{ textAlign: 'center', mt: 1 }}>

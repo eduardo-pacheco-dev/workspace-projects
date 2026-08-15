@@ -1,35 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Alert, Container, TablePagination } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  Alert,
-  Box,
-  Chip,
-  IconButton,
-  Tooltip,
-} from '@mui/material'
-import { Add, Delete } from '@mui/icons-material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import PlanModal from './PlanModal'
-import {
-  MsProjectSummary,
-  msProjectStatusLabels,
-  msProjectStatusColors,
-  formatDate,
-} from './msProjectTypes'
+import MsProjectToolbar from '../../components/ms-project/MsProjectToolbar'
+import MsProjectTable from '../../components/ms-project/MsProjectTable'
+import { MsProjectSummary } from './msProjectTypes'
 
 export default function MsProjectPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [plans, setPlans] = useState<MsProjectSummary[]>([])
   const [total, setTotal] = useState(0)
@@ -37,6 +20,7 @@ export default function MsProjectPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<MsProjectSummary | null>(null)
 
   const fetchPlans = useCallback(async () => {
     setError('')
@@ -44,13 +28,9 @@ export default function MsProjectPage() {
       const res = await api.get('/ms-project', {
         params: { page: page + 1, limit: rowsPerPage, sortBy: 'startDate', sortOrder: 'ASC' },
       })
-      if (Array.isArray(res.data)) {
-        setPlans(res.data)
-        setTotal(res.data.length)
-      } else {
-        setPlans(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<MsProjectSummary>(res.data)
+      setPlans(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar os planos.')
     }
@@ -61,97 +41,37 @@ export default function MsProjectPage() {
   }, [fetchPlans])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este plano e todas as suas tarefas?')) return
     try {
       await api.delete(`/ms-project/${id}`)
       fetchPlans()
+      showToast('Plano excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage)
-  }
+  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const criticalCount = (plan: MsProjectSummary) => plan.status
-
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box>
-          <Typography variant="h4">Cronograma (MS Project)</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {total} plano(s) de projeto
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Plano
-        </Button>
-      </Box>
+      <MsProjectToolbar total={total} onNew={() => setModal({ open: true, editId: null })} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Plano</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Início</TableCell>
-              <TableCell>Término</TableCell>
-              <TableCell>Duração (dias úteis)</TableCell>
-              <TableCell align="right">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {plans.map((plan) => (
-              <TableRow
-                key={plan.id}
-                hover
-                onClick={() => navigate(`/ms-project/${plan.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell sx={{ fontWeight: 600 }}>
-                  {plan.name}
-                  {criticalCount(plan) === 'behind' && (
-                    <Chip size="small" color="error" label="atrasado" sx={{ ml: 1 }} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={msProjectStatusLabels[plan.status] || plan.status}
-                    color={msProjectStatusColors[plan.status] || 'default'}
-                  />
-                </TableCell>
-                <TableCell>{formatDate(plan.startDate)}</TableCell>
-                <TableCell>{formatDate(plan.endDate)}</TableCell>
-                <TableCell>{plan.durationDays ?? '-'}</TableCell>
-                <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                  <Tooltip title="Excluir plano">
-                    <IconButton onClick={() => handleDelete(plan.id)}>
-                      <Delete />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {plans.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  Nenhum plano encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <MsProjectTable
+        plans={plans}
+        onOpen={(plan) => navigate(`/ms-project/${plan.id}`)}
+        onDelete={setToDelete}
+      />
 
       <TablePagination
         component="div"
@@ -169,6 +89,14 @@ export default function MsProjectPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchPlans()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir plano"
+        message={`Tem certeza que deseja excluir o plano "${toDelete?.name}" e todas as suas tarefas?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

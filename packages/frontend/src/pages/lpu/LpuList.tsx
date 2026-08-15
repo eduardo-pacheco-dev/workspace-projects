@@ -1,58 +1,44 @@
 import { useState, useEffect } from 'react'
 import {
-  Container,
-  Typography,
+  Alert,
+  Box,
   Button,
+  Container,
+  IconButton,
+  Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  MenuItem,
-  Chip,
-  Stack,
+  Typography,
 } from '@mui/material'
-import { Edit, Delete, Add, FileDownload } from '@mui/icons-material'
-import * as XLSX from 'xlsx'
+import { Add, Delete, Edit, FileDownload } from '@mui/icons-material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import LpuModal from './LpuModal'
-
-interface Lpu {
-  id: number
-  freelancerId: number
-  nome: string
-  descricao?: string
-  valor?: number
-  data?: string
-  status: string
-}
-
-interface Freelancer {
-  id: number
-  firstName: string
-  lastName: string
-}
+import FreelancerPicker from '../../components/lpu/FreelancerPicker'
+import LpuStatusChip from '../../components/lpu/LpuStatusChip'
+import { downloadFreelancerLpusExcel } from './lpuExport'
+import { Lpu, FreelancerOption, freelancerFullName, formatValor } from './lpuTypes'
 
 export default function LpuList() {
+  const { showToast } = useToast()
   const [lpus, setLpus] = useState<Lpu[]>([])
-  const [freelancers, setFreelancers] = useState<Freelancer[]>([])
+  const [freelancers, setFreelancers] = useState<FreelancerOption[]>([])
   const [selectedFreelancer, setSelectedFreelancer] = useState('')
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
+  const [toDelete, setToDelete] = useState<Lpu | null>(null)
 
   useEffect(() => {
     api.get('/collaborators', { params: { limit: 100, isFreelancer: true } })
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
-        setFreelancers(data)
-      })
+      .then((res) => setFreelancers(normalizeList<FreelancerOption>(res.data).data))
       .catch(() => {})
   }, [])
 
@@ -62,7 +48,7 @@ export default function LpuList() {
       return
     }
     api.get(`/lpus/freelancer/${selectedFreelancer}`)
-      .then((res) => setLpus(res.data))
+      .then((res) => setLpus(normalizeList<Lpu>(res.data).data))
       .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar a lista.'))
   }
 
@@ -71,49 +57,23 @@ export default function LpuList() {
   }, [selectedFreelancer])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta LPU?')) return
     try {
       await api.delete(`/lpus/${id}`)
       fetchLpus()
+      showToast('LPU excluída com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
-  }
-
-  const handleNew = () => {
-    setEditId(null)
-    setModalOpen(true)
-  }
-
-  const handleEdit = (id: number) => {
-    setEditId(id)
-    setModalOpen(true)
   }
 
   const handleExport = () => {
     const freelancer = freelancers.find((f) => f.id === Number(selectedFreelancer))
-    const name = freelancer ? `${freelancer.firstName}-${freelancer.lastName}` : selectedFreelancer
-
-    const rows = lpus.map((l) => ({
-      Nome: l.nome,
-      Descrição: l.descricao || '',
-      Valor: l.valor ?? '',
-      Data: l.data || '',
-      Status: l.status === 'ativo' ? 'Ativo' : 'Inativo',
-    }))
-    const ws = XLSX.utils.json_to_sheet(rows)
-
-    ws['!cols'] = [
-      { wch: 30 },
-      { wch: 40 },
-      { wch: 12 },
-      { wch: 14 },
-      { wch: 10 },
-    ]
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'LPUs')
-    XLSX.writeFile(wb, `lpus-${name}.xlsx`)
+    const name = freelancer ? freelancerFullName(freelancer).replace(/\s+/g, '-') : selectedFreelancer
+    downloadFreelancerLpusExcel(lpus, `lpus-${name}.xlsx`)
   }
 
   return (
@@ -124,25 +84,17 @@ export default function LpuList() {
           <Button variant="outlined" onClick={handleExport} disabled={lpus.length === 0} startIcon={<FileDownload />}>
             Exportar Excel
           </Button>
-          <Button variant="contained" onClick={handleNew} disabled={!selectedFreelancer} startIcon={<Add />}>
+          <Button variant="contained" onClick={() => { setEditId(null); setModalOpen(true) }} disabled={!selectedFreelancer} startIcon={<Add />}>
             Nova LPU
           </Button>
         </Box>
       </Box>
 
-      <TextField
-        select
-        size="small"
-        label="Selecionar Freelancer"
+      <FreelancerPicker
         value={selectedFreelancer}
-        onChange={(e) => setSelectedFreelancer(e.target.value)}
-        sx={{ mb: 2, minWidth: 250 }}
-      >
-        <MenuItem value="">Selecione um freelancer</MenuItem>
-        {freelancers.map((f) => (
-          <MenuItem key={f.id} value={f.id}>{f.firstName} {f.lastName}</MenuItem>
-        ))}
-      </TextField>
+        freelancers={freelancers}
+        onChange={setSelectedFreelancer}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -164,19 +116,19 @@ export default function LpuList() {
                 <TableCell colSpan={6} align="center">Nenhuma LPU encontrada</TableCell>
               </TableRow>
             )}
-            {lpus.map((l) => (
-              <TableRow key={l.id} hover>
-                <TableCell>{l.nome}</TableCell>
-                <TableCell>{l.descricao || '-'}</TableCell>
-                <TableCell>{l.valor ? `$${l.valor}` : '-'}</TableCell>
-                <TableCell>{l.data || '-'}</TableCell>
+            {lpus.map((lpu) => (
+              <TableRow key={lpu.id} hover>
+                <TableCell>{lpu.nome}</TableCell>
+                <TableCell>{lpu.descricao || '-'}</TableCell>
+                <TableCell>{formatValor(lpu.valor)}</TableCell>
+                <TableCell>{lpu.data || '-'}</TableCell>
                 <TableCell>
-                  <Chip label={l.status === 'ativo' ? 'Ativo' : 'Inativo'} color={l.status === 'ativo' ? 'success' : 'default'} size="small" />
+                  <LpuStatusChip status={lpu.status} />
                 </TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={0.5} alignItems="center">
-                    <IconButton onClick={() => handleEdit(l.id)}><Edit /></IconButton>
-                    <IconButton onClick={() => handleDelete(l.id)}><Delete /></IconButton>
+                    <IconButton onClick={() => { setEditId(lpu.id); setModalOpen(true) }}><Edit /></IconButton>
+                    <IconButton onClick={() => setToDelete(lpu)}><Delete /></IconButton>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -189,8 +141,17 @@ export default function LpuList() {
         open={modalOpen}
         editId={editId}
         freelancerId={selectedFreelancer ? Number(selectedFreelancer) : null}
+        freelancers={freelancers}
         onClose={() => setModalOpen(false)}
         onSaved={fetchLpus}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir LPU"
+        message={`Tem certeza que deseja excluir a LPU "${toDelete?.nome}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

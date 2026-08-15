@@ -1,48 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-  Chip,
-  MenuItem,
-} from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
 import ClientModal from './ClientModal'
-
-interface Client {
-  id: number
-  nome: string
-  documento: string | null
-  email: string | null
-  telefone: string | null
-  endereco: string | null
-  cidade: string | null
-  uf: string | null
-  observacoes: string | null
-  status: string
-}
-
-type SortBy = 'id' | 'nome' | 'documento' | 'email' | 'telefone' | 'cidade' | 'status'
-type SortOrder = 'ASC' | 'DESC'
+import ClientsToolbar from '../../components/clients/ClientsToolbar'
+import ClientsFilters, { ClientViewMode } from '../../components/clients/ClientsFilters'
+import ClientsTable from '../../components/clients/ClientsTable'
+import ClientsCards from '../../components/clients/ClientsCards'
+import DeleteClientDialog from '../../components/clients/DeleteClientDialog'
+import { downloadClientsExcel } from './clientExport'
+import { Client, SortBy, SortOrder } from './clientsTypes'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -51,28 +24,21 @@ export default function ClientsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [viewMode, setViewMode] = useState<ClientViewMode>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<Client | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
 
       const res = await api.get('/clients', { params })
-      if (Array.isArray(res.data)) {
-        setClients(res.data)
-        setTotal(res.data.length)
-      } else {
-        setClients(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<Client>(res.data)
+      setClients(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -92,143 +58,81 @@ export default function ClientsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este cliente?')) return
     try {
       await api.delete(`/clients/${id}`)
       fetchData()
+      showToast('Cliente excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage)
-  }
+  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'documento', label: 'CNPJ' },
-    { id: 'email', label: 'Email' },
-    { id: 'telefone', label: 'Telefone' },
-    { id: 'cidade', label: 'Cidade' },
-    { id: 'status', label: 'Status' },
-  ]
+  const handleExport = async () => {
+    try {
+      const params: any = { page: 1, limit: 10000, sortBy, sortOrder }
+      if (search) params.search = search
+      if (statusFilter) params.status = statusFilter
+
+      const res = await api.get('/clients', { params })
+      downloadClientsExcel(normalizeList<Client>(res.data).data)
+      showToast('Lista de clientes exportada com sucesso.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')
+    }
+  }
+
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
+  }
+
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (client: Client) => setModal({ open: true, editId: client.id })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Clientes</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Cliente
-        </Button>
-      </Box>
+      <ClientsToolbar onExport={handleExport} onNew={openCreate} />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 250 }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="ativo">Ativo</MenuItem>
-          <MenuItem value="inativo">Inativo</MenuItem>
-        </TextField>
-      </Stack>
+      <ClientsFilters
+        search={search}
+        status={statusFilter}
+        viewMode={viewMode}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+        onViewModeChange={setViewMode}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell align="right">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {clients.map((c) => (
-              <TableRow
-                key={c.id}
-                hover
-                onClick={() => navigate(`/clients/${c.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{c.nome}</TableCell>
-                <TableCell>{c.documento || '-'}</TableCell>
-                <TableCell>{c.email || '-'}</TableCell>
-                <TableCell>{c.telefone || '-'}</TableCell>
-                <TableCell>
-                  {c.cidade || '-'}
-                  {c.uf ? `/${c.uf}` : ''}
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={c.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={c.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModal({ open: true, editId: c.id })
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(c.id)
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {clients.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Nenhum cliente encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {viewMode === 'table' ? (
+        <ClientsTable
+          clients={clients}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+          onOpen={(client) => navigate(`/clients/${client.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
+      ) : (
+        <ClientsCards
+          clients={clients}
+          onOpen={(client) => navigate(`/clients/${client.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
+      )}
 
       <TablePagination
         component="div"
@@ -246,6 +150,12 @@ export default function ClientsPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <DeleteClientDialog
+        client={toDelete}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

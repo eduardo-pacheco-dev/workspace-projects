@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { ProjectProvider } from './contexts/ProjectContext'
-import { ToastProvider } from './contexts/ToastContext'
+import { useAuth } from './contexts/AuthContext'
+import { useAuthStore } from './stores/authStore'
 import api from './services/api'
 import { DEFAULT_USER_MODULES } from './pages/settings/roleModules'
 import Layout from './components/Layout'
 import PageTitle from './components/PageTitle'
+import Toaster from './components/Toaster'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -45,6 +45,7 @@ import SettingsPage from './pages/settings/SettingsPage'
 import CompaniesPage from './pages/companies/CompaniesPage'
 import CompanyDetailPage from './pages/companies/CompanyDetailPage'
 import ProfilePage from './pages/users/ProfilePage'
+import LpuPage from './pages/lpu/LpuPage'
 import NotFound from './pages/errors/NotFound'
 import InternalError from './pages/errors/InternalError'
 import Unauthorized from './pages/errors/Unauthorized'
@@ -59,18 +60,9 @@ function ProtectedLayout() {
   useEffect(() => {
     if (!isAuthenticated) return
     api
-      .get('/settings')
+      .get('/settings/my-modules')
       .then((res) => {
-        const role = user?.role || 'user'
-        const raw = res.data?.[`role_modules_${role}`]
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed)) setUserModules(parsed)
-          } catch {
-            setUserModules(DEFAULT_USER_MODULES)
-          }
-        }
+        if (Array.isArray(res.data)) setUserModules(res.data)
       })
       .catch(() => {})
   }, [isAuthenticated, user])
@@ -96,12 +88,14 @@ function MasterOnlyRoute({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    useAuthStore.getState().refreshUser()
+  }, [])
+
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <ProjectProvider>
-        <PageTitle />
-        <Routes>
+    <>
+      <PageTitle />
+      <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -143,13 +137,13 @@ export default function App() {
           <Route path="/ms-project" element={<MsProjectPage />} />
           <Route path="/ms-project/:id" element={<MsProjectDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/lpus" element={<LpuPage />} />
           <Route path="/companies" element={<MasterOnlyRoute><CompaniesPage /></MasterOnlyRoute>} />
           <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-        </Routes>
-        </ProjectProvider>
-      </ToastProvider>
-    </AuthProvider>
+      </Routes>
+      <Toaster />
+    </>
   )
 }

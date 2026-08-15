@@ -40,14 +40,59 @@ export const ALL_ROLE_MODULES: { value: string; label: string }[] = [
   { value: '/lpus', label: 'LPU' },
   { value: '/teams', label: 'Equipes' },
   { value: '/settings', label: 'Configurações' },
+  { value: '/schedule', label: 'Agenda' },
+  { value: '/ms-project', label: 'Cronograma' },
+  { value: '/finance', label: 'Finanças' },
+  { value: '/companies', label: 'Empresas' },
 ]
 
-const allModuleValues = ALL_ROLE_MODULES.map((m) => m.value)
-
 export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
-  admin: [...allModuleValues],
-  supervisor: allModuleValues.filter((v) => v !== '/users'),
-  coordenador: allModuleValues.filter((v) => v !== '/users'),
+  admin: [
+    '/tasks',
+    '/service-orders',
+    '/collaborators',
+    '/stations',
+    '/radio-links',
+    '/projects',
+    '/clients',
+    '/pdca',
+    '/users',
+    '/attachments',
+    '/comments',
+    '/lpus',
+    '/teams',
+    '/settings',
+  ],
+  supervisor: [
+    '/tasks',
+    '/service-orders',
+    '/collaborators',
+    '/stations',
+    '/radio-links',
+    '/projects',
+    '/clients',
+    '/pdca',
+    '/attachments',
+    '/comments',
+    '/lpus',
+    '/teams',
+    '/settings',
+  ],
+  coordenador: [
+    '/tasks',
+    '/service-orders',
+    '/collaborators',
+    '/stations',
+    '/radio-links',
+    '/projects',
+    '/clients',
+    '/pdca',
+    '/attachments',
+    '/comments',
+    '/lpus',
+    '/teams',
+    '/settings',
+  ],
   analista: [
     '/tasks',
     '/service-orders',
@@ -88,3 +133,21 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
 }
 
 export const DEFAULT_USER_MODULES = DEFAULT_ROLE_MODULES.user
+
+export const CONFIGURABLE_ROLES = ['admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']
+
+export function parseRoleModules(data: Record<string, unknown>): Record<string, string[]> {
+  const map: Record<string, string[]> = {}
+  for (const role of CONFIGURABLE_ROLES) {
+    const raw = data[`role_modules_${role}`]
+    if (raw) {
+      try {
+        const parsed = JSON.parse(String(raw))
+        if (Array.isArray(parsed)) map[role] = parsed
+      } catch {
+        map[role] = [...(DEFAULT_ROLE_MODULES[role] ?? [])]
+      }
+    }
+  }
+  return map
+}

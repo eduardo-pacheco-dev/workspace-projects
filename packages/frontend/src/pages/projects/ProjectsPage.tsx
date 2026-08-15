@@ -1,79 +1,43 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-  Chip,
-  MenuItem,
-} from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import ProjectModal from './ProjectModal'
-
-interface Project {
-  id: number
-  nome: string
-  codigo: string | null
-  descricao: string | null
-  cliente: string | null
-  responsavel: string | null
-  dataInicio: string | null
-  dataFim: string | null
-  observacoes: string | null
-  status: string
-  companies?: { id: number; nome: string }[]
-}
-
-type SortBy = 'id' | 'nome' | 'codigo' | 'cliente' | 'dataInicio' | 'status'
-type SortOrder = 'ASC' | 'DESC'
+import ProjectsToolbar from '../../components/projects/ProjectsToolbar'
+import ProjectsFilters, { ProjectViewMode } from '../../components/projects/ProjectsFilters'
+import ProjectsTable from '../../components/projects/ProjectsTable'
+import ProjectsCards from '../../components/projects/ProjectsCards'
+import { Project, ProjectSortBy, SortOrder } from './projectsTypes'
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [projects, setProjects] = useState<Project[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortBy, setSortBy] = useState<SortBy>('id')
+  const [sortBy, setSortBy] = useState<ProjectSortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [viewMode, setViewMode] = useState<ProjectViewMode>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<Project | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
 
       const res = await api.get('/projects', { params })
-      if (Array.isArray(res.data)) {
-        setProjects(res.data)
-        setTotal(res.data.length)
-      } else {
-        setProjects(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<Project>(res.data)
+      setProjects(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -83,7 +47,7 @@ export default function ProjectsPage() {
     fetchData()
   }, [fetchData])
 
-  const handleSort = (col: SortBy) => {
+  const handleSort = (col: ProjectSortBy) => {
     if (sortBy === col) {
       setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))
     } else {
@@ -93,12 +57,16 @@ export default function ProjectsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este projeto?')) return
     try {
       await api.delete(`/projects/${id}`)
       fetchData()
+      showToast('Projeto excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
@@ -111,139 +79,47 @@ export default function ProjectsPage() {
     setPage(0)
   }
 
-  const formatDate = (value: string | null) => {
-    if (!value) return '-'
-    const date = new Date(`${value}T00:00:00`)
-    return isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR')
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'codigo', label: 'Código' },
-    { id: 'cliente', label: 'Cliente' },
-    { id: 'dataInicio', label: 'Início' },
-    { id: 'status', label: 'Status' },
-  ]
-
-  const companyLabel = (p: Project) => {
-    const names = (p.companies ?? []).map((c) => c.nome).filter(Boolean)
-    return names.length ? names.join(', ') : '-'
-  }
-
-  const terminoLabel = (dataFim: string | null) => (dataFim ? formatDate(dataFim) : 'Indeterminado')
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (project: Project) => setModal({ open: true, editId: project.id })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Projetos</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Projeto
-        </Button>
-      </Box>
+      <ProjectsToolbar onNew={openCreate} />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 250 }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="ativo">Ativo</MenuItem>
-          <MenuItem value="inativo">Inativo</MenuItem>
-        </TextField>
-      </Stack>
+      <ProjectsFilters
+        search={search}
+        status={statusFilter}
+        viewMode={viewMode}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+        onViewModeChange={setViewMode}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Empresa</TableCell>
-              <TableCell>Responsável</TableCell>
-              <TableCell>Término</TableCell>
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {projects.map((p) => (
-              <TableRow
-                key={p.id}
-                hover
-                onClick={() => navigate(`/projects/${p.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>{p.nome}</TableCell>
-                <TableCell>{p.codigo || '-'}</TableCell>
-                <TableCell>{p.cliente || '-'}</TableCell>
-                <TableCell>{formatDate(p.dataInicio)}</TableCell>
-                <TableCell>{terminoLabel(p.dataFim)}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    color={p.status === 'ativo' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{companyLabel(p)}</TableCell>
-                <TableCell>{p.responsavel || '-'}</TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setModal({ open: true, editId: p.id })
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(p.id)
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {projects.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} align="center">
-                  Nenhum projeto encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {viewMode === 'table' ? (
+        <ProjectsTable
+          projects={projects}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+          onOpen={(project) => navigate(`/projects/${project.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
+      ) : (
+        <ProjectsCards
+          projects={projects}
+          onOpen={(project) => navigate(`/projects/${project.id}`)}
+          onEdit={openEdit}
+          onDelete={setToDelete}
+        />
+      )}
 
       <TablePagination
         component="div"
@@ -261,6 +137,14 @@ export default function ProjectsPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir projeto"
+        message={`Tem certeza que deseja excluir o projeto "${toDelete?.nome}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

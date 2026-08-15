@@ -15,9 +15,9 @@ import {
   ListItemText,
 } from '@mui/material'
 import { Download, UploadFile, FileUpload } from '@mui/icons-material'
-import * as XLSX from 'xlsx'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { downloadStationTemplate, parseStationFile } from './stationImport'
 
 interface ImportResult {
   imported: number
@@ -41,94 +41,6 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
   const [result, setResult] = useState<ImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDownloadTemplate = () => {
-    const rows = [
-      {
-        'Site ID': 'SITE-001',
-        'End ID': 'END-001',
-        'Tipo de elemento': 'Macro',
-        Tecnologia: '4G',
-        'Detentor da Área': 'Detentora A',
-        'Tipo de contrato Infra': 'Locação',
-        'Detentor de Infra': 'Infra B',
-        'Tipo de Infra': 'Torre',
-        'Tipo de EV': 'EV-01',
-        'Fornecedor de EV': 'Fornecedor X',
-        Operadora: 'TIM',
-        Status: 'ativo',
-        Endereço: 'Av. Exemplo, 100',
-        Regional: 'Norte',
-        Latitude: -23.5505,
-        Longitude: -46.6333,
-        'Tipo da torre': 'Torre treliçada',
-        'AEV Nominal': 120,
-        'Área de solo': 45.5,
-        'Altura da estrutura': 60,
-        Station_id: 'ST-001',
-        Observações: 'Exemplo de preenchimento',
-      },
-      {
-        'Site ID': '',
-        'End ID': '',
-        'Tipo de elemento': '',
-        Tecnologia: '',
-        'Detentor da Área': '',
-        'Tipo de contrato Infra': '',
-        'Detentor de Infra': '',
-        'Tipo de Infra': '',
-        'Tipo de EV': '',
-        'Fornecedor de EV': '',
-        Operadora: 'CLARO',
-        Status: 'ativo',
-        Endereço: '',
-        Regional: '',
-        Latitude: '',
-        Longitude: '',
-        'Tipo da torre': '',
-        'AEV Nominal': '',
-        'Área de solo': '',
-        'Altura da estrutura': '',
-        Station_id: '',
-        Observações: '',
-      },
-    ]
-    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false })
-    ws['!cols'] = [
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 16 },
-      { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 12 }, { wch: 10 },
-      { wch: 40 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 12 },
-      { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 40 },
-    ]
-
-    const border = {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
-    }
-    const cellAddresses = XLSX.utils.decode_range(ws['!ref'] || 'A1')
-    for (let r = cellAddresses.s.r; r <= cellAddresses.e.r; r++) {
-      for (let c = cellAddresses.s.c; c <= cellAddresses.e.c; c++) {
-        const addr = XLSX.utils.encode_cell({ r, c })
-        if (!ws[addr]) ws[addr] = { t: 's', v: '' }
-        ws[addr].s = { border }
-        if (r === 0) {
-          ws[addr].s = {
-            ...ws[addr].s,
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '1976D2' } },
-            alignment: { horizontal: 'center' },
-          }
-        }
-      }
-    }
-    ws['!freeze'] = { xSplit: 0, ySplit: 1 }
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Estações')
-    XLSX.writeFile(wb, 'template-estacoes.xlsx')
-  }
-
   const handleFile = (file: File) => {
     setError('')
     setResult(null)
@@ -136,37 +48,7 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const wb = XLSX.read(data, { type: 'array' })
-        const ws = wb.Sheets[wb.SheetNames[0]]
-        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' })
-
-        const stations = raw
-          .map((r) => ({
-            siteId: String(r['Site ID'] ?? '').trim(),
-            endId: String(r['End ID'] ?? '').trim(),
-            elementType: r['Tipo de elemento'] != null ? String(r['Tipo de elemento']).trim() : '',
-            technology: r['Tecnologia'] != null ? String(r['Tecnologia']).trim() : '',
-            areaHolder: r['Detentor da Área'] != null ? String(r['Detentor da Área']).trim() : '',
-            infraContractType: r['Tipo de contrato Infra'] != null ? String(r['Tipo de contrato Infra']).trim() : '',
-            infraHolder: r['Detentor de Infra'] != null ? String(r['Detentor de Infra']).trim() : '',
-            infraType: r['Tipo de Infra'] != null ? String(r['Tipo de Infra']).trim() : '',
-            evType: r['Tipo de EV'] != null ? String(r['Tipo de EV']).trim() : '',
-            evSupplier: r['Fornecedor de EV'] != null ? String(r['Fornecedor de EV']).trim() : '',
-            mobileCarrier: r['Operadora'] != null ? String(r['Operadora']).trim() : '',
-            status: String(r['Status'] ?? '').trim().toLowerCase(),
-            address: r['Endereço'] != null ? String(r['Endereço']).trim() : '',
-            regional: r['Regional'] != null ? String(r['Regional']).trim() : '',
-            latitude: r['Latitude'],
-            longitude: r['Longitude'],
-            towerType: r['Tipo da torre'] != null ? String(r['Tipo da torre']).trim() : '',
-            nominalAev: r['AEV Nominal'],
-            groundArea: r['Área de solo'],
-            structureHeight: r['Altura da estrutura'],
-            stationId: r['Station_id'] != null ? String(r['Station_id']).trim() : '',
-            notes: r['Observações'] != null ? String(r['Observações']).trim() : '',
-          }))
-          .filter((s) => !(s.siteId === 'SITE-001' && s.endId === 'END-001'))
+        const stations = parseStationFile(e.target?.result as ArrayBuffer)
 
         if (stations.length === 0) {
           setError('Nenhuma linha válida para importar. Verifique o template.')
@@ -224,7 +106,7 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
           Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). O End ID só é aplicado para a mobileCarrier TIM. Estações que já existem (mesmo Site ID e End ID) serão atualizadas.
         </Typography>
 
-        <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate} sx={{ mb: 2 }}>
+        <Button variant="outlined" startIcon={<Download />} onClick={downloadStationTemplate} sx={{ mb: 2 }}>
           Baixar Template
         </Button>
 

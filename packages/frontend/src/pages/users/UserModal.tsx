@@ -11,47 +11,18 @@ import {
   CircularProgress,
   Grid,
   InputAdornment,
-  IconButton,
   MenuItem,
 } from '@mui/material'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined'
-import Visibility from '@mui/icons-material/Visibility'
-import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import { z } from 'zod'
-import { strongPasswordSchema } from '../../schemas/authSchemas'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 import { roleOptions, RoleType } from '../settings/roleModules'
-
-const baseUserSchema = z.object({
-  name: z.string().min(1, 'Informe o nome.'),
-  lastName: z.string().min(1, 'Informe o sobrenome.'),
-  email: z.string().min(1, 'Informe o email.').email('Email inválido.'),
-  phone: z.string().min(1, 'Informe o telefone.'),
-  password: strongPasswordSchema,
-  confirmPassword: z.string().min(1, 'Confirme a senha.'),
-  role: z.enum(['master', 'admin', 'supervisor', 'coordenador', 'analista', 'technician', 'user']),
-  companyId: z.number().nullable(),
-})
-
-const createSchema = baseUserSchema
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'As senhas não conferem.',
-    path: ['confirmPassword'],
-  })
-  .refine((data) => data.role === 'master' || data.companyId != null, {
-    message: 'Selecione a empresa do usuário.',
-    path: ['companyId'],
-  })
-
-const editSchema = baseUserSchema.partial().refine((data) => data.role === 'master' || data.companyId != null, {
-  message: 'Selecione a empresa do usuário.',
-  path: ['companyId'],
-})
+import { createUserSchema, updateUserSchema } from './userSchemas'
+import PasswordField from '../../components/ui/PasswordField'
 
 interface UserModalProps {
   open: boolean
@@ -125,11 +96,15 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     }
   }, [open, editId])
 
-  const getFieldErrors = (error: z.ZodError) =>
-    Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
+  const clearFieldError = (field: string) => setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
-  const clearFieldError = (field: string) =>
-    setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+  const buildPayload = () => {
+    const payload: any = { name, lastName, email, phone: phone.replace(/\D/g, ''), role }
+    payload.companyId = role === 'master' ? null : companyId
+    if (password) payload.password = password
+    if (isEdit) payload.status = status
+    return payload
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -147,24 +122,21 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
       companyId: role === 'master' ? null : companyId,
     }
 
-    const schema = isEdit ? editSchema : createSchema
+    const schema = isEdit ? updateUserSchema : createUserSchema
     const result = schema.safeParse(data)
     if (!result.success) {
-      setFieldErrors(getFieldErrors(result.error))
+      setFieldErrors(
+        Object.fromEntries(result.error.issues.map((issue) => [issue.path[0], issue.message])),
+      )
       return
     }
-
-    const payload: any = { name, lastName, email, phone: phone.replace(/\D/g, ''), role }
-    payload.companyId = role === 'master' ? null : companyId
-    if (password) payload.password = password
-    if (isEdit) payload.status = status
 
     setLoading(true)
     try {
       if (isEdit) {
-        await api.patch(`/users/${editId}`, payload)
+        await api.patch(`/users/${editId}`, buildPayload())
       } else {
-        await api.post('/users', payload)
+        await api.post('/users', buildPayload())
       }
       onSaved()
       handleClose()
@@ -193,8 +165,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     onClose()
   }
 
-  const passwordHelperText =
-    fieldErrors.password || (isEdit && !password ? 'Deixe em branco para manter a senha atual.' : '')
+  const toggleShowPassword = () => setShowPassword((prev) => !prev)
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -290,60 +261,34 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
               ),
             }}
           />
-          <TextField
-            fullWidth
-            label={isEdit ? 'Nova Senha' : 'Senha'}
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              clearFieldError('password')
-            }}
-            margin="normal"
-            required={!isEdit}
-            error={!!fieldErrors.password}
-            helperText={passwordHelperText}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Confirmar Senha"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value)
-              clearFieldError('confirmPassword')
-            }}
-            margin="normal"
-            required={!isEdit}
-            error={!!fieldErrors.confirmPassword}
-            helperText={fieldErrors.confirmPassword}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          {!isEdit && (
+            <>
+              <PasswordField
+                label="Senha"
+                value={password}
+                onChange={(value) => {
+                  setPassword(value)
+                  clearFieldError('password')
+                }}
+                showPassword={showPassword}
+                onToggleShow={toggleShowPassword}
+                required
+                error={fieldErrors.password}
+              />
+              <PasswordField
+                label="Confirmar Senha"
+                value={confirmPassword}
+                onChange={(value) => {
+                  setConfirmPassword(value)
+                  clearFieldError('confirmPassword')
+                }}
+                showPassword={showPassword}
+                onToggleShow={toggleShowPassword}
+                required
+                error={fieldErrors.confirmPassword}
+              />
+            </>
+          )}
           <TextField
             fullWidth
             select

@@ -16,6 +16,8 @@ const PUBLIC_ROUTES = [
 ];
 
 const OWN_PROFILE_REGEX = /^\/users\/\d+$/;
+const OWN_COMPANY_REGEX = /^\/companies\/me$/;
+const OWN_MODULES_REGEX = /^\/settings\/my-modules$/;
 
 @Injectable()
 export class JwtRoleGuard extends AuthGuard('jwt') {
@@ -64,6 +66,8 @@ export class JwtRoleGuard extends AuthGuard('jwt') {
         const modules = await this.getRoleModules(result.role);
         const allowed =
           OWN_PROFILE_REGEX.test(path) ||
+          OWN_COMPANY_REGEX.test(path) ||
+          OWN_MODULES_REGEX.test(path) ||
           modules.some((p) => path === p || path.startsWith(`${p}/`));
         if (!allowed) {
           throw new ForbiddenException('Acesso negado: perfil sem permissão.');

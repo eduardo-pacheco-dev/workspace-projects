@@ -10,13 +10,12 @@ import {
   Box,
   CircularProgress,
   Grid,
-  FormLabel,
-  Checkbox,
-  FormControlLabel,
-  Stack,
 } from '@mui/material'
 import api from '../../services/api'
-import { MsProjectSummary, weekdayOptions, todayString } from './msProjectTypes'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import WeekdayPicker from '../../components/ms-project/WeekdayPicker'
+import { planSchema } from './msProjectSchemas'
+import { MsProjectSummary, todayString } from './msProjectTypes'
 
 interface PlanModalProps {
   open: boolean
@@ -33,6 +32,7 @@ export default function PlanModal({ open, editId, onClose, onSaved }: PlanModalP
   const [startDate, setStartDate] = useState(todayString())
   const [workingDays, setWorkingDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -58,22 +58,28 @@ export default function PlanModal({ open, editId, onClose, onSaved }: PlanModalP
     setStartDate(todayString())
     setWorkingDays([1, 2, 3, 4, 5])
     setError('')
+    setFieldErrors({})
   }
 
-  const toggleDay = (day: number) =>
+  const toggleDay = (day: number) => {
     setWorkingDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
+    setFieldErrors((prev) => ({ ...prev, workingDays: '' }))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
+
+    const result = planSchema.safeParse({ name, description, startDate, workingDays })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
+    }
+
     setLoading(true)
     try {
-      const payload = {
-        name,
-        description,
-        startDate,
-        workingDays,
-      }
+      const payload = { name, description, startDate, workingDays }
       if (isEdit) {
         await api.patch(`/ms-project/${editId}`, payload)
       } else {
@@ -105,10 +111,15 @@ export default function PlanModal({ open, editId, onClose, onSaved }: PlanModalP
             fullWidth
             label="Nome"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value)
+              setFieldErrors((prev) => ({ ...prev, name: '' }))
+            }}
             margin="normal"
             required
             autoFocus
+            error={!!fieldErrors.name}
+            helperText={fieldErrors.name}
           />
           <TextField
             fullWidth
@@ -132,23 +143,10 @@ export default function PlanModal({ open, editId, onClose, onSaved }: PlanModalP
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormLabel sx={{ display: 'block', mb: 1, mt: 2 }}>Dias úteis</FormLabel>
-              <Stack direction="row" flexWrap="wrap" useFlexGap>
-                {weekdayOptions.map((option) => (
-                  <FormControlLabel
-                    key={option.value}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={workingDays.includes(option.value)}
-                        onChange={() => toggleDay(option.value)}
-                      />
-                    }
-                    label={option.label}
-                    sx={{ mr: 0.5, minWidth: 90 }}
-                  />
-                ))}
-              </Stack>
+              <WeekdayPicker selected={workingDays} onToggle={toggleDay} />
+              {fieldErrors.workingDays && (
+                <Alert severity="error" sx={{ mt: 1 }}>{fieldErrors.workingDays}</Alert>
+              )}
             </Grid>
           </Grid>
         </DialogContent>

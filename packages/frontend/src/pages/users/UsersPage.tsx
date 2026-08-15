@@ -1,51 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  Stack,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from '@mui/material'
-import { Edit, Delete, PersonAdd } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
-import { roleLabels } from '../settings/roleModules'
-import UserModal from './UserModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import { User, SortBy, SortOrder, ViewMode } from './usersTypes'
+import { downloadUsersExcel } from './userExport'
+import UserModal from './UserModal'
+import UsersToolbar from '../../components/users/UsersToolbar'
+import UsersFilters from '../../components/users/UsersFilters'
+import UsersTable from '../../components/users/UsersTable'
+import UsersCards from '../../components/users/UsersCards'
+import DeleteUserDialog from '../../components/users/DeleteUserDialog'
 
-interface User {
+interface DeleteTarget {
   id: number
   name: string
-  lastName: string | null
-  email: string
-  phone: string | null
-  status: string
-  role?: string
-  companyId?: number | null
-  companyName?: string | null
-  createdAt: string
 }
-
-type SortBy = 'id' | 'name' | 'lastName' | 'email' | 'phone' | 'status' | 'createdAt'
-type SortOrder = 'ASC' | 'DESC'
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth()
@@ -57,29 +28,20 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState<SortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
-
       const res = await api.get('/users', { params })
-      if (Array.isArray(res.data)) {
-        setUsers(res.data)
-        setTotal(res.data.length)
-      } else {
-        setUsers(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<User>(res.data)
+      setUsers(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -122,107 +84,54 @@ export default function UsersPage() {
     setPage(0)
   }
 
-  const columns: { id: SortBy; label: string }[] = [
-    { id: 'name', label: 'Nome' },
-    { id: 'lastName', label: 'Sobrenome' },
-    { id: 'email', label: 'Email' },
-    { id: 'phone', label: 'Telefone' },
-    { id: 'status', label: 'Status' },
-    { id: 'createdAt', label: 'Criado em' },
-  ]
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(0)
+  }
+
+  const handleExport = async () => {
+    try {
+      const params: any = { page: 1, limit: 10000, sortBy, sortOrder }
+      if (search) params.search = search
+      const res = await api.get('/users', { params })
+      downloadUsersExcel(normalizeList<User>(res.data).data)
+      showToast('Lista de usuários exportada com sucesso.')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')
+    }
+  }
+
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (u: User) => setModal({ open: true, editId: u.id })
+  const requestDelete = (u: User) => setDeleteTarget({ id: u.id, name: u.name })
+  const isSelf = (u: User) => currentUser != null && String(currentUser.id) === String(u.id)
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Usuários</Typography>
-        <Button variant="contained" startIcon={<PersonAdd />} onClick={() => setModal({ open: true, editId: null })}>
-          Novo Usuário
-        </Button>
-      </Box>
+      <UsersToolbar onExport={handleExport} onNew={openCreate} />
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
-      </Stack>
+      <UsersFilters
+        search={search}
+        viewMode={viewMode}
+        onSearchChange={handleSearchChange}
+        onViewModeChange={setViewMode}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  <TableSortLabel
-                    active={sortBy === col.id}
-                    direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                    onClick={() => handleSort(col.id)}
-                  >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell>Perfil</TableCell>
-              <TableCell>Empresa</TableCell>
-              <TableCell align="center">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.id} hover>
-                <TableCell>{u.name}</TableCell>
-                <TableCell>{u.lastName || '-'}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.phone || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={u.status === 'active' ? 'Ativo' : 'Inativo'}
-                    color={u.status === 'active' ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{new Date(u.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={u.role ? (roleLabels[u.role] || u.role) : '-'}
-                    color={u.role === 'master' ? 'primary' : 'default'}
-                  />
-                </TableCell>
-                <TableCell>{u.role === 'master' ? '-' : (u.companyName || '-')}</TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                    <IconButton onClick={() => setModal({ open: true, editId: u.id })}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
-                      disabled={currentUser != null && String(currentUser.id) === String(u.id)}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-            {users.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} align="center">
-                  Nenhum usuário encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {viewMode === 'table' ? (
+        <UsersTable
+          users={users}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+          onEdit={openEdit}
+          onDelete={requestDelete}
+          isSelf={isSelf}
+        />
+      ) : (
+        <UsersCards users={users} onEdit={openEdit} onDelete={requestDelete} isSelf={isSelf} />
+      )}
 
       <TablePagination
         component="div"
@@ -242,23 +151,12 @@ export default function UsersPage() {
         onSaved={() => fetchData()}
       />
 
-      <Dialog
-        open={!!deleteTarget}
-        onClose={() => { if (!deleting) setDeleteTarget(null) }}
-      >
-        <DialogTitle>Excluir Usuário</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir o usuário <strong>{deleteTarget?.name}</strong>? Esta ação não pode ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancelar</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
-            {deleting ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteUserDialog
+        user={deleteTarget}
+        deleting={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </Container>
   )
 }

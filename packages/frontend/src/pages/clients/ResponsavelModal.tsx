@@ -13,17 +13,10 @@ import {
 } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { getFieldErrors } from '../../schemas/authSchemas'
 import { formatPhone } from '../../utils/phone'
-
-export interface Responsavel {
-  id: number
-  clientId: number
-  nome: string
-  sobrenome: string
-  email: string | null
-  telefone: string | null
-  funcao: string | null
-}
+import type { Responsavel } from './clientsTypes'
+import { responsavelSchema } from './clientSchemas'
 
 interface ResponsavelModalProps {
   open: boolean
@@ -33,35 +26,63 @@ interface ResponsavelModalProps {
   onSaved: () => void
 }
 
+interface ResponsavelFormState {
+  nome: string
+  sobrenome: string
+  email: string
+  telefone: string
+  funcao: string
+}
+
+const initialForm: ResponsavelFormState = {
+  nome: '',
+  sobrenome: '',
+  email: '',
+  telefone: '',
+  funcao: '',
+}
+
 export default function ResponsavelModal({ open, clientId, editData, onClose, onSaved }: ResponsavelModalProps) {
   const isEdit = Boolean(editData)
   const { showToast } = useToast()
-
-  const [nome, setNome] = useState('')
-  const [sobrenome, setSobrenome] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [funcao, setFuncao] = useState('')
+  const [form, setForm] = useState<ResponsavelFormState>(initialForm)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setNome(editData?.nome || '')
-      setSobrenome(editData?.sobrenome || '')
-      setEmail(editData?.email || '')
-      setTelefone(editData?.telefone ? formatPhone(editData.telefone) : '')
-      setFuncao(editData?.funcao || '')
+      setForm({
+        nome: editData?.nome || '',
+        sobrenome: editData?.sobrenome || '',
+        email: editData?.email || '',
+        telefone: editData?.telefone ? formatPhone(editData.telefone) : '',
+        funcao: editData?.funcao || '',
+      })
+      setError('')
+      setFieldErrors({})
     }
   }, [open, editData])
+
+  const handleChange = (key: keyof ResponsavelFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
+
+    const result = responsavelSchema.safeParse(form)
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
+    }
+
+    const payload = { ...form }
+
     setLoading(true)
-
-    const payload: any = { nome, sobrenome, email, telefone, funcao }
-
     try {
       if (isEdit) {
         await api.patch(`/clients/responsaveis/${editData?.id}`, payload)
@@ -72,8 +93,9 @@ export default function ResponsavelModal({ open, clientId, editData, onClose, on
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
+      const msg = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
+      setError(msg)
+      showToast(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -82,11 +104,8 @@ export default function ResponsavelModal({ open, clientId, editData, onClose, on
   const handleClose = () => {
     if (loading) return
     setError('')
-    setNome('')
-    setSobrenome('')
-    setEmail('')
-    setTelefone('')
-    setFuncao('')
+    setFieldErrors({})
+    setForm(initialForm)
     onClose()
   }
 
@@ -98,27 +117,45 @@ export default function ResponsavelModal({ open, clientId, editData, onClose, on
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} margin="normal" required />
+              <TextField
+                fullWidth
+                label="Nome"
+                value={form.nome}
+                onChange={(e) => handleChange('nome', e.target.value)}
+                margin="normal"
+                required
+                error={!!fieldErrors.nome}
+                helperText={fieldErrors.nome}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Sobrenome" value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} margin="normal" required />
+              <TextField
+                fullWidth
+                label="Sobrenome"
+                value={form.sobrenome}
+                onChange={(e) => handleChange('sobrenome', e.target.value)}
+                margin="normal"
+                required
+                error={!!fieldErrors.sobrenome}
+                helperText={fieldErrors.sobrenome}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Email" type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Telefone"
-                value={telefone}
-                onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                value={form.telefone}
+                onChange={(e) => handleChange('telefone', formatPhone(e.target.value))}
                 margin="normal"
                 placeholder="(00) 00000-0000"
                 inputProps={{ maxLength: 15 }}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField fullWidth label="Função" value={funcao} onChange={(e) => setFuncao(e.target.value)} margin="normal" placeholder="Ex.: Diretor de TI" />
+              <TextField fullWidth label="Função" value={form.funcao} onChange={(e) => handleChange('funcao', e.target.value)} margin="normal" placeholder="Ex.: Diretor de TI" />
             </Grid>
           </Grid>
         </DialogContent>

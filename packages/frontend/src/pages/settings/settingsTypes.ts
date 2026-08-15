@@ -1,16 +1,21 @@
 export interface Settings {
-  companyName: string
-  companyCnpj: string
-  companyEmail: string
-  companyPhone: string
-  companyAddress: string
   timezone: string
   language: string
   currency: string
 }
 
+export interface CompanyForm {
+  nome: string
+  cnpj: string
+  telefone: string
+  email: string
+  endereco: string
+  cidade: string
+  uf: string
+}
+
 export interface SettingsField {
-  key: keyof Settings
+  key: string
   label: string
   type?: 'text' | 'email' | 'textarea' | 'select'
   options?: { value: string; label: string }[]
@@ -40,11 +45,6 @@ export const currencyOptions = [
 ]
 
 export const settingsFields: SettingsField[] = [
-  { key: 'companyName', label: 'Nome da empresa', type: 'text', fullWidth: true },
-  { key: 'companyCnpj', label: 'CNPJ', type: 'text' },
-  { key: 'companyPhone', label: 'Telefone', type: 'text' },
-  { key: 'companyEmail', label: 'E-mail de contato', type: 'email' },
-  { key: 'companyAddress', label: 'Endereço', type: 'textarea', fullWidth: true },
   {
     key: 'timezone',
     label: 'Fuso horário',
@@ -65,13 +65,28 @@ export const settingsFields: SettingsField[] = [
   },
 ]
 
+export const companyFields: SettingsField[] = [
+  { key: 'nome', label: 'Nome da empresa', type: 'text', fullWidth: true },
+  { key: 'cnpj', label: 'CNPJ', type: 'text' },
+  { key: 'telefone', label: 'Telefone', type: 'text' },
+  { key: 'email', label: 'E-mail de contato', type: 'email' },
+  { key: 'endereco', label: 'Endereço', type: 'textarea', fullWidth: true },
+  { key: 'cidade', label: 'Cidade', type: 'text' },
+  { key: 'uf', label: 'UF', type: 'text' },
+]
+
 export const emptySettings: Settings = {
-  companyName: '',
-  companyCnpj: '',
-  companyEmail: '',
-  companyPhone: '',
-  companyAddress: '',
   timezone: 'America/Sao_Paulo',
   language: 'pt-BR',
   currency: 'BRL',
+}
+
+export const emptyCompany: CompanyForm = {
+  nome: '',
+  cnpj: '',
+  telefone: '',
+  email: '',
+  endereco: '',
+  cidade: '',
+  uf: '',
 }

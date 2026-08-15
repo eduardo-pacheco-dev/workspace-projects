@@ -14,6 +14,11 @@ export class SettingsController {
     return this.settingsService.findAll();
   }
 
+  @Get('my-modules')
+  myModules(@Request() req: any) {
+    return this.settingsService.getRoleModules(req.user?.role ?? 'user');
+  }
+
   @Put()
   async update(
     @Request() req: any,

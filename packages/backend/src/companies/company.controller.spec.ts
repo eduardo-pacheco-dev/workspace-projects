@@ -60,6 +60,7 @@ describe('CompanyController (integration)', () => {
   });
 
   let companyId: number;
+  let meCompanyId: number;
 
   describe('POST /companies', () => {
     it('should create a company with ativa default true', async () => {
@@ -164,6 +165,56 @@ describe('CompanyController (integration)', () => {
         .expect(403);
       await request(app.getHttpServer()).patch(`/companies/${companyId}`).send({ ativa: false }).expect(403);
       await request(app.getHttpServer()).delete(`/companies/${companyId}`).expect(403);
+    });
+  });
+
+  describe('GET /companies/me', () => {
+    it('should return the current user company', async () => {
+      currentUser = { id: 1, email: 'admin@admin.com', name: 'Admin', role: 'master', companyId: null };
+      const created = await request(app.getHttpServer())
+        .post('/companies')
+        .send({ nome: 'Empresa do Usuário', cnpj: '11.222.333/0001-44' })
+        .expect(201);
+      meCompanyId = created.body.id;
+
+      currentUser = { id: 3, email: 'admin@empresa.com', name: 'Admin Empresa', role: 'admin', companyId: meCompanyId };
+      const res = await request(app.getHttpServer()).get('/companies/me').expect(200);
+      expect(res.body.id).toBe(meCompanyId);
+      expect(res.body.nome).toBe('Empresa do Usuário');
+    });
+
+    it('should return null when the user has no company', async () => {
+      currentUser = { id: 1, email: 'admin@admin.com', name: 'Admin', role: 'master', companyId: null };
+      const res = await request(app.getHttpServer()).get('/companies/me').expect(200);
+      expect(res.body).toEqual({});
+    });
+  });
+
+  describe('PATCH /companies/me', () => {
+    it('should update the current user company for an admin', async () => {
+      currentUser = { id: 3, email: 'admin@empresa.com', name: 'Admin Empresa', role: 'admin', companyId: meCompanyId };
+      const res = await request(app.getHttpServer())
+        .patch('/companies/me')
+        .send({ cidade: 'Campinas', telefone: '(19) 99999-0000' })
+        .expect(200);
+      expect(res.body.cidade).toBe('Campinas');
+      expect(res.body.telefone).toBe('(19) 99999-0000');
+    });
+
+    it('should return 403 for a non-admin role', async () => {
+      currentUser = { id: 4, email: 'user@empresa.com', name: 'User', role: 'user', companyId: meCompanyId };
+      await request(app.getHttpServer())
+        .patch('/companies/me')
+        .send({ cidade: 'X' })
+        .expect(403);
+    });
+
+    it('should return 404 when the user has no company', async () => {
+      currentUser = { id: 1, email: 'admin@admin.com', name: 'Admin', role: 'master', companyId: null };
+      await request(app.getHttpServer())
+        .patch('/companies/me')
+        .send({ cidade: 'X' })
+        .expect(404);
     });
   });
 });

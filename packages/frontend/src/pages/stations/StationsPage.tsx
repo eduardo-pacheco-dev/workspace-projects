@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import StationModal from './StationModal'
 import ImportStationsModal from './ImportStationsModal'
 import StationsMapTab from './StationsMapTab'
@@ -170,10 +170,10 @@ export default function StationsPage() {
             onSaved={() => fetchData()}
           />
 
-          <ConfirmDialog
+          <DeleteModal
             open={Boolean(stationToDelete)}
             title="Excluir estação"
-            message={`Tem certeza que deseja excluir a estação "${stationToDelete?.siteId}"?`}
+            message={`Tem certeza que deseja excluir a estação "${stationToDelete?.siteId}"? Esta ação não poderá ser desfeita.`}
             onClose={() => setStationToDelete(null)}
             onConfirm={() => stationToDelete && handleDelete(stationToDelete.id)}
           />

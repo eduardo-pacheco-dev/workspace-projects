@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
@@ -18,45 +18,59 @@ interface AuthContextType {
   logout: () => void
 }
 
+const USER_KEY = 'user'
+const TOKEN_KEY = 'token'
+
+function readStoredUser(): User | null {
+  try {
+    const stored = localStorage.getItem(USER_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+function persistSession(token: string, user: User): void {
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
+function clearSession(): void {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user')
-    return stored ? JSON.parse(stored) : null
-  })
+  const [user, setUser] = useState<User | null>(readStoredUser)
   const navigate = useNavigate()
 
   useEffect(() => {
-    const stored = localStorage.getItem('user')
-    if (!stored) return
-    const parsed = JSON.parse(stored)
-    if (parsed?.id) {
-      api
-        .get(`/users/${parsed.id}`)
-        .then((res) => {
-          setUser(res.data)
-          localStorage.setItem('user', JSON.stringify(res.data))
-        })
-        .catch(() => {})
-    }
+    const stored = readStoredUser()
+    if (!stored?.id) return
+    api
+      .get(`/users/${stored.id}`)
+      .then((res) => {
+        setUser(res.data)
+        localStorage.setItem(USER_KEY, JSON.stringify(res.data))
+      })
+      .catch(() => {})
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password })
     const { access_token, user: userData } = response.data
-    localStorage.setItem('token', access_token)
-    localStorage.setItem('user', JSON.stringify(userData))
+    persistSession(access_token, userData)
     setUser(userData)
     navigate('/')
-  }
+  }, [navigate])
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const logout = useCallback(() => {
+    clearSession()
     setUser(null)
     navigate('/signin')
-  }
+  }, [navigate])
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>

@@ -47,7 +47,16 @@ export default function AuthLayout({ headline, headlineSubtitle, icon, title, su
 
       <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 3, sm: 6 } }}>
         <Box sx={{ width: '100%', maxWidth: 420 }}>
-          <Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 3 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 4, sm: 5 },
+              borderRadius: 4,
+              border: '1px solid rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+              bgcolor: 'background.paper',
+            }}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
               {icon && (
                 <Avatar sx={{ bgcolor: 'primary.main', width: 52, height: 52, mb: 2 }}>{icon}</Avatar>

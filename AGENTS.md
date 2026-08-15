@@ -95,6 +95,13 @@ Registrar o módulo em `app.module.ts` (import + `imports` array). DTOs usam **c
 - Confirmação: `ConfirmDialog` (`open`, `title`, `message`, `onConfirm`, `onClose`) em vez de `confirm()`.
 - Tipos/opções por módulo em arquivo `<modulo>Types.ts` (interface + `XOptions`/`XLabels`/`XColors`).
 
+### Estado global (Zustand)
+
+- Usar **Zustand** (`zustand`) para estado global compartilhado; evitar prop drilling de contexto de app.
+- Stores em `stores/<modulo>.ts`, criados com `create()`. Seletores usam `useStore((s) => s.campo)` (evitar retornar o store inteiro para não causar re-renders).
+- Ações sempre atualizam estado de forma imutável (ex.: `set((s) => ({ itens: [...s.itens, novo] }))`).
+- Para estado apenas local de página/modal, continuar usando `useState`/`useEffect` — Zustand é para estado compartilhado entre componentes.
+
 ### Rotas e navegação
 
 - Rotas em `App.tsx`; página protegida dentro de `<Route element={<ProtectedLayout />}>`; adicionar prefixo em `USER_MODULES` para não-master.

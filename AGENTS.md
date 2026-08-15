@@ -99,7 +99,11 @@ Registrar o módulo em `app.module.ts` (import + `imports` array). DTOs usam **c
 
 - Usar **Zustand** (`zustand`) para estado global compartilhado; evitar prop drilling de contexto de app.
 - Stores em `stores/<modulo>.ts`, criados com `create()`. Seletores usam `useStore((s) => s.campo)` (evitar retornar o store inteiro para não causar re-renders).
+- Para expor múltiplos campos/actions de um store, usar `useShallow` (de `zustand/react/shallow`).
 - Ações sempre atualizam estado de forma imutável (ex.: `set((s) => ({ itens: [...s.itens, novo] }))`).
+- **Ações devem ser puras** (sem navegação/roteamento); a navegação fica nos componentes que chamam a ação.
+- O app já migrou dos `Context` para stores: `authStore`, `toastStore` e `projectStore`. Os arquivos `contexts/*.tsx` mantêm hooks `useAuth`/`useToast`/`useProject` que delegam aos stores (não criar novos `Context`/`Provider`).
+- O `<Toaster />` é renderizado uma vez em `App.tsx` (subscreve o `toastStore` e exibe o Snackbar); não usar `ToastProvider`.
 - Para estado apenas local de página/modal, continuar usando `useState`/`useEffect` — Zustand é para estado compartilhado entre componentes.
 
 ### Rotas e navegação

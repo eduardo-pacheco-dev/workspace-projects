@@ -31,6 +31,7 @@ export default function UserMenu() {
   const goLogout = () => {
     close()
     logout()
+    navigate('/signin')
   }
 
   return (

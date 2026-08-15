@@ -127,6 +127,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     handleUserMenuClose()
     logout()
+    navigate('/signin')
   }
 
   const initials = user?.name

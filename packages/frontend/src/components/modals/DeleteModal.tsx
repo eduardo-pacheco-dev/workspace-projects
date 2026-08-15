@@ -1,5 +1,6 @@
-import { Box, Button, Dialog, DialogActions, Typography } from '@mui/material'
+import { Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
+import Button from '../ui/Button'
 
 interface DeleteModalProps {
   open: boolean
@@ -31,36 +32,40 @@ export default function DeleteModal({
       maxWidth="xs"
       fullWidth
     >
-      <Box sx={{ p: 3, pb: 1, textAlign: 'center' }}>
+      <Box sx={{ px: 3, pt: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box
           sx={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            bgcolor: 'rgba(211, 47, 47, 0.1)',
+            width: 44,
+            height: 44,
+            borderRadius: 1.5,
+            bgcolor: 'rgba(211, 47, 47, 0.12)',
             color: 'error.main',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            mx: 'auto',
-            mb: 2,
+            flexShrink: 0,
           }}
         >
-          <DeleteForeverIcon sx={{ fontSize: 36 }} />
+          <DeleteForeverIcon />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-          {title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {message}
-        </Typography>
+        <DialogTitle sx={{ p: 0, fontWeight: 700 }}>{title}</DialogTitle>
       </Box>
-      <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center', gap: 1 }}>
+      <DialogContent sx={{ pt: 2 }}>
+        <DialogContentText>{message}</DialogContentText>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" onClick={onClose} disabled={deleting}>
           Cancelar
         </Button>
         <Button variant="contained" color="error" onClick={onConfirm} disabled={deleting}>
-          {deleting ? deletingLabel : confirmLabel}
+          {deleting ? (
+            <>
+              <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+              {deletingLabel}
+            </>
+          ) : (
+            confirmLabel
+          )}
         </Button>
       </DialogActions>
     </Dialog>

@@ -4,7 +4,7 @@ import { Task, statusLabels, priorityLabels, formatDateTime } from '../../pages/
 import Markdown from '../Markdown'
 import TaskStatusChip from './TaskStatusChip'
 import TaskPriorityChip from './TaskPriorityChip'
-import InfoItem from './InfoItem'
+import InfoItem from '../InfoItem'
 
 interface TaskSummaryCardProps {
   task: Task

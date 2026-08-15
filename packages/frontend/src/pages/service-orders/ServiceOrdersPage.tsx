@@ -1,75 +1,32 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  MenuItem,
-  Stack,
-  Chip,
-} from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ServiceOrderModal from './ServiceOrderModal'
-
-interface ServiceOrder {
-  id: number
-  numero: string
-  cliente: string
-  descricao: string | null
-  siteId: string | null
-  endId: string | null
-  operadora: string | null
-  dataInicio: string | null
-  dataFim: string | null
-  status: string
-  observacoes: string | null
-}
-
-type SortBy = 'id' | 'numero' | 'cliente' | 'dataInicio' | 'status' | 'siteId' | 'operadora'
-type SortOrder = 'ASC' | 'DESC'
-
-const statusColors: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
-  aberta: 'info',
-  em_andamento: 'warning',
-  concluida: 'success',
-  cancelada: 'error',
-}
-
-const statusLabels: Record<string, string> = {
-  aberta: 'Aberta',
-  em_andamento: 'Em andamento',
-  concluida: 'Concluída',
-  cancelada: 'Cancelada',
-}
+import ServiceOrdersToolbar from '../../components/service-orders/ServiceOrdersToolbar'
+import ServiceOrdersFilters from '../../components/service-orders/ServiceOrdersFilters'
+import ServiceOrdersTable from '../../components/service-orders/ServiceOrdersTable'
+import { ServiceOrder, ServiceOrderSortBy, SortOrder } from './serviceOrdersTypes'
 
 export default function ServiceOrdersPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const editParam = searchParams.get('edit')
+  const { showToast } = useToast()
   const [orders, setOrders] = useState<ServiceOrder[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortBy, setSortBy] = useState<SortBy>('id')
+  const [sortBy, setSortBy] = useState<ServiceOrderSortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
+  const [toDelete, setToDelete] = useState<ServiceOrder | null>(null)
 
   useEffect(() => {
     if (editParam) {
@@ -80,23 +37,14 @@ export default function ServiceOrdersPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {
-        page: page + 1,
-        limit: rowsPerPage,
-        sortBy,
-        sortOrder,
-      }
+      const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       if (statusFilter) params.status = statusFilter
 
       const res = await api.get('/service-orders', { params })
-      if (Array.isArray(res.data)) {
-        setOrders(res.data)
-        setTotal(res.data.length)
-      } else {
-        setOrders(res.data.data ?? [])
-        setTotal(res.data.total ?? 0)
-      }
+      const { data, total: fetchedTotal } = normalizeList<ServiceOrder>(res.data)
+      setOrders(data)
+      setTotal(fetchedTotal)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a lista.')
     }
@@ -106,7 +54,7 @@ export default function ServiceOrdersPage() {
     fetchData()
   }, [fetchData])
 
-  const handleSort = (col: SortBy) => {
+  const handleSort = (col: ServiceOrderSortBy) => {
     if (sortBy === col) {
       setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))
     } else {
@@ -116,12 +64,16 @@ export default function ServiceOrdersPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta ordem de serviço?')) return
     try {
       await api.delete(`/service-orders/${id}`)
       fetchData()
+      showToast('Ordem de serviço excluída com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
@@ -134,114 +86,36 @@ export default function ServiceOrdersPage() {
     setPage(0)
   }
 
-  const columns: { id: SortBy | 'descricao'; label: string; sortable?: boolean }[] = [
-    { id: 'numero', label: 'Número' },
-    { id: 'cliente', label: 'Cliente' },
-    { id: 'descricao', label: 'Descrição', sortable: false },
-    { id: 'siteId', label: 'Site ID' },
-    { id: 'operadora', label: 'Operadora' },
-    { id: 'dataInicio', label: 'Data de Início' },
-    { id: 'status', label: 'Status' },
-  ]
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
+  }
+
+  const openCreate = () => setModal({ open: true, editId: null })
+  const openEdit = (order: ServiceOrder) => setModal({ open: true, editId: order.id })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Ordens de Serviço</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null })}>
-          Nova Ordem de Serviço
-        </Button>
-      </Box>
+      <ServiceOrdersToolbar onNew={openCreate} />
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="aberta">Aberta</MenuItem>
-          <MenuItem value="em_andamento">Em andamento</MenuItem>
-          <MenuItem value="concluida">Concluída</MenuItem>
-          <MenuItem value="cancelada">Cancelada</MenuItem>
-        </TextField>
-      </Stack>
+      <ServiceOrdersFilters
+        search={search}
+        status={statusFilter}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.id}>
-                  {col.sortable === false ? (
-                    col.label
-                  ) : (
-                    <TableSortLabel
-                      active={sortBy === col.id}
-                      direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                      onClick={() => handleSort(col.id as SortBy)}
-                    >
-                      {col.label}
-                    </TableSortLabel>
-                  )}
-                </TableCell>
-              ))}
-              <TableCell align="right">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {orders.map((so) => (
-              <TableRow key={so.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/service-orders/${so.id}`)}>
-                <TableCell>{so.numero}</TableCell>
-                <TableCell>{so.cliente}</TableCell>
-                <TableCell>{so.descricao || '-'}</TableCell>
-                <TableCell>{so.siteId || '-'}</TableCell>
-                <TableCell>{so.operadora || '-'}</TableCell>
-                <TableCell>{so.dataInicio || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={statusLabels[so.status] || so.status}
-                    color={statusColors[so.status] || 'default'}
-                  />
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton onClick={(e) => { e.stopPropagation(); setModal({ open: true, editId: so.id }) }}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={(e) => { e.stopPropagation(); handleDelete(so.id) }}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {orders.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  Nenhuma ordem de serviço encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <ServiceOrdersTable
+        orders={orders}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        onOpen={(order) => navigate(`/service-orders/${order.id}`)}
+        onEdit={openEdit}
+        onDelete={setToDelete}
+      />
 
       <TablePagination
         component="div"
@@ -259,6 +133,14 @@ export default function ServiceOrdersPage() {
         editId={modal.editId}
         onClose={() => setModal({ open: false, editId: null })}
         onSaved={() => fetchData()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir ordem de serviço"
+        message={`Tem certeza que deseja excluir a ordem de serviço "${toDelete?.numero}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

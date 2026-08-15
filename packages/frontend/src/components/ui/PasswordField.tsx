@@ -1,4 +1,5 @@
 import { IconButton, InputAdornment } from '@mui/material'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import TextField from './TextField'
@@ -35,6 +36,11 @@ export default function PasswordField({
       error={Boolean(error)}
       helperText={error || helperText}
       InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <LockOutlinedIcon fontSize="small" />
+          </InputAdornment>
+        ),
         endAdornment: (
           <InputAdornment position="end">
             <IconButton onClick={onToggleShow} edge="end" size="small">

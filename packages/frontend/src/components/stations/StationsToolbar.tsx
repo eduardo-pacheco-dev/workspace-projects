@@ -1,5 +1,6 @@
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { Add, Upload } from '@mui/icons-material'
+import Button from '../ui/Button'
 
 interface StationsToolbarProps {
   total: number

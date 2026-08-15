@@ -1,5 +1,7 @@
-import { MenuItem, TextField } from '@mui/material'
 import { SettingsField } from '../../pages/settings/settingsTypes'
+import TextField from '../ui/TextField'
+import TextArea from '../ui/TextArea'
+import SelectField from '../ui/SelectField'
 
 interface SettingsFormFieldProps {
   field: SettingsField
@@ -10,29 +12,24 @@ interface SettingsFormFieldProps {
 
 export default function SettingsFormField({ field, value, onChange, disabled }: SettingsFormFieldProps) {
   const common = {
-    fullWidth: true,
-    size: 'small' as const,
     label: field.label,
     value,
     disabled,
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
   }
 
   if (field.type === 'select') {
-    return (
-      <TextField select {...common}>
-        {field.options?.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ))}
-      </TextField>
-    )
+    return <SelectField {...common} options={field.options ?? []} onChange={onChange} />
   }
 
   if (field.type === 'textarea') {
-    return <TextField multiline rows={2} {...common} />
+    return <TextArea {...common} minRows={2} onChange={(e) => onChange(e.target.value)} />
   }
 
-  return <TextField type={field.type === 'email' ? 'email' : 'text'} {...common} />
+  return (
+    <TextField
+      {...common}
+      type={field.type === 'email' ? 'email' : 'text'}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  )
 }

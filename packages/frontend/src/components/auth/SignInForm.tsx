@@ -1,11 +1,12 @@
 import { useState, FormEvent } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Link } from '@mui/material'
+import { Alert, Box, Checkbox, FormControlLabel, Link } from '@mui/material'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import { useAuth } from '../../contexts/AuthContext'
 import { signInSchema, getFieldErrors } from '../../schemas/authSchemas'
 import AuthTextField from './AuthTextField'
 import PasswordField from '../ui/PasswordField'
+import SubmitButton from '../ui/SubmitButton'
 
 export default function SignInForm() {
   const [email, setEmail] = useState('')
@@ -80,9 +81,9 @@ export default function SignInForm() {
         </Link>
       </Box>
 
-      <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ mt: 2, py: 1.4, borderRadius: 2, textTransform: 'none', fontSize: 16 }}>
-        {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
-      </Button>
+      <SubmitButton fullWidth variant="contained" loading={loading} sx={{ mt: 2, py: 1.4, fontSize: 16 }}>
+        Entrar
+      </SubmitButton>
     </Box>
   )
 }

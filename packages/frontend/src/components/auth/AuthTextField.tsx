@@ -1,4 +1,5 @@
-import { InputAdornment, TextField } from '@mui/material'
+import { InputAdornment } from '@mui/material'
+import TextField from '../ui/TextField'
 
 interface AuthTextFieldProps {
   icon: React.ReactNode
@@ -25,7 +26,6 @@ export default function AuthTextField({
 }: AuthTextFieldProps) {
   return (
     <TextField
-      fullWidth
       label={label}
       type={type}
       value={value}

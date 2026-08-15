@@ -15,28 +15,12 @@ import {
   Tooltip,
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
-import { z } from 'zod'
 import api from '../../services/api'
-import {
-  ScheduleEvent,
-  statusOptions,
-  splitDateTime,
-  joinDateTime,
-  toDateString,
-} from './scheduleTypes'
-
-const baseSchema = z.object({
-  title: z.string().min(1, 'Informe o título.'),
-  description: z.string().optional(),
-  startAt: z.string().optional(),
-  endAt: z.string().optional(),
-  location: z.string().optional(),
-  client: z.string().optional(),
-  assignedTo: z.string().optional(),
-})
-
-const createSchema = baseSchema
-const editSchema = baseSchema.partial()
+import { getFieldErrors } from '../../schemas/authSchemas'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import DateTimeField from '../../components/schedule/DateTimeField'
+import { ScheduleEvent, statusOptions, splitDateTime, joinDateTime, toDateString } from './scheduleTypes'
+import { createScheduleSchema, updateScheduleSchema } from './scheduleSchemas'
 
 interface ScheduleModalProps {
   open: boolean
@@ -63,6 +47,7 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (open && editId) {
@@ -105,11 +90,7 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
     setDeleting(false)
   }
 
-  const getFieldErrors = (error: z.ZodError) =>
-    Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
-
-  const clearFieldError = (field: string) =>
-    setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+  const clearFieldError = (field: string) => setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -119,7 +100,7 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
     const startAt = joinDateTime(startDate, startTime)
     const endAt = joinDateTime(endDate, endTime)
 
-    const payload = {
+    const payload: any = {
       title,
       description,
       startAt: startAt || undefined,
@@ -128,15 +109,14 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
       client,
       assignedTo,
     }
+    if (isEdit) payload.status = status
 
-    const schema = isEdit ? editSchema : createSchema
+    const schema = isEdit ? updateScheduleSchema : createScheduleSchema
     const result = schema.safeParse(payload)
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error))
       return
     }
-
-    if (isEdit) (payload as any).status = status
 
     setLoading(true)
     try {
@@ -157,7 +137,6 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
 
   const handleDelete = async () => {
     if (!editId) return
-    if (!confirm('Tem certeza que deseja excluir este agendamento?')) return
     setDeleting(true)
     try {
       await api.delete(`/schedule/${editId}`)
@@ -211,64 +190,24 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
             error={!!fieldErrors.description}
             helperText={fieldErrors.description}
           />
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Data de Início"
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value)
-                  clearFieldError('startAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Hora de Início"
-                type="time"
-                value={startTime}
-                onChange={(e) => {
-                  setStartTime(e.target.value)
-                  clearFieldError('startAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Data de Fim"
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value)
-                  clearFieldError('endAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Hora de Fim"
-                type="time"
-                value={endTime}
-                onChange={(e) => {
-                  setEndTime(e.target.value)
-                  clearFieldError('endAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
+          <DateTimeField
+            date={startDate}
+            time={startTime}
+            dateLabel="Data de Início"
+            timeLabel="Hora de Início"
+            onDateChange={setStartDate}
+            onTimeChange={setStartTime}
+            onClearError={() => clearFieldError('startAt')}
+          />
+          <DateTimeField
+            date={endDate}
+            time={endTime}
+            dateLabel="Data de Fim"
+            timeLabel="Hora de Fim"
+            onDateChange={setEndDate}
+            onTimeChange={setEndTime}
+            onClearError={() => clearFieldError('endAt')}
+          />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -329,7 +268,7 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (
             <Tooltip title="Excluir agendamento">
-              <IconButton color="error" onClick={handleDelete} disabled={loading || deleting} sx={{ mr: 'auto' }}>
+              <IconButton color="error" onClick={() => setConfirmDelete(true)} disabled={loading || deleting} sx={{ mr: 'auto' }}>
                 <Delete />
               </IconButton>
             </Tooltip>
@@ -340,6 +279,14 @@ export default function ScheduleModal({ open, editId, initialDate, onClose, onSa
           </Button>
         </DialogActions>
       </Box>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir agendamento"
+        message="Tem certeza que deseja excluir este agendamento?"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Dialog>
   )
 }

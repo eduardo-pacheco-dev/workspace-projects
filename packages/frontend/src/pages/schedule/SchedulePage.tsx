@@ -1,61 +1,34 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  Paper,
-  IconButton,
-  Alert,
-  Box,
-  TextField,
-  MenuItem,
-  Stack,
-  Chip,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material'
-import { Edit, Delete, Add, ViewList, CalendarMonth } from '@mui/icons-material'
+import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ScheduleModal from './ScheduleModal'
 import ScheduleCalendar from './ScheduleCalendar'
-import {
-  ScheduleEvent,
-  statusOptions,
-  statusLabels,
-  statusColors,
-  formatDateTime,
-  toDateString,
-  pad2,
-} from './scheduleTypes'
-
-type SortBy = 'id' | 'title' | 'startAt' | 'endAt' | 'status' | 'client' | 'location'
-type SortOrder = 'ASC' | 'DESC'
-type ViewMode = 'list' | 'calendar'
+import ScheduleToolbar, { ScheduleViewMode } from '../../components/schedule/ScheduleToolbar'
+import ScheduleFilters from '../../components/schedule/ScheduleFilters'
+import ScheduleTable from '../../components/schedule/ScheduleTable'
+import { ScheduleEvent, ScheduleSortBy, SortOrder, toDateString, pad2 } from './scheduleTypes'
 
 export default function SchedulePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const editParam = searchParams.get('edit')
+  const { showToast } = useToast()
 
-  const [view, setView] = useState<ViewMode>('list')
+  const [view, setView] = useState<ScheduleViewMode>('list')
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [sortBy, setSortBy] = useState<SortBy>('startAt')
+  const [sortBy, setSortBy] = useState<ScheduleSortBy>('startAt')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null, initialDate: null as string | null })
+  const [toDelete, setToDelete] = useState<ScheduleEvent | null>(null)
   const [month, setMonth] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -72,31 +45,25 @@ export default function SchedulePage() {
     setError('')
     try {
       if (view === 'calendar') {
-        const from = `${month.getFullYear()}-${pad2(month.getMonth() + 1)}-01`
-        const to = `${month.getFullYear()}-${pad2(month.getMonth() + 1)}-${pad2(new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate())}`
+        const year = month.getFullYear()
+        const monthIndex = month.getMonth()
+        const from = `${year}-${pad2(monthIndex + 1)}-01`
+        const to = `${year}-${pad2(monthIndex + 1)}-${pad2(new Date(year, monthIndex + 1, 0).getDate())}`
         const params: any = { from, to, limit: 1000, sortBy: 'startAt', sortOrder: 'ASC' }
         if (statusFilter) params.status = statusFilter
         const res = await api.get('/schedule', { params })
-        setEvents(Array.isArray(res.data) ? res.data : (res.data.data ?? []))
-        setTotal(Array.isArray(res.data) ? res.data.length : (res.data.total ?? 0))
+        const { data, total: fetchedTotal } = normalizeList<ScheduleEvent>(res.data)
+        setEvents(data)
+        setTotal(fetchedTotal)
       } else {
-        const params: any = {
-          page: page + 1,
-          limit: rowsPerPage,
-          sortBy,
-          sortOrder,
-        }
+        const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
         if (search) params.search = search
         if (statusFilter) params.status = statusFilter
 
         const res = await api.get('/schedule', { params })
-        if (Array.isArray(res.data)) {
-          setEvents(res.data)
-          setTotal(res.data.length)
-        } else {
-          setEvents(res.data.data ?? [])
-          setTotal(res.data.total ?? 0)
-        }
+        const { data, total: fetchedTotal } = normalizeList<ScheduleEvent>(res.data)
+        setEvents(data)
+        setTotal(fetchedTotal)
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Não foi possível carregar a agenda.')
@@ -107,10 +74,6 @@ export default function SchedulePage() {
     fetchEvents()
   }, [fetchEvents])
 
-  const handleChangeView = (_: React.MouseEvent<HTMLElement>, nextView: ViewMode | null) => {
-    if (nextView) setView(nextView)
-  }
-
   const handlePrevMonth = () => setMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
   const handleNextMonth = () => setMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
   const handleToday = () => {
@@ -118,7 +81,7 @@ export default function SchedulePage() {
     setMonth(new Date(now.getFullYear(), now.getMonth(), 1))
   }
 
-  const handleSort = (col: SortBy) => {
+  const handleSort = (col: ScheduleSortBy) => {
     if (sortBy === col) {
       setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))
     } else {
@@ -128,12 +91,16 @@ export default function SchedulePage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este agendamento?')) return
     try {
       await api.delete(`/schedule/${id}`)
       fetchEvents()
+      showToast('Agendamento excluído com sucesso.')
+      setToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível excluir. Tente novamente.')
+      const message = err.response?.data?.message || 'Não foi possível excluir. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
+      setToDelete(null)
     }
   }
 
@@ -146,76 +113,34 @@ export default function SchedulePage() {
     setPage(0)
   }
 
-  const columns: { id: SortBy | 'description'; label: string; sortable?: boolean }[] = [
-    { id: 'title', label: 'Título' },
-    { id: 'startAt', label: 'Início' },
-    { id: 'endAt', label: 'Fim' },
-    { id: 'client', label: 'Cliente' },
-    { id: 'location', label: 'Local' },
-    { id: 'assignedTo' as SortBy, label: 'Responsável' },
-    { id: 'status', label: 'Status' },
-  ]
+  const resetFilterAndPage = (setter: (value: string) => void) => (value: string) => {
+    setter(value)
+    setPage(0)
+  }
 
-  const isActive = (event: ScheduleEvent) =>
-    event.status !== 'completed' && event.status !== 'cancelled'
-
+  const isActive = (event: ScheduleEvent) => event.status !== 'completed' && event.status !== 'cancelled'
   const countUpcoming = events.filter((event) => isActive(event) && (!event.startAt || event.startAt >= toDateString(new Date()))).length
+
+  const openCreate = () => setModal({ open: true, editId: null, initialDate: null })
+  const openCreateOn = (date?: string) => setModal({ open: true, editId: null, initialDate: date ?? null })
+  const openEdit = (event: ScheduleEvent) => setModal({ open: true, editId: event.id, initialDate: null })
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box>
-          <Typography variant="h4">Agenda</Typography>
-          {view === 'list' && (
-            <Typography variant="body2" color="text.secondary">
-              {total} agendamento(s) · {countUpcoming} próximos
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <ToggleButtonGroup value={view} exclusive onChange={handleChangeView} size="small">
-            <ToggleButton value="list" aria-label="Lista">
-              <ViewList fontSize="small" sx={{ mr: 0.5 }} />
-              Lista
-            </ToggleButton>
-            <ToggleButton value="calendar" aria-label="Calendário">
-              <CalendarMonth fontSize="small" sx={{ mr: 0.5 }} />
-              Calendário
-            </ToggleButton>
-          </ToggleButtonGroup>
-          <Button variant="contained" startIcon={<Add />} onClick={() => setModal({ open: true, editId: null, initialDate: null })}>
-            Novo Agendamento
-          </Button>
-        </Box>
-      </Box>
+      <ScheduleToolbar
+        view={view}
+        total={total}
+        upcomingCount={countUpcoming}
+        onViewChange={setView}
+        onNew={openCreate}
+      />
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          label="Buscar"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(0)
-          }}
-        />
-        <TextField
-          size="small"
-          select
-          label="Status"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setPage(0)
-          }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          {statusOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+      <ScheduleFilters
+        search={search}
+        status={statusFilter}
+        onSearchChange={resetFilterAndPage(setSearch)}
+        onStatusChange={resetFilterAndPage(setStatusFilter)}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -226,69 +151,19 @@ export default function SchedulePage() {
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
           onToday={handleToday}
-          onCreateEvent={(date) => setModal({ open: true, editId: null, initialDate: date ?? null })}
+          onCreateEvent={openCreateOn}
           onEditEvent={(id) => setModal({ open: true, editId: id, initialDate: null })}
         />
       ) : (
         <>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {columns.map((col) => (
-                    <TableCell key={col.id}>
-                      {col.sortable === false ? (
-                        col.label
-                      ) : (
-                        <TableSortLabel
-                          active={sortBy === col.id}
-                          direction={sortBy === col.id ? sortOrder.toLowerCase() as 'asc' | 'desc' : 'asc'}
-                          onClick={() => handleSort(col.id as SortBy)}
-                        >
-                          {col.label}
-                        </TableSortLabel>
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow key={event.id} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{event.title}</TableCell>
-                    <TableCell>{formatDateTime(event.startAt)}</TableCell>
-                    <TableCell>{formatDateTime(event.endAt)}</TableCell>
-                    <TableCell>{event.client || '-'}</TableCell>
-                    <TableCell>{event.location || '-'}</TableCell>
-                    <TableCell>{event.assignedTo || '-'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={statusLabels[event.status] || event.status}
-                        color={statusColors[event.status] || 'default'}
-                      />
-                    </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                      <IconButton onClick={() => setModal({ open: true, editId: event.id, initialDate: null })}>
-                        <Edit />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(event.id)}>
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {events.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      Nenhum agendamento encontrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ScheduleTable
+            events={events}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            onEdit={openEdit}
+            onDelete={setToDelete}
+          />
 
           <TablePagination
             component="div"
@@ -309,6 +184,14 @@ export default function SchedulePage() {
         initialDate={modal.initialDate}
         onClose={() => setModal({ open: false, editId: null, initialDate: null })}
         onSaved={() => fetchEvents()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title="Excluir agendamento"
+        message={`Tem certeza que deseja excluir o agendamento "${toDelete?.title}"?`}
+        onClose={() => setToDelete(null)}
+        onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />
     </Container>
   )

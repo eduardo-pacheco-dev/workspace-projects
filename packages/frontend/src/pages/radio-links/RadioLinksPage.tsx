@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Container, TablePagination, Tabs, Tab } from '@mui/material'
+import { Alert, Container, TablePagination, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import { ListAlt, Map as MapIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import RadioLinkModal from './RadioLinkModal'
 import ImportRadioLinksModal from './ImportRadioLinksModal'
 import RadioLinksMapTab from './RadioLinksMapTab'
@@ -14,6 +14,13 @@ import RadioLinksFilters, { RadioLinkViewMode } from '../../components/radio-lin
 import RadioLinksTable from '../../components/radio-links/RadioLinksTable'
 import RadioLinksCards from '../../components/radio-links/RadioLinksCards'
 import { RadioLink, RadioLinkSortBy, SortOrder } from './radioLinksTypes'
+
+const VIEW_MODE_KEY = 'radioLinksViewMode'
+
+const getStoredViewMode = (): RadioLinkViewMode => {
+  const stored = localStorage.getItem(VIEW_MODE_KEY)
+  return stored === 'cards' ? 'cards' : 'table'
+}
 
 export default function RadioLinksPage() {
   const navigate = useNavigate()
@@ -32,7 +39,7 @@ export default function RadioLinksPage() {
   const [linkToDelete, setLinkToDelete] = useState<RadioLink | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [tab, setTab] = useState(0)
-  const [viewMode, setViewMode] = useState<RadioLinkViewMode>('table')
+  const [viewMode, setViewMode] = useState<RadioLinkViewMode>(getStoredViewMode)
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,9 +101,14 @@ export default function RadioLinksPage() {
   const openCreate = () => setModal({ open: true, editId: null })
   const openEdit = (link: RadioLink) => setModal({ open: true, editId: link.id })
 
+  const handleViewModeChange = (mode: RadioLinkViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
-      <RadioLinksToolbar onImport={() => setImportOpen(true)} onNew={openCreate} />
+      <RadioLinksToolbar total={total} onImport={() => setImportOpen(true)} onNew={openCreate} />
 
       <RadioLinksFilters
         search={search}
@@ -106,14 +118,26 @@ export default function RadioLinksPage() {
         onSearchChange={resetFilterAndPage(setSearch)}
         onStatusChange={resetFilterAndPage(setStatusFilter)}
         onOperadoraChange={resetFilterAndPage(setOperadoraFilter)}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
         showViewToggle={tab === 0}
       />
 
-      <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
-        <Tab icon={<ListAlt />} iconPosition="start" label="Lista" />
-        <Tab icon={<MapIcon />} iconPosition="start" label="Mapa" />
-      </Tabs>
+      <ToggleButtonGroup
+        value={tab}
+        exclusive
+        size="small"
+        onChange={(_, value) => value != null && setTab(value)}
+        sx={{ mb: 2 }}
+      >
+        <ToggleButton value={0} sx={{ textTransform: 'none', px: 2.5 }}>
+          <ListAlt fontSize="small" sx={{ mr: 0.75 }} />
+          Lista
+        </ToggleButton>
+        <ToggleButton value={1} sx={{ textTransform: 'none', px: 2.5 }}>
+          <MapIcon fontSize="small" sx={{ mr: 0.75 }} />
+          Mapa
+        </ToggleButton>
+      </ToggleButtonGroup>
 
       {tab === 1 ? (
         <RadioLinksMapTab search={search} status={statusFilter} operadora={operadoraFilter} />
@@ -164,10 +188,10 @@ export default function RadioLinksPage() {
             onImported={() => fetchData()}
           />
 
-          <ConfirmDialog
+          <DeleteModal
             open={Boolean(linkToDelete)}
             title="Excluir enlace de rádio"
-            message={`Tem certeza que deseja excluir o enlace "${linkToDelete?.nome}"?`}
+            message={`Tem certeza que deseja excluir o enlace "${linkToDelete?.nome}"? Esta ação não poderá ser desfeita.`}
             onClose={() => setLinkToDelete(null)}
             onConfirm={() => linkToDelete && handleDelete(linkToDelete.id)}
           />

@@ -20,7 +20,7 @@ import {
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { getFieldErrors } from '../../schemas/authSchemas'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { taskSchema } from './msProjectSchemas'
 import { MsTask, taskPriorityOptions, dependencyTypeOptions } from './msProjectTypes'
 

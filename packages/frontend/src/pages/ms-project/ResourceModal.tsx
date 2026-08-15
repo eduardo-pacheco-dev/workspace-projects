@@ -18,7 +18,7 @@ import {
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { getFieldErrors } from '../../schemas/authSchemas'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { resourceSchema } from './msProjectSchemas'
 import { MsResource, MsTask, resourceTypeOptions } from './msProjectTypes'
 

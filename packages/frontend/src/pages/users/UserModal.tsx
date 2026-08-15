@@ -22,7 +22,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { formatPhone } from '../../utils/phone'
 import { roleOptions, RoleType } from '../settings/roleModules'
 import { createUserSchema, updateUserSchema } from './userSchemas'
-import PasswordField from '../../components/users/PasswordField'
+import PasswordField from '../../components/ui/PasswordField'
 
 interface UserModalProps {
   open: boolean

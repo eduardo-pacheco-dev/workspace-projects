@@ -17,7 +17,7 @@ import {
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { getFieldErrors } from '../../schemas/authSchemas'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import DateTimeField from '../../components/schedule/DateTimeField'
 import { ScheduleEvent, statusOptions, splitDateTime, joinDateTime, toDateString } from './scheduleTypes'
 import { createScheduleSchema, updateScheduleSchema } from './scheduleSchemas'

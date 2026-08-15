@@ -3,7 +3,7 @@ import { Alert, Box, Button, Chip, Container, CircularProgress, Grid, IconButton
 import { ArrowBack, Edit } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import InfoItem from '../../components/InfoItem'
+import InfoItem from '../../components/ui/InfoItem'
 import JobStatusChip from '../../components/jobs/JobStatusChip'
 import JobAttachmentsSection from '../../components/jobs/JobAttachmentsSection'
 import JobCommentsSection from '../../components/jobs/JobCommentsSection'
@@ -78,7 +78,7 @@ export default function JobDetail() {
 
       <JobAttachmentsSection jobId={job.id} onError={setError} />
 
-      <JobCommentsSection jobId={job.id} onError={setError} />
+      <JobCommentsSection jobId={job.id} />
 
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Button variant="outlined" onClick={() => navigate('/collaborators?tab=3')}>

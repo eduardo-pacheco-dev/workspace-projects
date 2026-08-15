@@ -19,8 +19,8 @@ import {
 import { AttachFile, Delete, Download, PictureAsPdf, Visibility } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ConfirmDialog'
-import FilePreviewDialog from '../FilePreviewDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
+import FilePreviewDialog from '../ui/FilePreviewDialog'
 import { Attachment } from '../../pages/tasks/tasksTypes'
 import { formatSize } from '../../utils/format'
 

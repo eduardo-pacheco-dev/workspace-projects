@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { signInSchema, getFieldErrors } from '../../schemas/authSchemas'
 import AuthLayout from '../../components/auth/AuthLayout'
 import AuthTextField from '../../components/auth/AuthTextField'
-import PasswordField from '../../components/users/PasswordField'
+import PasswordField from '../../components/ui/PasswordField'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')

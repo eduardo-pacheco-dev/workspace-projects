@@ -3,7 +3,7 @@ import { Box, Button, IconButton, Paper, Table, TableBody, TableCell, TableHead,
 import { Add, Delete, Edit } from '@mui/icons-material'
 import { useToast } from '../../contexts/ToastContext'
 import api from '../../services/api'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { MsProjectDetail, MsResource, resourceTypeLabels } from '../../pages/ms-project/msProjectTypes'
 
 interface ResourcesSectionProps {

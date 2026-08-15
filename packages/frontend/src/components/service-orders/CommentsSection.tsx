@@ -3,7 +3,7 @@ import { Box, Divider, IconButton, List, ListItem, Paper, TextField, Typography 
 import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { Comment } from '../../pages/service-orders/serviceOrdersTypes'
 
 interface CommentsSectionProps {

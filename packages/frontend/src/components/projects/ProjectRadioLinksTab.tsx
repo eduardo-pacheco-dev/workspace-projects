@@ -6,7 +6,7 @@ import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { ProjectRadioLink } from '../../pages/projects/projectsTypes'
 
 interface ProjectRadioLinksTabProps {

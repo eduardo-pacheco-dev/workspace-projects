@@ -5,8 +5,8 @@ import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { getFieldErrors, strongPasswordSchema } from '../../schemas/authSchemas'
 import { getPasswordStrength } from '../../utils/password'
-import PasswordField from './PasswordField'
-import PasswordStrength from './PasswordStrength'
+import PasswordField from '../ui/PasswordField'
+import PasswordStrength from '../ui/PasswordStrength'
 
 interface ChangePasswordFormProps {
   userId: number | string

@@ -3,7 +3,7 @@ import { Alert, Box, CircularProgress, Divider, IconButton, List, ListItem, Pape
 import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { ProjectComment } from '../../pages/projects/projectsTypes'
 
 interface ProjectCommentsTabProps {

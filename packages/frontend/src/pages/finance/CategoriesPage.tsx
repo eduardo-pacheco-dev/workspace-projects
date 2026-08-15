@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Box, Button, Container, Stack, TablePagination, Typography } from '@mui/material'
+import { Alert, Box, Button, Container, Stack, Typography } from '@mui/material'
 import { Add } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import ListPagination from '../../components/ui/ListPagination'
 import CategoryModal from './CategoryModal'
 import CategoriesTable from '../../components/finance/CategoriesTable'
 import SearchField from '../../components/finance/SearchField'
@@ -66,10 +67,10 @@ export default function CategoriesPage() {
     }
   }
 
-  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
+  const handleChangePage = (newPage: number) => setPage(newPage)
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
+  const handleChangeRowsPerPage = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage)
     setPage(0)
   }
 
@@ -97,15 +98,12 @@ export default function CategoriesPage() {
         onDelete={setToDelete}
       />
 
-      <TablePagination
-        component="div"
-        count={total}
+      <ListPagination
+        total={total}
         page={page}
-        onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
+        onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        labelRowsPerPage="Linhas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
       />
 
       <CategoryModal

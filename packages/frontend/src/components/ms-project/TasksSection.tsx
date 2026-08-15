@@ -15,7 +15,7 @@ import {
 import { Delete, Edit } from '@mui/icons-material'
 import { useToast } from '../../contexts/ToastContext'
 import api from '../../services/api'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { MsProjectDetail, MsTask, taskPriorityLabels, taskPriorityColors, formatDate, taskAssignments } from '../../pages/ms-project/msProjectTypes'
 
 interface TasksSectionProps {

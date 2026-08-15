@@ -3,7 +3,7 @@ import { IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Ty
 import { Delete } from '@mui/icons-material'
 import { useToast } from '../../contexts/ToastContext'
 import api from '../../services/api'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { MsProjectDetail, MsAssignment, taskName, resourceName } from '../../pages/ms-project/msProjectTypes'
 
 interface AssignmentsSectionProps {

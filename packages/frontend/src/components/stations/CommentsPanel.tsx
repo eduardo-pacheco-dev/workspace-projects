@@ -16,7 +16,7 @@ import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 
 interface Comment {
   id: number

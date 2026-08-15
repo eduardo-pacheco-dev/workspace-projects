@@ -1,7 +1,7 @@
 import { Box, Chip, Divider, Grid, IconButton, Paper, Typography } from '@mui/material'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import { ServiceOrder, statusLabels, statusColors } from '../../pages/service-orders/serviceOrdersTypes'
-import InfoItem from '../InfoItem'
+import InfoItem from '../ui/InfoItem'
 
 interface ServiceOrderSummaryCardProps {
   order: ServiceOrder

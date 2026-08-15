@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Container, Grid, Typography } from '@mui/material'
 import api from '../../services/api'
-import InfoItem from '../../components/InfoItem'
+import InfoItem from '../../components/ui/InfoItem'
 import ProposalStatusChip from '../../components/proposals/ProposalStatusChip'
 import { Proposal, formatRate } from './proposalsTypes'
 

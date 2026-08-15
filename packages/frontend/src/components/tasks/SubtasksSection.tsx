@@ -3,7 +3,7 @@ import { Box, Button, Checkbox, Divider, IconButton, Paper, Stack, TextField, Ty
 import { Add, Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { Task } from '../../pages/tasks/tasksTypes'
 import TaskStatusChip from './TaskStatusChip'
 

@@ -3,7 +3,7 @@ import { Alert, Box, Button, CircularProgress, Container, Divider, Grid, IconBut
 import { ArrowBack, Edit } from '@mui/icons-material'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import InfoItem from '../../components/InfoItem'
+import InfoItem from '../../components/ui/InfoItem'
 import FreelancerModal from '../freelancers/FreelancerModal'
 import CollaboratorHeaderCard from '../../components/collaborators/CollaboratorHeaderCard'
 import CollaboratorSection from '../../components/collaborators/CollaboratorSection'

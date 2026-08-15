@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-d
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Container, Link, Typography } from '@mui/material'
 import api from '../../services/api'
 import { resetPasswordSchema, getFieldErrors } from '../../schemas/authSchemas'
-import PasswordField from '../../components/users/PasswordField'
+import PasswordField from '../../components/ui/PasswordField'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()

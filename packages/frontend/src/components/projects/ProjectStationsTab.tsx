@@ -6,7 +6,7 @@ import CellTowerIcon from '@mui/icons-material/CellTower'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { ProjectStation } from '../../pages/projects/projectsTypes'
 
 interface ProjectStationsTabProps {

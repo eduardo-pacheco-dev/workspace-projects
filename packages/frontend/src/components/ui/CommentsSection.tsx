@@ -4,19 +4,29 @@ import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ui/ConfirmDialog'
-import { CompanyComment } from '../../pages/companies/companiesTypes'
+import ConfirmDialog from './ConfirmDialog'
 
-const PAGE_SIZE = 5
+export type CommentResource = 'client' | 'job' | 'project' | 'company' | 'service-order' | 'station' | 'radio-link'
 
-interface CompanyCommentsTabProps {
-  companyId: number
+interface Comment {
+  id: number
+  content: string
+  author: string
+  createdAt: string
 }
 
-export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProps) {
+interface CommentsSectionProps {
+  resource: CommentResource
+  resourceId: number
+  paginated?: boolean
+  pageSize?: number
+  title?: string
+}
+
+export default function CommentsSection({ resource, resourceId, paginated = false, pageSize = 5, title = 'Comentários' }: CommentsSectionProps) {
   const { user } = useAuth()
   const { showToast } = useToast()
-  const [comments, setComments] = useState<CompanyComment[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [commentsError, setCommentsError] = useState('')
@@ -24,20 +34,25 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editContent, setEditContent] = useState('')
-  const [toDelete, setToDelete] = useState<CompanyComment | null>(null)
+  const [toDelete, setToDelete] = useState<number | null>(null)
 
   const load = useCallback(() => {
     setCommentsError('')
-    api.get(`/comments/company/${companyId}`, { params: { page, limit: PAGE_SIZE } })
+    const params = paginated ? { page, limit: pageSize } : undefined
+    api.get(`/comments/${resource}/${resourceId}`, { params })
       .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : res.data.data ?? []
-        setComments(data)
-        setTotal(Array.isArray(res.data) ? res.data.length : res.data.total ?? 0)
+        if (paginated) {
+          const data = Array.isArray(res.data) ? res.data : res.data.data ?? []
+          setComments(data)
+          setTotal(Array.isArray(res.data) ? res.data.length : res.data.total ?? 0)
+        } else {
+          setComments(res.data)
+        }
       })
       .catch((err) => {
         setCommentsError(err.response?.data?.message || 'Não foi possível carregar os comentários.')
       })
-  }, [companyId, page])
+  }, [resource, resourceId, paginated, page, pageSize])
 
   useEffect(() => {
     load()
@@ -47,7 +62,7 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
     if (!newComment.trim()) return
     setSubmitting(true)
     try {
-      await api.post(`/comments/company/${companyId}`, { content: newComment })
+      await api.post(`/comments/${resource}/${resourceId}`, { content: newComment })
       setNewComment('')
       load()
       showToast('Comentário adicionado com sucesso.')
@@ -58,7 +73,7 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
     }
   }
 
-  const startEdit = (comment: CompanyComment) => {
+  const startEdit = (comment: Comment) => {
     setEditingId(comment.id)
     setEditContent(comment.content)
   }
@@ -84,18 +99,18 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
   const deleteComment = async (commentId: number) => {
     try {
       await api.delete(`/comments/${commentId}`)
-      setToDelete(null)
       load()
       showToast('Comentário excluído com sucesso.')
-    } catch (err: any) {
       setToDelete(null)
+    } catch (err: any) {
       showToast(err.response?.data?.message || 'Não foi possível excluir o comentário.', 'error')
+      setToDelete(null)
     }
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+    <Paper sx={{ p: 3, mt: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>
       <Divider sx={{ mb: 2 }} />
       {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
       {!commentsError && comments.length === 0 ? (
@@ -117,7 +132,7 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
                         <IconButton size="small" onClick={() => startEdit(comment)}>
                           <Edit fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => setToDelete(comment)}>
+                        <IconButton size="small" onClick={() => setToDelete(comment.id)}>
                           <Delete fontSize="small" />
                         </IconButton>
                       </>
@@ -162,18 +177,18 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
           {submitting ? <CircularProgress size={20} /> : <Send />}
         </IconButton>
       </Box>
-      {total > PAGE_SIZE && (
+      {paginated && total > pageSize && (
         <Stack alignItems="center" sx={{ mt: 2 }}>
-          <Pagination count={Math.ceil(total / PAGE_SIZE)} page={page} onChange={(_, value) => setPage(value)} size="small" />
+          <Pagination count={Math.ceil(total / pageSize)} page={page} onChange={(_, value) => setPage(value)} size="small" />
         </Stack>
       )}
 
       <ConfirmDialog
-        open={Boolean(toDelete)}
+        open={toDelete != null}
         title="Excluir comentário"
-        message={`Tem certeza que deseja excluir o comentário de ${toDelete?.author}?`}
+        message="Tem certeza que deseja excluir este comentário?"
         onClose={() => setToDelete(null)}
-        onConfirm={() => toDelete && deleteComment(toDelete.id)}
+        onConfirm={() => toDelete != null && deleteComment(toDelete)}
       />
     </Paper>
   )

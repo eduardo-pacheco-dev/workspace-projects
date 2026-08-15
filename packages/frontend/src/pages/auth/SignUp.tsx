@@ -12,8 +12,8 @@ import { formatPhone } from '../../utils/phone'
 import { getPasswordStrength } from '../../utils/password'
 import AuthLayout from '../../components/auth/AuthLayout'
 import AuthTextField from '../../components/auth/AuthTextField'
-import PasswordField from '../../components/users/PasswordField'
-import PasswordStrength from '../../components/users/PasswordStrength'
+import PasswordField from '../../components/ui/PasswordField'
+import PasswordStrength from '../../components/ui/PasswordStrength'
 
 export default function SignUp() {
   const navigate = useNavigate()

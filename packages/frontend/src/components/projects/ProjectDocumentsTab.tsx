@@ -5,7 +5,7 @@ import DescriptionIcon from '@mui/icons-material/Description'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { ProjectDocument } from '../../pages/projects/projectsTypes'
 import ProjectDocumentModal from '../../pages/projects/ProjectDocumentModal'
 

@@ -19,7 +19,7 @@ import {
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { getFieldErrors } from '../../schemas/authSchemas'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { createCompanySchema, updateCompanySchema } from './companySchemas'
 import { Company, ufOptions } from './companiesTypes'
 

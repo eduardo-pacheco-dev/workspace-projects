@@ -3,7 +3,7 @@ import { Chip, IconButton, Paper, Table, TableBody, TableCell, TableRow, Typogra
 import { Delete } from '@mui/icons-material'
 import { useToast } from '../../contexts/ToastContext'
 import api from '../../services/api'
-import ConfirmDialog from '../ConfirmDialog'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { MsProjectDetail, MsDependency, dependencyTypeLabels, taskName } from '../../pages/ms-project/msProjectTypes'
 
 interface DependenciesSectionProps {

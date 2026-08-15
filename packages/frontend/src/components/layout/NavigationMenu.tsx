@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Box, Grid, IconButton, Popover, Tooltip, Typography } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useAuth } from '../../contexts/AuthContext'
 import { useUserModules } from '../../hooks/useUserModules'
@@ -10,7 +10,9 @@ export default function NavigationMenu() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const modules = useUserModules()
+  const location = useLocation()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const items = visibleItems(user?.role, modules)
 
   const close = () => setAnchorEl(null)
 
@@ -18,6 +20,9 @@ export default function NavigationMenu() {
     navigate(path)
     close()
   }
+
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
   return (
     <>
@@ -31,19 +36,58 @@ export default function NavigationMenu() {
           <MenuIcon />
         </IconButton>
       </Tooltip>
-      <Menu
-        anchorEl={anchorEl}
+      <Popover
         open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
         onClose={close}
-        slotProps={{ paper: { elevation: 0, sx: { border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 2, mt: 0.5 } } }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              p: 2,
+              mt: 0.5,
+              border: '1px solid rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            },
+          },
+        }}
       >
-        {visibleItems(user?.role, modules).map((item) => (
-          <MenuItem key={item.path} onClick={() => go(item.path)}>
-            <ListItemIcon sx={{ color: 'text.secondary', minWidth: 36 }}>{item.icon}</ListItemIcon>
-            <ListItemText>{item.label}</ListItemText>
-          </MenuItem>
-        ))}
-      </Menu>
+        <Grid container spacing={1} sx={{ width: 300 }}>
+          {items.map((item) => {
+            const active = isActive(item.path)
+            return (
+              <Grid item key={item.path} xs={4}>
+                <Box
+                  onClick={() => go(item.path)}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    minHeight: 86,
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    color: active ? 'rgb(0, 21, 68)' : 'text.secondary',
+                    bgcolor: active ? 'rgba(0, 21, 68, 0.08)' : 'transparent',
+                    transition: 'background-color 0.15s ease',
+                    '&:hover': { bgcolor: active ? 'rgba(0, 21, 68, 0.12)' : 'action.hover' },
+                  }}
+                >
+                  <Box sx={{ fontSize: 26, display: 'flex', lineHeight: 1 }}>{item.icon}</Box>
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: active ? 700 : 500, textAlign: 'center', lineHeight: 1.2, px: 0.5 }}
+                  >
+                    {item.label}
+                  </Typography>
+                </Box>
+              </Grid>
+            )
+          })}
+        </Grid>
+      </Popover>
     </>
   )
 }

@@ -12,27 +12,13 @@ import {
   CircularProgress,
   Grid,
 } from '@mui/material'
-import { z } from 'zod'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { getFieldErrors } from '../../schemas/authSchemas'
 import { formatPhone } from '../../utils/phone'
 import { formatCnpj } from '../../utils/cnpj'
 import { ufOptions } from '../companies/companiesTypes'
-
-const baseSchema = z.object({
-  nome: z.string().min(1, 'Informe o nome.'),
-  documento: z.string().optional(),
-  email: z.string().email('Informe um e-mail válido.').optional().or(z.literal('')),
-  telefone: z.string().optional(),
-  endereco: z.string().optional(),
-  cidade: z.string().optional(),
-  uf: z.string().optional(),
-  status: z.enum(['ativo', 'inativo']).optional(),
-  observacoes: z.string().optional(),
-})
-
-const createSchema = baseSchema
-const editSchema = baseSchema.partial()
+import { createClientSchema, updateClientSchema } from './clientSchemas'
 
 interface ClientModalProps {
   open: boolean
@@ -41,86 +27,90 @@ interface ClientModalProps {
   onSaved: () => void
 }
 
+interface ClientFormState {
+  nome: string
+  documento: string
+  email: string
+  telefone: string
+  endereco: string
+  cidade: string
+  uf: string
+  observacoes: string
+  status: string
+}
+
+const initialForm: ClientFormState = {
+  nome: '',
+  documento: '',
+  email: '',
+  telefone: '',
+  endereco: '',
+  cidade: '',
+  uf: '',
+  observacoes: '',
+  status: 'ativo',
+}
+
 export default function ClientModal({ open, editId, onClose, onSaved }: ClientModalProps) {
   const isEdit = Boolean(editId)
   const { showToast } = useToast()
-
-  const [nome, setNome] = useState('')
-  const [documento, setDocumento] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [cidade, setCidade] = useState('')
-  const [uf, setUf] = useState('')
-  const [observacoes, setObservacoes] = useState('')
-  const [status, setStatus] = useState('ativo')
+  const [form, setForm] = useState<ClientFormState>(initialForm)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(false)
 
-  const reset = () => {
-    setNome('')
-    setDocumento('')
-    setEmail('')
-    setTelefone('')
-    setEndereco('')
-    setCidade('')
-    setUf('')
-    setObservacoes('')
-    setStatus('ativo')
-    setError('')
-    setFieldErrors({})
-  }
-
   useEffect(() => {
     if (!open) return
-    reset()
+    setForm(initialForm)
+    setError('')
+    setFieldErrors({})
     if (editId) {
       setFetching(true)
       api
         .get(`/clients/${editId}`)
         .then((res) => {
           const d = res.data
-          setNome(d.nome || '')
-          setDocumento(d.documento ? formatCnpj(d.documento) : '')
-          setEmail(d.email || '')
-          setTelefone(d.telefone ? formatPhone(d.telefone) : '')
-          setEndereco(d.endereco || '')
-          setCidade(d.cidade || '')
-          setUf(d.uf || '')
-          setObservacoes(d.observacoes || '')
-          setStatus(d.status || 'ativo')
+          setForm({
+            nome: d.nome || '',
+            documento: d.documento ? formatCnpj(d.documento) : '',
+            email: d.email || '',
+            telefone: d.telefone ? formatPhone(d.telefone) : '',
+            endereco: d.endereco || '',
+            cidade: d.cidade || '',
+            uf: d.uf || '',
+            observacoes: d.observacoes || '',
+            status: d.status || 'ativo',
+          })
         })
         .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
         .finally(() => setFetching(false))
     }
   }, [open, editId])
 
-  const getFieldErrors = (error: z.ZodError) =>
-    Object.fromEntries(error.issues.map((issue) => [issue.path[0], issue.message]))
-
-  const clearFieldError = (field: string) =>
-    setFieldErrors((prev) => ({ ...prev, [field]: '' }))
+  const handleChange = (key: keyof ClientFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setFieldErrors({})
 
-    const payload: any = {
-      nome,
-      documento: documento || undefined,
-      email: email || undefined,
-      telefone: telefone || undefined,
-      endereco: endereco || undefined,
-      cidade: cidade || undefined,
-      uf: uf || undefined,
-      status,
-      observacoes: observacoes || undefined,
+    const payload = {
+      nome: form.nome,
+      documento: form.documento || undefined,
+      email: form.email || undefined,
+      telefone: form.telefone || undefined,
+      endereco: form.endereco || undefined,
+      cidade: form.cidade || undefined,
+      uf: form.uf || undefined,
+      status: form.status,
+      observacoes: form.observacoes || undefined,
     }
 
-    const schema = isEdit ? editSchema : createSchema
+    const schema = isEdit ? updateClientSchema : createClientSchema
     const result = schema.safeParse(payload)
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error))
@@ -135,9 +125,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
         await api.post('/clients', payload)
       }
       showToast(isEdit ? 'Cliente atualizado com sucesso.' : 'Cliente criado com sucesso.')
-      reset()
       onSaved()
-      onClose()
+      handleClose()
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
       setError(msg)
@@ -149,7 +138,9 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
 
   const handleClose = () => {
     if (loading || fetching) return
-    reset()
+    setError('')
+    setFieldErrors({})
+    setForm(initialForm)
     onClose()
   }
 
@@ -169,11 +160,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                 <TextField
                   fullWidth
                   label="Nome"
-                  value={nome}
-                  onChange={(e) => {
-                    setNome(e.target.value)
-                    clearFieldError('nome')
-                  }}
+                  value={form.nome}
+                  onChange={(e) => handleChange('nome', e.target.value)}
                   required
                   autoFocus
                   error={!!fieldErrors.nome}
@@ -184,11 +172,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                 <TextField
                   fullWidth
                   label="CNPJ"
-                  value={documento}
-                  onChange={(e) => {
-                    setDocumento(formatCnpj(e.target.value))
-                    clearFieldError('documento')
-                  }}
+                  value={form.documento}
+                  onChange={(e) => handleChange('documento', formatCnpj(e.target.value))}
                   placeholder="00.000.000/0000-00"
                   error={!!fieldErrors.documento}
                   helperText={fieldErrors.documento}
@@ -199,11 +184,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                   fullWidth
                   label="Email"
                   type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    clearFieldError('email')
-                  }}
+                  value={form.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
                   error={!!fieldErrors.email}
                   helperText={fieldErrors.email}
                 />
@@ -212,11 +194,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                 <TextField
                   fullWidth
                   label="Telefone"
-                  value={telefone}
-                  onChange={(e) => {
-                    setTelefone(formatPhone(e.target.value))
-                    clearFieldError('telefone')
-                  }}
+                  value={form.telefone}
+                  onChange={(e) => handleChange('telefone', formatPhone(e.target.value))}
                   placeholder="(00) 00000-0000"
                   inputProps={{ maxLength: 15 }}
                   error={!!fieldErrors.telefone}
@@ -227,11 +206,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                 <TextField
                   fullWidth
                   label="Endereço"
-                  value={endereco}
-                  onChange={(e) => {
-                    setEndereco(e.target.value)
-                    clearFieldError('endereco')
-                  }}
+                  value={form.endereco}
+                  onChange={(e) => handleChange('endereco', e.target.value)}
                   error={!!fieldErrors.endereco}
                   helperText={fieldErrors.endereco}
                 />
@@ -240,11 +216,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                 <TextField
                   fullWidth
                   label="Cidade"
-                  value={cidade}
-                  onChange={(e) => {
-                    setCidade(e.target.value)
-                    clearFieldError('cidade')
-                  }}
+                  value={form.cidade}
+                  onChange={(e) => handleChange('cidade', e.target.value)}
                   error={!!fieldErrors.cidade}
                   helperText={fieldErrors.cidade}
                 />
@@ -254,11 +227,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                   fullWidth
                   select
                   label="UF"
-                  value={uf}
-                  onChange={(e) => {
-                    setUf(e.target.value)
-                    clearFieldError('uf')
-                  }}
+                  value={form.uf}
+                  onChange={(e) => handleChange('uf', e.target.value)}
                   error={!!fieldErrors.uf}
                   helperText={fieldErrors.uf}
                 >
@@ -275,11 +245,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                   fullWidth
                   select
                   label="Status"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value)
-                    clearFieldError('status')
-                  }}
+                  value={form.status}
+                  onChange={(e) => handleChange('status', e.target.value)}
                   required
                   error={!!fieldErrors.status}
                   helperText={fieldErrors.status}
@@ -295,11 +262,8 @@ export default function ClientModal({ open, editId, onClose, onSaved }: ClientMo
                   label="Observações"
                   multiline
                   rows={3}
-                  value={observacoes}
-                  onChange={(e) => {
-                    setObservacoes(e.target.value)
-                    clearFieldError('observacoes')
-                  }}
+                  value={form.observacoes}
+                  onChange={(e) => handleChange('observacoes', e.target.value)}
                   error={!!fieldErrors.observacoes}
                   helperText={fieldErrors.observacoes}
                 />

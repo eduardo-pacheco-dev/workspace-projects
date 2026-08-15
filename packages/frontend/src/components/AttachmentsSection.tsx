@@ -7,7 +7,7 @@ import ConfirmDialog from './ConfirmDialog'
 import FilePreviewDialog from './FilePreviewDialog'
 import { formatSize } from '../utils/format'
 
-export type AttachmentResource = 'task' | 'station' | 'service-order'
+export type AttachmentResource = 'task' | 'station' | 'service-order' | 'client'
 
 interface Attachment {
   id: number

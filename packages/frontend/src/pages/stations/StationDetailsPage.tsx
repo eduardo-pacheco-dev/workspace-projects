@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import ErrorState from '../../components/ui/ErrorState'
 import InfoCard from '../../components/ui/InfoCard'
 import PageLoader from '../../components/ui/PageLoader'
@@ -161,10 +161,10 @@ export default function StationDetailsPage() {
         </>
       )}
 
-      <ConfirmDialog
+      <DeleteModal
         open={confirmDelete}
         title="Excluir estação"
-        message={`Tem certeza que deseja excluir a estação "${station?.siteId}"?`}
+        message={`Tem certeza que deseja excluir a estação "${station?.siteId}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setConfirmDelete(false)}
         onConfirm={handleDelete}
       />

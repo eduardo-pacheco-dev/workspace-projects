@@ -1,4 +1,5 @@
 import { Button as MuiButton, ButtonProps } from '@mui/material'
+import { Link as RouterLink } from 'react-router-dom'
 
 const PRIMARY = 'rgb(0, 21, 68)'
 
@@ -51,7 +52,23 @@ function primaryStyle(variant: NonNullable<ButtonProps['variant']>) {
   }
 }
 
-export default function Button({ variant = 'text', color, sx, ...props }: ButtonProps) {
+interface RouterButtonProps extends ButtonProps {
+  to?: string
+}
+
+export default function Button({ to, component, variant = 'text', color, sx, ...props }: RouterButtonProps) {
   const themed = color == null ? primaryStyle(variant) : {}
-  return <MuiButton variant={variant} color={color} {...props} sx={{ ...MODERN_STYLE, ...themed, ...sx }} />
+  const extraProps: Record<string, unknown> = {}
+  if (to) extraProps.to = to
+
+  return (
+    <MuiButton
+      variant={variant}
+      color={color}
+      component={to ? RouterLink : component}
+      {...(extraProps as any)}
+      {...props}
+      sx={{ ...MODERN_STYLE, ...themed, ...sx }}
+    />
+  )
 }

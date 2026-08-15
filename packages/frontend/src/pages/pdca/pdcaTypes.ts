@@ -121,3 +121,34 @@ export const statusValidacaoColors: Record<string, ChipColor> = {
   sucesso_parcial: 'warning',
   falha: 'error',
 }
+
+export type PdcaSortBy = 'id' | 'titulo' | 'fase' | 'statusCiclo' | 'createdAt'
+export type SortOrder = 'ASC' | 'DESC'
+
+export const PDCA_COLUMNS: { id: PdcaSortBy; label: string }[] = [
+  { id: 'titulo', label: 'Título' },
+  { id: 'fase', label: 'Fase' },
+  { id: 'statusCiclo', label: 'Status' },
+]
+
+export const FASE_ORDER = ['plan', 'do', 'check', 'act']
+
+export function formatPdcaDate(value: string | null): string {
+  if (!value) return '-'
+  const date = new Date(`${value}T00:00:00`)
+  return isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR')
+}
+
+export function formatMoney(value: number | null): string {
+  if (value == null) return '-'
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+export function formatSizePercent(value: number | null): string {
+  return value == null ? '-' : `${value}%`
+}
+
+export interface ProjectOption {
+  id: number
+  nome: string
+}

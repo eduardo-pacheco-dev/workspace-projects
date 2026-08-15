@@ -14,8 +14,9 @@ import {
 } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import { statusAcaoOptions } from './pdcaTypes'
-import type { PdcaAction } from './pdcaTypes'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import { pdcaActionSchema } from './pdcaSchemas'
+import { statusAcaoOptions, PdcaAction } from './pdcaTypes'
 
 interface PdcaActionModalProps {
   open: boolean
@@ -25,59 +26,85 @@ interface PdcaActionModalProps {
   onSaved: () => void
 }
 
+interface ActionFormState {
+  what: string
+  why: string
+  ondeAplicacao: string
+  whenInicio: string
+  whenPrazo: string
+  who: string
+  how: string
+  howMuch: string
+  status: string
+  progresso: string
+  observacoes: string
+}
+
+const initialForm: ActionFormState = {
+  what: '',
+  why: '',
+  ondeAplicacao: '',
+  whenInicio: '',
+  whenPrazo: '',
+  who: '',
+  how: '',
+  howMuch: '',
+  status: 'pendente',
+  progresso: '0',
+  observacoes: '',
+}
+
 export default function PdcaActionModal({ open, pdcaId, editData, onClose, onSaved }: PdcaActionModalProps) {
   const isEdit = Boolean(editData)
   const { showToast } = useToast()
-
-  const [what, setWhat] = useState('')
-  const [why, setWhy] = useState('')
-  const [ondeAplicacao, setOndeAplicacao] = useState('')
-  const [whenInicio, setWhenInicio] = useState('')
-  const [whenPrazo, setWhenPrazo] = useState('')
-  const [who, setWho] = useState('')
-  const [how, setHow] = useState('')
-  const [howMuch, setHowMuch] = useState('')
-  const [status, setStatus] = useState('pendente')
-  const [progresso, setProgresso] = useState('0')
-  const [observacoes, setObservacoes] = useState('')
+  const [form, setForm] = useState<ActionFormState>(initialForm)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setWhat(editData?.what || '')
-      setWhy(editData?.why || '')
-      setOndeAplicacao(editData?.ondeAplicacao || '')
-      setWhenInicio(editData?.whenInicio || '')
-      setWhenPrazo(editData?.whenPrazo || '')
-      setWho(editData?.who || '')
-      setHow(editData?.how || '')
-      setHowMuch(editData?.howMuch != null ? String(editData.howMuch) : '')
-      setStatus(editData?.status || 'pendente')
-      setProgresso(editData?.progresso != null ? String(editData.progresso) : '0')
-      setObservacoes(editData?.observacoes || '')
+      setForm({
+        what: editData?.what || '',
+        why: editData?.why || '',
+        ondeAplicacao: editData?.ondeAplicacao || '',
+        whenInicio: editData?.whenInicio || '',
+        whenPrazo: editData?.whenPrazo || '',
+        who: editData?.who || '',
+        how: editData?.how || '',
+        howMuch: editData?.howMuch != null ? String(editData.howMuch) : '',
+        status: editData?.status || 'pendente',
+        progresso: editData?.progresso != null ? String(editData.progresso) : '0',
+        observacoes: editData?.observacoes || '',
+      })
+      setError('')
+      setFieldErrors({})
     }
   }, [open, editData])
+
+  const handleChange = (key: keyof ActionFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setFieldErrors({})
 
-    const payload: any = {
-      what,
-      why,
-      ondeAplicacao,
-      whenInicio,
-      whenPrazo,
-      who,
-      how,
-      howMuch: howMuch !== '' ? Number(howMuch) : undefined,
-      status,
-      progresso: Number(progresso) || 0,
-      observacoes,
+    const result = pdcaActionSchema.safeParse(form)
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
+      return
     }
 
+    const payload: any = {
+      ...form,
+      howMuch: form.howMuch !== '' ? Number(form.howMuch) : undefined,
+      progresso: Number(form.progresso) || 0,
+    }
+
+    setLoading(true)
     try {
       if (isEdit) {
         await api.patch(`/pdca/${pdcaId}/actions/${editData?.id}`, payload)
@@ -88,8 +115,9 @@ export default function PdcaActionModal({ open, pdcaId, editData, onClose, onSav
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
+      const message = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -98,17 +126,8 @@ export default function PdcaActionModal({ open, pdcaId, editData, onClose, onSav
   const handleClose = () => {
     if (loading) return
     setError('')
-    setWhat('')
-    setWhy('')
-    setOndeAplicacao('')
-    setWhenInicio('')
-    setWhenPrazo('')
-    setWho('')
-    setHow('')
-    setHowMuch('')
-    setStatus('pendente')
-    setProgresso('0')
-    setObservacoes('')
+    setFieldErrors({})
+    setForm(initialForm)
     onClose()
   }
 
@@ -120,31 +139,40 @@ export default function PdcaActionModal({ open, pdcaId, editData, onClose, onSav
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField fullWidth label="What — O que fazer" value={what} onChange={(e) => setWhat(e.target.value)} margin="normal" required />
+              <TextField
+                fullWidth
+                label="What — O que fazer"
+                value={form.what}
+                onChange={(e) => handleChange('what', e.target.value)}
+                margin="normal"
+                required
+                error={!!fieldErrors.what}
+                helperText={fieldErrors.what}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Why — Por que" multiline rows={2} value={why} onChange={(e) => setWhy(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Why — Por que" multiline rows={2} value={form.why} onChange={(e) => handleChange('why', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Where — Onde aplicar" value={ondeAplicacao} onChange={(e) => setOndeAplicacao(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Where — Onde aplicar" value={form.ondeAplicacao} onChange={(e) => handleChange('ondeAplicacao', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="When — Início" type="date" value={whenInicio} onChange={(e) => setWhenInicio(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
+              <TextField fullWidth label="When — Início" type="date" value={form.whenInicio} onChange={(e) => handleChange('whenInicio', e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="When — Prazo limite" type="date" value={whenPrazo} onChange={(e) => setWhenPrazo(e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
+              <TextField fullWidth label="When — Prazo limite" type="date" value={form.whenPrazo} onChange={(e) => handleChange('whenPrazo', e.target.value)} margin="normal" InputLabelProps={{ shrink: true }} />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Who — Responsável" value={who} onChange={(e) => setWho(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Who — Responsável" value={form.who} onChange={(e) => handleChange('who', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="How much — Custo estimado (R$)" type="number" value={howMuch} onChange={(e) => setHowMuch(e.target.value)} margin="normal" />
+              <TextField fullWidth label="How much — Custo estimado (R$)" type="number" value={form.howMuch} onChange={(e) => handleChange('howMuch', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12}>
-              <TextField fullWidth label="How — Como / Método" multiline rows={2} value={how} onChange={(e) => setHow(e.target.value)} margin="normal" />
+              <TextField fullWidth label="How — Como / Método" multiline rows={2} value={form.how} onChange={(e) => handleChange('how', e.target.value)} margin="normal" />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal">
+              <TextField fullWidth select label="Status" value={form.status} onChange={(e) => handleChange('status', e.target.value)} margin="normal">
                 {statusAcaoOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                 ))}
@@ -155,14 +183,16 @@ export default function PdcaActionModal({ open, pdcaId, editData, onClose, onSav
                 fullWidth
                 label="Progresso (%)"
                 type="number"
-                value={progresso}
-                onChange={(e) => setProgresso(e.target.value)}
+                value={form.progresso}
+                onChange={(e) => handleChange('progresso', e.target.value)}
                 margin="normal"
                 inputProps={{ min: 0, max: 100 }}
+                error={!!fieldErrors.progresso}
+                helperText={fieldErrors.progresso}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField fullWidth label="Observações / Evidências" multiline rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Observações / Evidências" multiline rows={2} value={form.observacoes} onChange={(e) => handleChange('observacoes', e.target.value)} margin="normal" />
             </Grid>
           </Grid>
         </DialogContent>

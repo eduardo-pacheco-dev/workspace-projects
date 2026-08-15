@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -9,10 +9,20 @@ import {
   Box,
   CircularProgress,
   Grid,
+  Stepper,
+  Step,
+  StepLabel,
+  Typography,
 } from '@mui/material'
 import api from '../../services/api'
 import StationFormField from '../../components/stations/StationFormField'
-import { initialStationForm, stationFormFields, buildStationPayload, StationFormState } from './stationFormConfig'
+import {
+  initialStationForm,
+  stationFormFields,
+  stationFormSteps,
+  buildStationPayload,
+  StationFormState,
+} from './stationFormConfig'
 
 interface StationModalProps {
   open: boolean
@@ -25,7 +35,12 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
   const isEdit = Boolean(editId)
   const [form, setForm] = useState<StationFormState>(initialStationForm)
   const [error, setError] = useState('')
+  const [stepError, setStepError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
+
+  const stepFields = stationFormSteps[activeStep].fields
+  const isLastStep = activeStep === stationFormSteps.length - 1
 
   useEffect(() => {
     if (open && editId) {
@@ -61,12 +76,46 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
     }
   }, [open, editId])
 
+  useEffect(() => {
+    if (open) {
+      setActiveStep(0)
+      setStepError('')
+    }
+  }, [open])
+
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const validateStep = () => {
+    const missing = stationFormFields
+      .filter(
+        (config) =>
+          stepFields.includes(config.name) &&
+          config.required &&
+          !String(form[config.name as keyof StationFormState]).trim()
+      )
+      .map((config) => config.label)
+
+    if (missing.length) {
+      setStepError(`Preencha os campos obrigatórios: ${missing.join(', ')}.`)
+      return false
+    }
+    setStepError('')
+    return true
+  }
+
+  const handleNext = () => {
+    if (validateStep()) setActiveStep((prev) => prev + 1)
+  }
+
+  const handleBack = () => {
+    setStepError('')
+    setActiveStep((prev) => Math.max(0, prev - 1))
+  }
+
+  const handleSubmit = async () => {
+    if (!validateStep()) return
     setError('')
     setLoading(true)
 
@@ -86,37 +135,62 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
   const handleClose = () => {
     if (loading) return
     setError('')
+    setStepError('')
+    setActiveStep(0)
     setForm(initialStationForm)
     onClose()
   }
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Editar Estação' : 'Nova Estação'}</DialogTitle>
-        <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Grid container spacing={2}>
-            {stationFormFields
-              .filter((config) => config.visible?.(form) ?? true)
-              .map((config) => (
-                <Grid item xs={12} sm={config.size ?? 12} key={config.name}>
-                  <StationFormField
-                    config={config}
-                    value={form[config.name as keyof StationFormState]}
-                    onChange={(value) => handleChange(config.name, value)}
-                  />
-                </Grid>
-              ))}
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
+      <DialogTitle>{isEdit ? 'Editar Estação' : 'Nova Estação'}</DialogTitle>
+      <DialogContent>
+        <Stepper activeStep={activeStep} sx={{ my: 2, '& .MuiStepLabel-label': { fontSize: '0.875rem' } }}>
+          {stationFormSteps.map((step) => (
+            <Step key={step.label}>
+              <StepLabel>{step.label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+
+        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
+          Passo {activeStep + 1} de {stationFormSteps.length} — {stationFormSteps[activeStep].label}
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {stepError && <Alert severity="warning" sx={{ mb: 2 }}>{stepError}</Alert>}
+
+        <Grid container spacing={2}>
+          {stationFormFields
+            .filter((config) => stepFields.includes(config.name) && (config.visible?.(form) ?? true))
+            .map((config) => (
+              <Grid item xs={12} sm={config.size ?? 12} key={config.name}>
+                <StationFormField
+                  config={config}
+                  value={form[config.name as keyof StationFormState]}
+                  onChange={(value) => handleChange(config.name, value)}
+                />
+              </Grid>
+            ))}
+        </Grid>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
+        <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0 || loading}>
+            Voltar
           </Button>
-        </DialogActions>
-      </Box>
+          {isLastStep ? (
+            <Button variant="contained" onClick={handleSubmit} disabled={loading}>
+              {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
+            </Button>
+          ) : (
+            <Button variant="contained" onClick={handleNext} disabled={loading}>
+              Próximo
+            </Button>
+          )}
+        </Box>
+      </DialogActions>
     </Dialog>
   )
 }

@@ -114,3 +114,32 @@ export function buildStationPayload(form: StationFormState) {
   if (form.structureHeight) payload.structureHeight = Number(form.structureHeight)
   return payload
 }
+
+export interface StationFormStep {
+  label: string
+  fields: string[]
+}
+
+export const stationFormSteps: StationFormStep[] = [
+  {
+    label: 'Identificação',
+    fields: ['siteId', 'endId', 'elementType', 'technology', 'mobileCarrier', 'status'],
+  },
+  {
+    label: 'Infraestrutura',
+    fields: [
+      'areaHolder',
+      'infraHolder',
+      'infraContractType',
+      'infraType',
+      'evType',
+      'evSupplier',
+      'regional',
+      'towerType',
+    ],
+  },
+  {
+    label: 'Localização',
+    fields: ['address', 'latitude', 'longitude', 'nominalAev', 'groundArea', 'structureHeight', 'stationId', 'notes'],
+  },
+]

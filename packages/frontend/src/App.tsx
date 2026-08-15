@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { ProjectProvider } from './contexts/ProjectContext'
-import { ToastProvider } from './contexts/ToastContext'
+import { useAuth } from './contexts/AuthContext'
+import { useAuthStore } from './stores/authStore'
 import api from './services/api'
 import { DEFAULT_USER_MODULES } from './pages/settings/roleModules'
 import Layout from './components/Layout'
 import PageTitle from './components/PageTitle'
+import Toaster from './components/Toaster'
 import SignIn from './pages/auth/SignIn'
 import SignUp from './pages/auth/SignUp'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -88,12 +88,14 @@ function MasterOnlyRoute({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    useAuthStore.getState().refreshUser()
+  }, [])
+
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <ProjectProvider>
-        <PageTitle />
-        <Routes>
+    <>
+      <PageTitle />
+      <Routes>
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -140,9 +142,8 @@ export default function App() {
           <Route path="/companies/:id" element={<MasterOnlyRoute><CompanyDetailPage /></MasterOnlyRoute>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-        </Routes>
-        </ProjectProvider>
-      </ToastProvider>
-    </AuthProvider>
+      </Routes>
+      <Toaster />
+    </>
   )
 }

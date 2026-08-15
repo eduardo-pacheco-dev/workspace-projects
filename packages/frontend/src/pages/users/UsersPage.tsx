@@ -3,6 +3,7 @@ import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
 import { User, SortBy, SortOrder, ViewMode } from './usersTypes'
 import { downloadUsersExcel } from './userExport'
 import UserModal from './UserModal'
@@ -15,11 +16,6 @@ import DeleteUserDialog from '../../components/users/DeleteUserDialog'
 interface DeleteTarget {
   id: number
   name: string
-}
-
-function normalizeList(res: any): { data: User[]; total: number } {
-  if (Array.isArray(res)) return { data: res, total: res.length }
-  return { data: res?.data ?? [], total: res?.total ?? 0 }
 }
 
 export default function UsersPage() {
@@ -43,7 +39,7 @@ export default function UsersPage() {
       const params: any = { page: page + 1, limit: rowsPerPage, sortBy, sortOrder }
       if (search) params.search = search
       const res = await api.get('/users', { params })
-      const { data, total: fetchedTotal } = normalizeList(res.data)
+      const { data, total: fetchedTotal } = normalizeList<User>(res.data)
       setUsers(data)
       setTotal(fetchedTotal)
     } catch (err: any) {
@@ -98,7 +94,7 @@ export default function UsersPage() {
       const params: any = { page: 1, limit: 10000, sortBy, sortOrder }
       if (search) params.search = search
       const res = await api.get('/users', { params })
-      downloadUsersExcel(normalizeList(res.data).data)
+      downloadUsersExcel(normalizeList<User>(res.data).data)
       showToast('Lista de usuários exportada com sucesso.')
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Não foi possível exportar. Tente novamente.', 'error')

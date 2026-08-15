@@ -10,22 +10,10 @@ import {
   Box,
   MenuItem,
   CircularProgress,
-  Checkbox,
-  FormControlLabel,
-  Chip,
-  Typography,
-  Stack,
 } from '@mui/material'
 import api from '../../services/api'
-
-interface CollaboratorOption {
-  id: number
-  nome: string | null
-  firstName?: string | null
-  lastName?: string | null
-  cargo?: string | null
-  isFreelancer: boolean
-}
+import { CollaboratorOption } from './teamsTypes'
+import MemberPicker from '../../components/teams/MemberPicker'
 
 interface TeamModalProps {
   open: boolean
@@ -33,9 +21,6 @@ interface TeamModalProps {
   onClose: () => void
   onSaved: () => void
 }
-
-const memberName = (c: CollaboratorOption) =>
-  c.nome || [c.firstName, c.lastName].filter(Boolean).join(' ')
 
 export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalProps) {
   const isEdit = Boolean(editId)
@@ -46,21 +31,12 @@ export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalP
   const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([])
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [currentIds, setCurrentIds] = useState<number[]>([])
-  const [typeFilter, setTypeFilter] = useState<'todos' | 'freelancer' | 'colaborador'>('todos')
-  const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setError('')
-    setNome('')
-    setDescricao('')
-    setStatus('ativo')
-    setSelectedIds([])
-    setCurrentIds([])
-    setTypeFilter('todos')
-    setSearch('')
+    resetForm()
 
     api
       .get('/collaborators', { params: { limit: 1000, sortBy: 'nome', sortOrder: 'ASC' } })
@@ -86,19 +62,37 @@ export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalP
     }
   }, [open, editId])
 
+  const resetForm = () => {
+    setNome('')
+    setDescricao('')
+    setStatus('ativo')
+    setSelectedIds([])
+    setCurrentIds([])
+    setError('')
+  }
+
   const toggleMember = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     )
   }
 
-  const filtered = collaborators.filter((c) => {
-    const name = memberName(c).toLowerCase()
-    if (search && !name.includes(search.toLowerCase())) return false
-    if (typeFilter === 'freelancer' && !c.isFreelancer) return false
-    if (typeFilter === 'colaborador' && c.isFreelancer) return false
-    return true
-  })
+  const syncMembers = async (teamId: number) => {
+    if (isEdit) {
+      const current = new Set(currentIds)
+      const target = new Set(selectedIds)
+      for (const cid of currentIds) {
+        if (!target.has(cid)) await api.delete(`/teams/${teamId}/members/${cid}`)
+      }
+      for (const cid of selectedIds) {
+        if (!current.has(cid)) await api.post(`/teams/${teamId}/members`, { collaboratorId: cid })
+      }
+    } else {
+      for (const cid of selectedIds) {
+        await api.post(`/teams/${teamId}/members`, { collaboratorId: cid })
+      }
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -110,29 +104,15 @@ export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalP
       if (descricao) payload.descricao = descricao
 
       let teamId = editId
-      if (editId) {
-        await api.patch(`/teams/${editId}`, payload)
+      if (isEdit) {
+        await api.patch(`/teams/${teamId}`, payload)
       } else {
         const res = await api.post('/teams', payload)
         teamId = res.data.id
       }
       if (teamId == null) throw new Error('Falha ao identificar a equipe')
 
-      if (editId) {
-        const current = new Set(currentIds)
-        const target = new Set(selectedIds)
-        for (const cid of currentIds) {
-          if (!target.has(cid)) await api.delete(`/teams/${editId}/members/${cid}`)
-        }
-        for (const cid of selectedIds) {
-          if (!current.has(cid)) await api.post(`/teams/${editId}/members`, { collaboratorId: cid })
-        }
-      } else {
-        for (const cid of selectedIds) {
-          await api.post(`/teams/${teamId}/members`, { collaboratorId: cid })
-        }
-      }
-
+      await syncMembers(teamId)
       onSaved()
       handleClose()
     } catch (err: any) {
@@ -144,15 +124,8 @@ export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalP
 
   const handleClose = () => {
     if (loading) return
-    setError('')
-    setNome('')
-    setDescricao('')
-    setStatus('ativo')
-    setSelectedIds([])
-    setCurrentIds([])
+    resetForm()
     setCollaborators([])
-    setTypeFilter('todos')
-    setSearch('')
     onClose()
   }
 
@@ -192,63 +165,7 @@ export default function TeamModal({ open, editId, onClose, onSaved }: TeamModalP
             <MenuItem value="inativo">Inativo</MenuItem>
           </TextField>
 
-          <Box sx={{ mt: 2, mb: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Membros ({selectedIds.length})
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <TextField
-                size="small"
-                fullWidth
-                label="Buscar"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <TextField
-                size="small"
-                select
-                label="Tipo"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as any)}
-                sx={{ minWidth: 140 }}
-              >
-                <MenuItem value="todos">Todos</MenuItem>
-                <MenuItem value="freelancer">Freelancers</MenuItem>
-                <MenuItem value="colaborador">Colaboradores</MenuItem>
-              </TextField>
-            </Stack>
-            <Box sx={{ maxHeight: 260, overflowY: 'auto', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1, p: 1 }}>
-              {filtered.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ p: 1 }}>
-                  Nenhum colaborador encontrado.
-                </Typography>
-              ) : (
-                filtered.map((c) => (
-                  <FormControlLabel
-                    key={c.id}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={selectedIds.includes(c.id)}
-                        onChange={() => toggleMember(c.id)}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>{memberName(c) || '-'}</span>
-                        <Chip
-                          size="small"
-                          label={c.isFreelancer ? 'Freelancer' : 'Colaborador'}
-                          color={c.isFreelancer ? 'primary' : 'default'}
-                        />
-                      </Box>
-                    }
-                    sx={{ width: '100%', mx: 0 }}
-                  />
-                ))
-              )}
-            </Box>
-          </Box>
+          <MemberPicker collaborators={collaborators} selectedIds={selectedIds} onToggle={toggleMember} />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={loading}>Cancelar</Button>

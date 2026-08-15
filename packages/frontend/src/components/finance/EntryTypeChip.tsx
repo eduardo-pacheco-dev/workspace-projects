@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { entryTypeLabels, entryTypeColors } from '../../pages/finance/financeTypes'
 
 interface EntryTypeChipProps {
@@ -6,7 +6,5 @@ interface EntryTypeChipProps {
 }
 
 export default function EntryTypeChip({ type }: EntryTypeChipProps) {
-  return (
-    <Chip size="small" label={entryTypeLabels[type] || type} color={entryTypeColors[type] || 'default'} />
-  )
+  return <StatusChip value={type} labels={entryTypeLabels} colors={entryTypeColors} />
 }

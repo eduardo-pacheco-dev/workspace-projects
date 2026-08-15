@@ -1,4 +1,5 @@
-import { Box, Typography } from '@mui/material'
+import { Box } from '@mui/material'
+import SectionTitle from '../ui/SectionTitle'
 
 interface CollaboratorSectionProps {
   label: string
@@ -8,12 +9,7 @@ interface CollaboratorSectionProps {
 export default function CollaboratorSection({ label, children }: CollaboratorSectionProps) {
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, mb: 2, mt: 1 }}
-      >
-        {label}
-      </Typography>
+      <SectionTitle label={label} />
       {children}
     </Box>
   )

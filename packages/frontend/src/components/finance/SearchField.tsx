@@ -1,4 +1,4 @@
-import { TextField } from '@mui/material'
+import SearchInput from '../ui/SearchInput'
 
 interface SearchFieldProps {
   value: string
@@ -7,13 +7,5 @@ interface SearchFieldProps {
 }
 
 export default function SearchField({ value, onChange, minWidth }: SearchFieldProps) {
-  return (
-    <TextField
-      size="small"
-      label="Buscar"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      sx={minWidth ? { minWidth } : undefined}
-    />
-  )
+  return <SearchInput value={value} onChange={onChange} minWidth={minWidth} />
 }

@@ -1,12 +1,9 @@
-import { Chip } from '@mui/material'
+import ActiveStatusChip from '../ui/ActiveStatusChip'
 
 interface LinkStatusChipProps {
   status: string
 }
 
 export default function LinkStatusChip({ status }: LinkStatusChipProps) {
-  const active = status === 'ativo'
-  return (
-    <Chip size="small" label={active ? 'Ativo' : 'Inativo'} color={active ? 'success' : 'default'} />
-  )
+  return <ActiveStatusChip status={status} />
 }

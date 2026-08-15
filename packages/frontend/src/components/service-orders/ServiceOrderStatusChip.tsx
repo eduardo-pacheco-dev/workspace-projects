@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { statusLabels, statusColors } from '../../pages/service-orders/serviceOrdersTypes'
 
 interface ServiceOrderStatusChipProps {
@@ -6,11 +6,5 @@ interface ServiceOrderStatusChipProps {
 }
 
 export default function ServiceOrderStatusChip({ status }: ServiceOrderStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      label={statusLabels[status] || status}
-      color={statusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={statusLabels} colors={statusColors} />
 }

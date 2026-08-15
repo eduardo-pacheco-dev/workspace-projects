@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { priorityLabels, priorityColors } from '../../pages/tasks/tasksTypes'
 
 interface TaskPriorityChipProps {
@@ -7,12 +7,5 @@ interface TaskPriorityChipProps {
 }
 
 export default function TaskPriorityChip({ priority, variant }: TaskPriorityChipProps) {
-  return (
-    <Chip
-      size="small"
-      variant={variant}
-      label={priorityLabels[priority] || priority}
-      color={priorityColors[priority] || 'default'}
-    />
-  )
+  return <StatusChip value={priority} labels={priorityLabels} colors={priorityColors} variant={variant} />
 }

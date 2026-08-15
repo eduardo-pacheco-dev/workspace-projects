@@ -1,11 +1,9 @@
-import { Chip } from '@mui/material'
+import ActiveStatusChip from '../ui/ActiveStatusChip'
 
 interface CompanyStatusChipProps {
   ativa: boolean
 }
 
 export default function CompanyStatusChip({ ativa }: CompanyStatusChipProps) {
-  return (
-    <Chip size="small" label={ativa ? 'Ativa' : 'Inativa'} color={ativa ? 'success' : 'default'} />
-  )
+  return <ActiveStatusChip status={ativa ? 'ativo' : 'inativo'} />
 }

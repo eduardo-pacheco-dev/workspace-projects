@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { msProjectStatusLabels, msProjectStatusColors } from '../../pages/ms-project/msProjectTypes'
 
 interface MsProjectStatusChipProps {
@@ -6,11 +6,5 @@ interface MsProjectStatusChipProps {
 }
 
 export default function MsProjectStatusChip({ status }: MsProjectStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      label={msProjectStatusLabels[status] || status}
-      color={msProjectStatusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={msProjectStatusLabels} colors={msProjectStatusColors} />
 }

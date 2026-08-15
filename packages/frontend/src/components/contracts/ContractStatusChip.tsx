@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { contractStatusLabels, contractStatusColors } from '../../pages/contracts/contractsTypes'
 
 interface ContractStatusChipProps {
@@ -6,11 +6,5 @@ interface ContractStatusChipProps {
 }
 
 export default function ContractStatusChip({ status }: ContractStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      label={contractStatusLabels[status] || status}
-      color={contractStatusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={contractStatusLabels} colors={contractStatusColors} />
 }

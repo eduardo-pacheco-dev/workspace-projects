@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, CircularProgress } from '@mui/material'
+import DeleteConfirmDialog from '../ui/DeleteConfirmDialog'
 import { ExplorerItem } from '../../pages/projects/explorerTypes'
 
 interface DeleteExplorerDialogProps {
@@ -9,21 +9,20 @@ interface DeleteExplorerDialogProps {
 }
 
 export default function DeleteExplorerDialog({ target, deleting, onClose, onConfirm }: DeleteExplorerDialogProps) {
+  const kind = target?.isFolder ? 'pasta' : 'arquivo'
   return (
-    <Dialog open={Boolean(target)} onClose={onClose}>
-      <DialogTitle>Excluir {target?.isFolder ? 'pasta' : 'arquivo'}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
+    <DeleteConfirmDialog
+      open={Boolean(target)}
+      title={`Excluir ${kind}`}
+      message={
+        <>
           Tem certeza que deseja excluir "{target?.originalName}"?
           {target?.isFolder ? ' Todos os itens dentro dela também serão excluídos.' : ''}
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="error" onClick={onConfirm} disabled={deleting}>
-          {deleting ? <CircularProgress size={20} color="inherit" /> : 'Excluir'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </>
+      }
+      deleting={deleting}
+      onConfirm={onConfirm}
+      onClose={onClose}
+    />
   )
 }

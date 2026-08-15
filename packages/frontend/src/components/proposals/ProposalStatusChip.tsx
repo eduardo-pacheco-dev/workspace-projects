@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { proposalStatusLabels, proposalStatusColors } from '../../pages/proposals/proposalsTypes'
 
 interface ProposalStatusChipProps {
@@ -6,11 +6,5 @@ interface ProposalStatusChipProps {
 }
 
 export default function ProposalStatusChip({ status }: ProposalStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      label={proposalStatusLabels[status] || status}
-      color={proposalStatusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={proposalStatusLabels} colors={proposalStatusColors} />
 }

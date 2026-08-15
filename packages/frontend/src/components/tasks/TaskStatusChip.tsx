@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { statusLabels, statusColors } from '../../pages/tasks/tasksTypes'
 
 interface TaskStatusChipProps {
@@ -7,12 +7,5 @@ interface TaskStatusChipProps {
 }
 
 export default function TaskStatusChip({ status, variant }: TaskStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      variant={variant}
-      label={statusLabels[status] || status}
-      color={statusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={statusLabels} colors={statusColors} variant={variant} />
 }

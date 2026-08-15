@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import StatusChip from '../ui/StatusChip'
 import { jobStatusLabels, jobStatusColors } from '../../pages/jobs/jobsTypes'
 
 interface JobStatusChipProps {
@@ -6,11 +6,5 @@ interface JobStatusChipProps {
 }
 
 export default function JobStatusChip({ status }: JobStatusChipProps) {
-  return (
-    <Chip
-      size="small"
-      label={jobStatusLabels[status] || status}
-      color={jobStatusColors[status] || 'default'}
-    />
-  )
+  return <StatusChip value={status} labels={jobStatusLabels} colors={jobStatusColors} />
 }

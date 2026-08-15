@@ -1,5 +1,8 @@
 import { Avatar, Box, Paper, Typography } from '@mui/material'
 
+const BRANDING_IMAGE =
+  'https://images.pexels.com/photos/19728112/pexels-photo-19728112/free-photo-of-pessoas-trabalhando-tecnologia-trabalho.jpeg?auto=compress&w=1260&h=750&dpr=1'
+
 interface AuthLayoutProps {
   headline?: string
   headlineSubtitle?: string
@@ -19,8 +22,10 @@ export default function AuthLayout({ headline, headlineSubtitle, icon, title, su
           flexDirection: 'column',
           justifyContent: 'space-between',
           p: 6,
-          background: 'linear-gradient(135deg, #1976d2 0%, #115293 50%, #0d47a1 100%)',
           color: 'white',
+          backgroundImage: `linear-gradient(rgba(0, 21, 68, 0.78), rgba(0, 21, 68, 0.78)), url('${BRANDING_IMAGE}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>

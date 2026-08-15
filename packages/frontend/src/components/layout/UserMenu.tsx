@@ -46,15 +46,15 @@ export default function UserMenu() {
             px: 1,
             py: 0.5,
             borderRadius: 2,
-            border: '1px solid rgba(0,0,0,0.1)',
+            border: '1px solid rgba(255,255,255,0.2)',
             transition: 'background-color 0.15s ease',
-            '&:hover': { bgcolor: 'action.hover' },
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
           }}
         >
           <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 600 }}>
             {user?.name}
           </Typography>
-          <Avatar sx={{ width: 30, height: 30, bgcolor: 'rgb(0, 21, 68)', fontSize: 13 }}>
+          <Avatar sx={{ width: 30, height: 30, bgcolor: 'rgba(255,255,255,0.18)', color: 'white', fontSize: 13 }}>
             {getInitials(user?.name || '')}
           </Avatar>
         </Box>

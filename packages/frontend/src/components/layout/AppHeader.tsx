@@ -1,6 +1,5 @@
 import { AppBar, Box, Toolbar, Typography } from '@mui/material'
 import NavigationMenu from './NavigationMenu'
-import ProjectSelector from './ProjectSelector'
 import UserMenu from './UserMenu'
 
 export default function AppHeader() {
@@ -9,23 +8,24 @@ export default function AppHeader() {
       position="sticky"
       elevation={0}
       sx={{
-        bgcolor: 'background.paper',
-        color: 'text.primary',
-        borderBottom: '1px solid rgba(0,0,0,0.08)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        bgcolor: 'rgb(0, 21, 68)',
+        color: 'white',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
-      <Toolbar sx={{ gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.3 }}>
-            AFL
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 300, color: 'text.secondary' }}>
-            Engenharia
-          </Typography>
-        </Box>
+      <Toolbar sx={{ px: { xs: 1.5, sm: 3 }, minHeight: { xs: 56, sm: 64 } }}>
         <NavigationMenu />
-        <ProjectSelector />
+        <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
+          <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1.1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              AFL Engenharia
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+              Sistema de Telecomunicações
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ flexGrow: 1 }} />
         <UserMenu />
       </Toolbar>
     </AppBar>

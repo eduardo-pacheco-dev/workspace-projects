@@ -26,7 +26,7 @@ export default function NavigationMenu() {
           color="inherit"
           edge="start"
           onClick={(e) => setAnchorEl(e.currentTarget)}
-          sx={{ mr: 1, '&:hover': { bgcolor: 'action.hover' } }}
+          sx={{ mr: { xs: 1, sm: 2 }, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}
         >
           <MenuIcon />
         </IconButton>

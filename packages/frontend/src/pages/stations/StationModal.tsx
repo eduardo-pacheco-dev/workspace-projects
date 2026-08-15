@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Alert,
   Box,
   CircularProgress,
@@ -16,6 +15,7 @@ import {
 } from '@mui/material'
 import api from '../../services/api'
 import StationFormField from '../../components/stations/StationFormField'
+import Button from '../../components/ui/Button'
 import { useToast } from '../../contexts/ToastContext'
 import {
   initialStationForm,
@@ -156,7 +156,20 @@ export default function StationModal({ open, editId, onClose, onSaved }: Station
       <Box component="form" onSubmit={handleSubmit}>
         <DialogTitle>{isEdit ? 'Editar Estação' : 'Nova Estação'}</DialogTitle>
         <DialogContent>
-          <Stepper activeStep={activeStep} sx={{ my: 2, '& .MuiStepLabel-label': { fontSize: '0.875rem' } }}>
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel
+            sx={{
+              my: 2,
+              '& .MuiStepConnector-line': { borderColor: 'divider' },
+              '& .MuiStepLabel-label': { fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 },
+              '& .MuiStepLabel-label.Mui-active': { fontWeight: 700, color: 'rgb(0, 21, 68)' },
+              '& .MuiStepLabel-label.Mui-completed': { fontWeight: 600, color: 'text.primary' },
+              '& .MuiStepIcon-root.Mui-active': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-root.Mui-completed': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-text': { fontWeight: 600 },
+            }}
+          >
             {stationFormSteps.map((step) => (
               <Step key={step.label}>
                 <StepLabel>{step.label}</StepLabel>

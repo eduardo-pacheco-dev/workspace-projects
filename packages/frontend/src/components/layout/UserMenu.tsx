@@ -46,11 +46,15 @@ export default function UserMenu() {
             px: 1,
             py: 0.5,
             borderRadius: 2,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+            border: '1px solid rgba(0,0,0,0.1)',
+            transition: 'background-color 0.15s ease',
+            '&:hover': { bgcolor: 'action.hover' },
           }}
         >
-          <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>{user?.name}</Typography>
-          <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.dark', fontSize: 14 }}>
+          <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 600 }}>
+            {user?.name}
+          </Typography>
+          <Avatar sx={{ width: 30, height: 30, bgcolor: 'rgb(0, 21, 68)', fontSize: 13 }}>
             {getInitials(user?.name || '')}
           </Avatar>
         </Box>
@@ -61,6 +65,7 @@ export default function UserMenu() {
         onClose={close}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { elevation: 0, sx: { border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderRadius: 2, mt: 0.5 } } }}
       >
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{user?.name}</Typography>
@@ -68,11 +73,11 @@ export default function UserMenu() {
         </Box>
         <Divider />
         <MenuItem onClick={goProfile}>
-          <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon sx={{ color: 'text.secondary', minWidth: 36 }}><AccountCircleIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Perfil</ListItemText>
         </MenuItem>
         <MenuItem onClick={goLogout}>
-          <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+          <ListItemIcon sx={{ color: 'text.secondary', minWidth: 36 }}><LogoutIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Sair</ListItemText>
         </MenuItem>
       </Menu>

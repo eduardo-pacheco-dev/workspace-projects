@@ -34,11 +34,12 @@ export default function ProjectSelector() {
         displayEmpty
         variant="standard"
         sx={{
-          color: 'white',
+          color: 'text.primary',
           minWidth: 200,
-          '& .MuiSelect-icon': { color: 'white' },
-          '&:before': { borderBottom: '1px solid rgba(255,255,255,0.5)' },
-          '&:after': { borderBottom: '1px solid white' },
+          fontSize: '0.9rem',
+          '& .MuiSelect-icon': { color: 'text.secondary' },
+          '&:before': { borderBottom: '1px solid rgba(0,0,0,0.25)' },
+          '&:after': { borderBottom: '1px solid rgb(0, 21, 68)' },
         }}
       >
         <MenuItem value="">

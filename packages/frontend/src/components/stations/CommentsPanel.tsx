@@ -25,12 +25,15 @@ interface Comment {
   createdAt: string
 }
 
+export type PanelResource = 'station' | 'radio-link'
+
 interface CommentsPanelProps {
-  stationId: number
+  resource: PanelResource
+  resourceId: number
   onError: (message: string) => void
 }
 
-export default function CommentsPanel({ stationId, onError }: CommentsPanelProps) {
+export default function CommentsPanel({ resource, resourceId, onError }: CommentsPanelProps) {
   const { user } = useAuth()
   const { showToast } = useToast()
   const [comments, setComments] = useState<Comment[]>([])
@@ -47,7 +50,7 @@ export default function CommentsPanel({ stationId, onError }: CommentsPanelProps
   const load = useCallback(() => {
     setCommentsError('')
     api
-      .get(`/comments/station/${stationId}`, {
+      .get(`/comments/${resource}/${resourceId}`, {
         params: { page: page + 1, limit: perPage },
       })
       .then((res) => {
@@ -57,7 +60,7 @@ export default function CommentsPanel({ stationId, onError }: CommentsPanelProps
       .catch((err) => {
         setCommentsError(err.response?.data?.message || 'Não foi possível carregar os comentários.')
       })
-  }, [stationId, page, perPage])
+  }, [resource, resourceId, page, perPage])
 
   useEffect(() => {
     load()
@@ -67,7 +70,7 @@ export default function CommentsPanel({ stationId, onError }: CommentsPanelProps
     if (!newComment.trim()) return
     setSubmitting(true)
     try {
-      await api.post(`/comments/station/${stationId}`, { content: newComment })
+      await api.post(`/comments/${resource}/${resourceId}`, { content: newComment })
       setNewComment('')
       setPage(0)
       load()

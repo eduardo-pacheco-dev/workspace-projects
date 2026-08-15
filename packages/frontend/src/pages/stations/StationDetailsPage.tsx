@@ -104,9 +104,9 @@ export default function StationDetailsPage() {
 
           <StationMapPanel station={station} />
 
-          <AttachmentsPanel stationId={stationId} onError={setError} />
+          <AttachmentsPanel resource="station" resourceId={stationId} onError={setError} />
 
-          <CommentsPanel stationId={stationId} onError={setError} />
+          <CommentsPanel resource="station" resourceId={stationId} onError={setError} />
 
           <StationModal
             open={editOpen}

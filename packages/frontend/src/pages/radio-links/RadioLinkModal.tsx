@@ -11,27 +11,20 @@ import {
   MenuItem,
   CircularProgress,
   Grid,
-  Typography,
   Divider,
-  Autocomplete,
 } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import { normalizeList } from '../../utils/list'
 import StationModal from '../stations/StationModal'
+import LinkEndpointPicker from '../../components/radio-links/LinkEndpointPicker'
+import { LinkStationOption } from './radioLinksTypes'
 
 interface RadioLinkModalProps {
   open: boolean
   editId?: number | null
   onClose: () => void
   onSaved: () => void
-}
-
-interface Station {
-  id: number
-  siteId: string
-  endId: string
-  mobileCarrier: string | null
 }
 
 export default function RadioLinkModal({ open, editId, onClose, onSaved }: RadioLinkModalProps) {
@@ -41,9 +34,9 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
   const [nome, setNome] = useState('')
   const [frequencia, setFrequencia] = useState('')
   const [capacidade, setCapacidade] = useState('')
-  const [stations, setStations] = useState<Station[]>([])
-  const [stationA, setStationA] = useState<Station | null>(null)
-  const [stationB, setStationB] = useState<Station | null>(null)
+  const [stations, setStations] = useState<LinkStationOption[]>([])
+  const [stationA, setStationA] = useState<LinkStationOption | null>(null)
+  const [stationB, setStationB] = useState<LinkStationOption | null>(null)
   const [observacoes, setObservacoes] = useState('')
   const [status, setStatus] = useState('ativo')
   const [error, setError] = useState('')
@@ -53,9 +46,9 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
   const fetchStations = async () => {
     try {
       const res = await api.get('/stations', { params: { limit: 1000, sortBy: 'siteId', sortOrder: 'ASC' } })
-      const data = Array.isArray(res.data) ? res.data : (res.data.data ?? [])
+      const data = normalizeList<LinkStationOption>(res.data).data
       setStations(data)
-      return data as Station[]
+      return data
     } catch {
       return []
     }
@@ -102,8 +95,9 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
       onSaved()
       handleClose()
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.')
-      showToast(err.response?.data?.message || 'Não foi possível salvar. Tente novamente.', 'error')
+      const message = err.response?.data?.message || 'Não foi possível salvar. Tente novamente.'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -119,37 +113,18 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
     setStationB(null)
     setObservacoes('')
     setStatus('ativo')
+    setNewStationEnd(null)
     onClose()
   }
 
-  const stationLabel = (s: Station) =>
-    `${s.siteId} · ${s.endId}${s.mobileCarrier ? ` (${s.mobileCarrier})` : ''}`
-
-  const renderEnd = (label: string, end: 'A' | 'B', value: Station | null, setValue: (s: Station | null) => void) => (
-    <Grid item xs={12}>
-      <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>{label}</Typography>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-        <Autocomplete
-          fullWidth
-          options={stations}
-          getOptionLabel={stationLabel}
-          value={value}
-          onChange={(_, v) => setValue(v)}
-          renderInput={(params) => (
-            <TextField {...params} label="Selecionar estação" placeholder="Busque pelo site id ou end id" />
-          )}
-        />
-        <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={() => setNewStationEnd(end)}
-          sx={{ height: 56, whiteSpace: 'nowrap' }}
-        >
-          Nova Estação
-        </Button>
-      </Box>
-    </Grid>
-  )
+  const handleStationCreated = async (record?: any) => {
+    const data = await fetchStations()
+    const created = data.find((s) => s.id === record?.id)
+    if (created) {
+      if (newStationEnd === 'A') setStationA(created)
+      else if (newStationEnd === 'B') setStationB(created)
+    }
+  }
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -169,9 +144,21 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
             </Grid>
           </Grid>
           <Divider sx={{ my: 1 }} />
-          {renderEnd('Estação A', 'A', stationA, setStationA)}
+          <LinkEndpointPicker
+            label="Estação A"
+            stations={stations}
+            value={stationA}
+            onChange={setStationA}
+            onNewStation={() => setNewStationEnd('A')}
+          />
           <Divider sx={{ my: 1 }} />
-          {renderEnd('Estação B', 'B', stationB, setStationB)}
+          <LinkEndpointPicker
+            label="Estação B"
+            stations={stations}
+            value={stationB}
+            onChange={setStationB}
+            onNewStation={() => setNewStationEnd('B')}
+          />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} margin="normal" required>
@@ -195,15 +182,7 @@ export default function RadioLinkModal({ open, editId, onClose, onSaved }: Radio
       <StationModal
         open={newStationEnd !== null}
         onClose={() => setNewStationEnd(null)}
-        onSaved={(record) => {
-          fetchStations().then((data) => {
-            const created = data.find((s) => s.id === record?.id)
-            if (created) {
-              if (newStationEnd === 'A') setStationA(created)
-              else if (newStationEnd === 'B') setStationB(created)
-            }
-          })
-        }}
+        onSaved={handleStationCreated}
       />
     </Dialog>
   )

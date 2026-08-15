@@ -26,12 +26,15 @@ import { formatSize } from '../../utils/format'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 
+export type PanelResource = 'station' | 'radio-link'
+
 interface AttachmentsPanelProps {
-  stationId: number
+  resource: PanelResource
+  resourceId: number
   onError: (message: string) => void
 }
 
-export default function AttachmentsPanel({ stationId, onError }: AttachmentsPanelProps) {
+export default function AttachmentsPanel({ resource, resourceId, onError }: AttachmentsPanelProps) {
   const { showToast } = useToast()
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
@@ -46,7 +49,7 @@ export default function AttachmentsPanel({ stationId, onError }: AttachmentsPane
 
   const load = useCallback(() => {
     api
-      .get(`/attachments/station/${stationId}`, {
+      .get(`/attachments/${resource}/${resourceId}`, {
         params: {
           page: page + 1,
           limit: perPage,
@@ -59,7 +62,7 @@ export default function AttachmentsPanel({ stationId, onError }: AttachmentsPane
         setTotal(res.data.total ?? 0)
       })
       .catch(() => {})
-  }, [stationId, page, perPage, search, type])
+  }, [resource, resourceId, page, perPage, search, type])
 
   useEffect(() => {
     load()
@@ -77,7 +80,7 @@ export default function AttachmentsPanel({ stationId, onError }: AttachmentsPane
     try {
       const form = new FormData()
       form.append('file', file)
-      await api.post(`/attachments/upload/station/${stationId}`, form)
+      await api.post(`/attachments/upload/${resource}/${resourceId}`, form)
       setPage(0)
       load()
     } catch (err: any) {

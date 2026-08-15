@@ -26,3 +26,7 @@ export function formatDate(value: string): string {
 export function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('pt-BR')
 }
+
+export function getInitials(name: string): string {
+  return name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || '?'
+}

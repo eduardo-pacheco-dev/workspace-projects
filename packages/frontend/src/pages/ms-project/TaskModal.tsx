@@ -19,11 +19,10 @@ import {
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
-import {
-  MsTask,
-  taskPriorityOptions,
-  dependencyTypeOptions,
-} from './msProjectTypes'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import { taskSchema } from './msProjectSchemas'
+import { MsTask, taskPriorityOptions, dependencyTypeOptions } from './msProjectTypes'
 
 interface TaskModalProps {
   projectId: number
@@ -47,8 +46,10 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
   const [depType, setDepType] = useState('FS')
   const [lagDays, setLagDays] = useState('0')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (open && editId) {
@@ -81,16 +82,21 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
     setDepType('FS')
     setLagDays('0')
     setError('')
+    setFieldErrors({})
     setDeleting(false)
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Informe o nome da tarefa.')
+    setError('')
+    setFieldErrors({})
+
+    const result = taskSchema.safeParse({ name, durationDays, milestone, percentComplete, priority, notes, predecessorId, depType, lagDays })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
-    setError('')
+
     setLoading(true)
     try {
       const duration = milestone ? 0 : Math.max(0, Number(durationDays) || 1)
@@ -135,7 +141,6 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
 
   const handleDelete = async () => {
     if (!editId) return
-    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return
     setDeleting(true)
     try {
       await api.delete(`/ms-project/tasks/${editId}`)
@@ -165,10 +170,15 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
             fullWidth
             label="Nome"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value)
+              setFieldErrors((prev) => ({ ...prev, name: '' }))
+            }}
             margin="normal"
             required
             autoFocus
+            error={!!fieldErrors.name}
+            helperText={fieldErrors.name}
           />
           <Grid container spacing={2}>
             <Grid item xs={6}>
@@ -280,7 +290,7 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (
             <Tooltip title="Excluir tarefa">
-              <IconButton color="error" onClick={handleDelete} disabled={loading || deleting} sx={{ mr: 'auto' }}>
+              <IconButton color="error" onClick={() => setConfirmDelete(true)} disabled={loading || deleting} sx={{ mr: 'auto' }}>
                 <Delete />
               </IconButton>
             </Tooltip>
@@ -291,6 +301,14 @@ export default function TaskModal({ projectId, open, editId, tasks, onClose, onS
           </Button>
         </DialogActions>
       </Box>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir tarefa"
+        message="Tem certeza que deseja excluir esta tarefa?"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Dialog>
   )
 }

@@ -17,6 +17,9 @@ import {
 } from '@mui/material'
 import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
+import { getFieldErrors } from '../../schemas/authSchemas'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import { resourceSchema } from './msProjectSchemas'
 import { MsResource, MsTask, resourceTypeOptions } from './msProjectTypes'
 
 interface ResourceModalProps {
@@ -39,8 +42,10 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
   const [units, setUnits] = useState('100')
   const [work, setWork] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (open && editId) {
@@ -69,16 +74,21 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
     setUnits('100')
     setWork('')
     setError('')
+    setFieldErrors({})
     setDeleting(false)
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Informe o nome do recurso.')
+    setError('')
+    setFieldErrors({})
+
+    const result = resourceSchema.safeParse({ name, type, email, maxUnits, taskId, units, work })
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error))
       return
     }
-    setError('')
+
     setLoading(true)
     try {
       const payload = {
@@ -113,7 +123,6 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
 
   const handleDelete = async () => {
     if (!editId) return
-    if (!confirm('Tem certeza que deseja excluir este recurso?')) return
     setDeleting(true)
     try {
       await api.delete(`/ms-project/resources/${editId}`)
@@ -145,10 +154,15 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
                 fullWidth
                 label="Nome"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setFieldErrors((prev) => ({ ...prev, name: '' }))
+                }}
                 margin="normal"
                 required
                 autoFocus
+                error={!!fieldErrors.name}
+                helperText={fieldErrors.name}
               />
             </Grid>
             <Grid item xs={4}>
@@ -238,7 +252,7 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {isEdit && (
             <Tooltip title="Excluir recurso">
-              <IconButton color="error" onClick={handleDelete} disabled={loading || deleting} sx={{ mr: 'auto' }}>
+              <IconButton color="error" onClick={() => setConfirmDelete(true)} disabled={loading || deleting} sx={{ mr: 'auto' }}>
                 <Delete />
               </IconButton>
             </Tooltip>
@@ -249,6 +263,14 @@ export default function ResourceModal({ projectId, open, editId, tasks, onClose,
           </Button>
         </DialogActions>
       </Box>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir recurso"
+        message="Tem certeza que deseja excluir este recurso?"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Dialog>
   )
 }

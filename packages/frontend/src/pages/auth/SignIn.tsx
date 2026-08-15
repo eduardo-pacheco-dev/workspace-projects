@@ -50,8 +50,6 @@ export default function SignIn() {
 
   return (
     <AuthLayout
-      headline="Gerencie seu workspace em um só lugar"
-      headlineSubtitle="Freelancers, jobs, propostas e contratos organizados em um único painel."
       icon={<LockOutlinedIcon />}
       title="Bem-vindo de volta"
       subtitle="Entre com suas credenciais"

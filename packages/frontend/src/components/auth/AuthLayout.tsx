@@ -1,8 +1,8 @@
 import { Avatar, Box, Paper, Typography } from '@mui/material'
 
 interface AuthLayoutProps {
-  headline: string
-  headlineSubtitle: string
+  headline?: string
+  headlineSubtitle?: string
   icon: React.ReactNode
   title: string
   subtitle: string
@@ -27,17 +27,21 @@ export default function AuthLayout({ headline, headlineSubtitle, icon, title, su
           AFL Engenharia
         </Typography>
 
-        <Box>
-          <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
-            {headline}
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, maxWidth: 480 }}>
-            {headlineSubtitle}
-          </Typography>
-        </Box>
+        {headline && (
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
+              {headline}
+            </Typography>
+            {headlineSubtitle && (
+              <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, maxWidth: 480 }}>
+                {headlineSubtitle}
+              </Typography>
+            )}
+          </Box>
+        )}
 
         <Typography variant="body2" sx={{ opacity: 0.7 }}>
-          © {new Date().getFullYear()} Workspace. Todos os direitos reservados.
+          © {new Date().getFullYear()} AFL Engenharia. Todos os direitos reservados.
         </Typography>
       </Box>
 

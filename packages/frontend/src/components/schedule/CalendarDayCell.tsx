@@ -25,13 +25,13 @@ export default function CalendarDayCell({ day, events, isToday, onCreateEvent, o
         borderRadius: 1,
         p: 0.5,
         cursor: 'pointer',
-        bgcolor: isToday ? 'primary.main' : 'background.paper',
+        bgcolor: isToday ? 'rgb(0, 21, 68)' : 'background.paper',
         color: isToday ? 'common.white' : 'text.primary',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         gap: 0.25,
-        '&:hover': { bgcolor: isToday ? 'primary.dark' : 'action.hover' },
+        '&:hover': { bgcolor: isToday ? 'rgba(0, 21, 68, 0.88)' : 'action.hover' },
       }}
     >
       <Typography variant="caption" sx={{ fontWeight: 600 }}>

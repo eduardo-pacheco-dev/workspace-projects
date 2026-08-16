@@ -3,7 +3,6 @@ import {
   Paper,
   Box,
   Typography,
-  Button,
   Grid,
   Breadcrumbs,
   IconButton,
@@ -32,6 +31,7 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import Button from '../../components/ui/Button'
 import FilePreviewDialog from '../../components/ui/FilePreviewDialog'
 import NewFolderDialog from '../../components/projects/NewFolderDialog'
 import RenameDialog from '../../components/projects/RenameDialog'
@@ -307,9 +307,9 @@ export default function ProjectFileExplorer({ projectId }: ProjectFileExplorerPr
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Anexos</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Anexos</Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <ToggleButtonGroup
             size="small"

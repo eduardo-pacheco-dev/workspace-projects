@@ -1,5 +1,4 @@
 import {
-  Box,
   IconButton,
   Paper,
   Table,
@@ -27,62 +26,78 @@ interface UsersTableProps {
 
 export default function UsersTable({ users, sortBy, sortOrder, onSort, onEdit, onDelete, isSelf }: UsersTableProps) {
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            {USER_COLUMNS.map((col) => (
-              <TableCell key={col.id}>
-                <TableSortLabel
-                  active={sortBy === col.id}
-                  direction={sortBy === col.id ? (sortOrder.toLowerCase() as 'asc' | 'desc') : 'asc'}
-                  onClick={() => onSort(col.id)}
-                >
-                  {col.label}
-                </TableSortLabel>
-              </TableCell>
+    <Paper elevation={0} sx={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+      <TableContainer>
+        <Table size="small" sx={{ minWidth: 900 }}>
+          <TableHead>
+            <TableRow
+              sx={{
+                '& th': {
+                  bgcolor: 'rgba(0, 21, 68, 0.05)',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  borderBottom: '1px solid rgba(0,0,0,0.08)',
+                },
+              }}
+            >
+              {USER_COLUMNS.map((col) => (
+                <TableCell key={col.id}>
+                  <TableSortLabel
+                    active={sortBy === col.id}
+                    direction={sortBy === col.id ? (sortOrder.toLowerCase() as 'asc' | 'desc') : 'asc'}
+                    onClick={() => onSort(col.id)}
+                  >
+                    {col.label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
+              <TableCell>Perfil</TableCell>
+              <TableCell>Empresa</TableCell>
+              <TableCell align="right">Ações</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow
+                key={user.id}
+                hover
+                sx={{
+                  '&:nth-of-type(even)': { bgcolor: 'rgba(0,0,0,0.015)' },
+                  '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04) !important' },
+                }}
+              >
+                <TableCell sx={{ fontWeight: 600 }}>{user.name}</TableCell>
+                <TableCell sx={{ color: 'text.secondary' }}>{user.lastName || '-'}</TableCell>
+                <TableCell sx={{ color: 'text.secondary' }}>{user.email}</TableCell>
+                <TableCell sx={{ color: 'text.secondary' }}>{user.phone || '-'}</TableCell>
+                <TableCell><UserStatusChip status={user.status} /></TableCell>
+                <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                  {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                </TableCell>
+                <TableCell><RoleChip role={user.role} /></TableCell>
+                <TableCell sx={{ color: 'text.secondary' }}>
+                  {user.role === 'master' ? '-' : (user.companyName || '-')}
+                </TableCell>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <IconButton size="small" color="primary" onClick={() => onEdit(user)}>
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => onDelete(user)} disabled={isSelf(user)}>
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
             ))}
-            <TableCell>Perfil</TableCell>
-            <TableCell>Empresa</TableCell>
-            <TableCell align="center">Ações</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id} hover>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.lastName || '-'}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.phone || '-'}</TableCell>
-              <TableCell>
-                <UserStatusChip status={user.status} />
-              </TableCell>
-              <TableCell>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-              <TableCell>
-                <RoleChip role={user.role} />
-              </TableCell>
-              <TableCell>{user.role === 'master' ? '-' : (user.companyName || '-')}</TableCell>
-              <TableCell align="center">
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                  <IconButton onClick={() => onEdit(user)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => onDelete(user)} disabled={isSelf(user)}>
-                    <Delete />
-                  </IconButton>
-                </Box>
-              </TableCell>
-            </TableRow>
-          ))}
-          {users.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={9} align="center">
-                Nenhum usuário encontrado.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            {users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={9} align="center" sx={{ py: 5, color: 'text.secondary' }}>
+                  Nenhum usuário encontrado.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
   )
 }

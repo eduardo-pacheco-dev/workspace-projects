@@ -1,59 +1,97 @@
-import { Box, Divider, Grid, Paper, Stack, Typography } from '@mui/material'
-import AssignmentIcon from '@mui/icons-material/Assignment'
+import { Avatar, Box, Grid, Paper, Stack, Typography } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
 import { Task, statusLabels, priorityLabels, formatDateTime } from '../../pages/tasks/tasksTypes'
 import Markdown from '../Markdown'
+import Button from '../ui/Button'
 import TaskStatusChip from './TaskStatusChip'
 import TaskPriorityChip from './TaskPriorityChip'
 import InfoItem from '../ui/InfoItem'
+import { getInitials } from '../../utils/format'
 
 interface TaskSummaryCardProps {
   task: Task
+  onEdit: () => void
 }
 
-export default function TaskSummaryCard({ task }: TaskSummaryCardProps) {
+export default function TaskSummaryCard({ task, onEdit }: TaskSummaryCardProps) {
   return (
-    <Paper sx={{ p: 4, mb: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Box
+    <Paper
+      elevation={0}
+      sx={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}
+    >
+      <Box sx={{ bgcolor: 'rgb(0, 21, 68)', px: 3, py: 2.5, display: 'flex', alignItems: 'center', gap: 2, color: 'white' }}>
+        <Avatar
           sx={{
-            width: 56,
-            height: 56,
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
+            bgcolor: 'rgba(255,255,255,0.15)',
             color: 'white',
+            width: 48,
+            height: 48,
+            fontWeight: 700,
           }}
         >
-          <AssignmentIcon fontSize="large" />
-        </Box>
-        <Box sx={{ flexGrow: 1, minWidth: 200 }}>
-          <Typography variant="h4">{task.title}</Typography>
+          {getInitials(task.title)}
+        </Avatar>
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: 'white' }}>
+            {task.title}
+          </Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
             <TaskStatusChip status={task.status} />
             <TaskPriorityChip priority={task.priority} variant="outlined" />
           </Stack>
         </Box>
+        <Button
+          variant="outlined"
+          startIcon={<EditIcon />}
+          onClick={onEdit}
+          sx={{
+            flexShrink: 0,
+            color: 'white',
+            borderColor: 'rgba(255,255,255,0.5)',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.12)', borderColor: 'white', color: 'white' },
+          }}
+        >
+          Editar
+        </Button>
       </Box>
-      <Divider sx={{ mb: 3 }} />
 
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="subtitle2" color="text.secondary">Descrição</Typography>
-          <Box sx={{ pt: 0.5 }}>
-            <Markdown>{task.description}</Markdown>
-          </Box>
+      <Box sx={{ p: 3 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                display: 'block',
+                fontSize: '0.65rem',
+                textTransform: 'uppercase',
+                letterSpacing: 0.6,
+              }}
+            >
+              Descrição
+            </Typography>
+            <Box sx={{ pt: 0.5 }}>
+              <Markdown>{task.description}</Markdown>
+            </Box>
+          </Grid>
+          <InfoItem label="Status" value={statusLabels[task.status] || task.status} md={4} />
+          <InfoItem label="Prioridade" value={priorityLabels[task.priority] || task.priority} md={4} />
+          <InfoItem label="Vencimento" value={formatDateTime(task.dueAt)} md={4} />
+          <InfoItem label="Projeto" value={task.project} md={4} />
+          <InfoItem label="Cliente" value={task.client} md={4} />
+          <InfoItem label="Responsável" value={task.assignedTo} md={4} />
+          <InfoItem
+            label="Criada em"
+            value={task.createdAt ? new Date(task.createdAt).toLocaleString('pt-BR') : undefined}
+            md={4}
+          />
+          <InfoItem
+            label="Atualizada em"
+            value={task.updatedAt ? new Date(task.updatedAt).toLocaleString('pt-BR') : undefined}
+            md={4}
+          />
         </Grid>
-        <InfoItem label="Status" value={statusLabels[task.status] || task.status} />
-        <InfoItem label="Prioridade" value={priorityLabels[task.priority] || task.priority} />
-        <InfoItem label="Vencimento" value={formatDateTime(task.dueAt)} />
-        <InfoItem label="Projeto" value={task.project} />
-        <InfoItem label="Cliente" value={task.client} />
-        <InfoItem label="Responsável" value={task.assignedTo} />
-        <InfoItem label="Criada em" value={task.createdAt ? new Date(task.createdAt).toLocaleString('pt-BR') : undefined} />
-        <InfoItem label="Atualizada em" value={task.updatedAt ? new Date(task.updatedAt).toLocaleString('pt-BR') : undefined} />
-      </Grid>
+      </Box>
     </Paper>
   )
 }

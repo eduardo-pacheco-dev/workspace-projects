@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Box, Button, Divider, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, Typography } from '@mui/material'
+import { Box, Divider, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DescriptionIcon from '@mui/icons-material/Description'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import Button from '../ui/Button'
+import DeleteModal from '../modals/DeleteModal'
 import { ProjectDocument } from '../../pages/projects/projectsTypes'
 import ProjectDocumentModal from '../../pages/projects/ProjectDocumentModal'
 
@@ -41,10 +42,10 @@ export default function ProjectDocumentsTab({ projectId, onError }: ProjectDocum
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography variant="h6">Documentos</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Documentos</Typography>
           <Typography variant="body2" color="text.secondary">
             Configure quais documentos serão necessários, tipos e quantidades.
           </Typography>
@@ -73,10 +74,10 @@ export default function ProjectDocumentsTab({ projectId, onError }: ProjectDocum
                 secondary={`${doc.tipo || 'Sem tipo'} · Quantidade: ${doc.quantidade}${doc.observacoes ? ` · ${doc.observacoes}` : ''}`}
               />
               <ListItemSecondaryAction>
-                <IconButton size="small" onClick={() => setDocModal({ open: true, editId: doc.id })}>
+                <IconButton size="small" color="primary" onClick={() => setDocModal({ open: true, editId: doc.id })}>
                   <EditIcon fontSize="small" />
                 </IconButton>
-                <IconButton size="small" onClick={() => setToDelete(doc)}>
+                <IconButton size="small" color="error" onClick={() => setToDelete(doc)}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </ListItemSecondaryAction>
@@ -96,10 +97,10 @@ export default function ProjectDocumentsTab({ projectId, onError }: ProjectDocum
         }}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir documento"
-        message={`Excluir o documento "${toDelete?.nome}" da configuração?`}
+        message={`Tem certeza que deseja excluir o documento "${toDelete?.nome}" da configuração? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />

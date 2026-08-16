@@ -3,7 +3,7 @@ import { Alert, Box, CircularProgress, Divider, IconButton, List, ListItem, Pape
 import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import DeleteModal from '../modals/DeleteModal'
 import { ProjectComment } from '../../pages/projects/projectsTypes'
 
 interface ProjectCommentsTabProps {
@@ -82,8 +82,8 @@ export default function ProjectCommentsTab({ projectId, onError }: ProjectCommen
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>Comentários</Typography>
       <Divider sx={{ mb: 2 }} />
       {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
       {!commentsError && comments.length === 0 ? (
@@ -151,10 +151,10 @@ export default function ProjectCommentsTab({ projectId, onError }: ProjectCommen
         </IconButton>
       </Box>
 
-      <ConfirmDialog
+      <DeleteModal
         open={toDelete != null}
         title="Excluir comentário"
-        message="Tem certeza que deseja excluir este comentário?"
+        message="Tem certeza que deseja excluir este comentário? Esta ação não poderá ser desfeita."
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete != null && deleteComment(toDelete)}
       />

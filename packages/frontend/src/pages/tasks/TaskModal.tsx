@@ -4,13 +4,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Button,
   Alert,
   Box,
   CircularProgress,
-  MenuItem,
   Grid,
+  Stepper,
+  Step,
+  StepLabel,
+  Typography,
   IconButton,
   Tooltip,
 } from '@mui/material'
@@ -18,6 +19,10 @@ import { Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { getFieldErrors } from '../../schemas/authSchemas'
+import TextField from '../../components/ui/TextField'
+import SelectField from '../../components/ui/SelectField'
+import Button from '../../components/ui/Button'
+import DeleteModal from '../../components/modals/DeleteModal'
 import useTaskOptions from '../../hooks/useTaskOptions'
 import MarkdownField from '../../components/tasks/MarkdownField'
 import {
@@ -38,6 +43,8 @@ interface TaskModalProps {
   onSaved: () => void
 }
 
+const STEPS = [{ label: 'Informações' }, { label: 'Status e Prazo' }, { label: 'Associação' }]
+
 export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalProps) {
   const isEdit = Boolean(editId)
   const { showToast } = useToast()
@@ -53,30 +60,39 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   const [client, setClient] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
   const [error, setError] = useState('')
+  const [stepError, setStepError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
+
+  const isLastStep = activeStep === STEPS.length - 1
 
   useEffect(() => {
-    if (open && editId) {
-      setLoading(true)
-      api
-        .get(`/tasks/${editId}`)
-        .then((res) => {
-          const data: Task = res.data
-          setTitle(data.title)
-          setDescription(data.description || '')
-          setStatus(data.status || 'pending')
-          setPriority(data.priority || 'medium')
-          const due = splitDateTime(data.dueAt)
-          setDueDate(due.date)
-          setDueTime(due.time)
-          setProject(data.project || '')
-          setClient(data.client || '')
-          setAssignedTo(data.assignedTo || '')
-        })
-        .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
-        .finally(() => setLoading(false))
+    if (open) {
+      setActiveStep(0)
+      setStepError('')
+      if (editId) {
+        setLoading(true)
+        api
+          .get(`/tasks/${editId}`)
+          .then((res) => {
+            const data: Task = res.data
+            setTitle(data.title)
+            setDescription(data.description || '')
+            setStatus(data.status || 'pending')
+            setPriority(data.priority || 'medium')
+            const due = splitDateTime(data.dueAt)
+            setDueDate(due.date)
+            setDueTime(due.time)
+            setProject(data.project || '')
+            setClient(data.client || '')
+            setAssignedTo(data.assignedTo || '')
+          })
+          .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
+          .finally(() => setLoading(false))
+      }
     }
   }, [open, editId])
 
@@ -91,14 +107,45 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
     setClient('')
     setAssignedTo('')
     setError('')
+    setStepError('')
     setFieldErrors({})
     setDeleting(false)
+    setConfirmDelete(false)
+    setActiveStep(0)
   }
 
   const clearFieldError = (field: string) => setFieldErrors((prev) => ({ ...prev, [field]: '' }))
 
+  const validateStep = () => {
+    const missing: string[] = []
+    if (activeStep === 0 && !title.trim()) missing.push('Título')
+
+    if (missing.length) {
+      setStepError(`Preencha os campos obrigatórios: ${missing.join(', ')}.`)
+      return false
+    }
+    setStepError('')
+    return true
+  }
+
+  const handleNext = () => {
+    if (validateStep()) setActiveStep((prev) => prev + 1)
+  }
+
+  const handleBack = () => {
+    setStepError('')
+    setActiveStep((prev) => Math.max(0, prev - 1))
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!isLastStep) {
+      handleNext()
+      return
+    }
+    if (!validateStep()) return
+
     setError('')
     setFieldErrors({})
 
@@ -144,10 +191,10 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
 
   const handleDelete = async () => {
     if (!editId) return
-    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return
     setDeleting(true)
     try {
       await api.delete(`/tasks/${editId}`)
+      showToast('Tarefa excluída com sucesso.')
       reset()
       onSaved()
       onClose()
@@ -167,170 +214,207 @@ export default function TaskModal({ open, editId, onClose, onSaved }: TaskModalP
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{isEdit ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <TextField
-            fullWidth
-            label="Título"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value)
-              clearFieldError('title')
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel
+            sx={{
+              my: 2,
+              '& .MuiStepConnector-line': { borderColor: 'divider' },
+              '& .MuiStepLabel-label': { fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 },
+              '& .MuiStepLabel-label.Mui-active': { fontWeight: 700, color: 'rgb(0, 21, 68)' },
+              '& .MuiStepLabel-label.Mui-completed': { fontWeight: 600, color: 'text.primary' },
+              '& .MuiStepIcon-root.Mui-active': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-root.Mui-completed': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-text': { fontWeight: 600 },
             }}
-            margin="normal"
-            required
-            autoFocus
-            error={!!fieldErrors.title}
-            helperText={fieldErrors.title}
-          />
-          <MarkdownField
-            value={description}
-            onChange={(value) => {
-              setDescription(value)
-              clearFieldError('description')
-            }}
-            error={fieldErrors.description}
-          />
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                select
-                label="Status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                margin="normal"
-              >
-                {statusOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                select
-                label="Prioridade"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                margin="normal"
-              >
-                {priorityOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-          </Grid>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Data de Vencimento"
-                type="date"
-                value={dueDate}
-                onChange={(e) => {
-                  setDueDate(e.target.value)
-                  clearFieldError('dueAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Hora de Vencimento"
-                type="time"
-                value={dueTime}
-                onChange={(e) => {
-                  setDueTime(e.target.value)
-                  clearFieldError('dueAt')
-                }}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                select
-                label="Projeto"
-                value={project}
-                onChange={(e) => {
-                  setProject(e.target.value)
-                  if (!client) {
-                    const selected = projects.find((p) => p.nome === e.target.value)
-                    if (selected?.cliente) setClient(selected.cliente)
-                  }
-                  clearFieldError('project')
-                }}
-                margin="normal"
-                error={!!fieldErrors.project}
-                helperText={fieldErrors.project || 'Opcional'}
-              >
-                <MenuItem value="">Sem projeto</MenuItem>
-                {projects.map((p) => (
-                  <MenuItem key={p.id} value={p.nome}>{p.nome}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                select
-                label="Cliente"
-                value={client}
-                onChange={(e) => {
-                  setClient(e.target.value)
-                  clearFieldError('client')
-                }}
-                margin="normal"
-                error={!!fieldErrors.client}
-                helperText={fieldErrors.client || 'Opcional'}
-              >
-                <MenuItem value="">Sem cliente</MenuItem>
-                {clients.map((c) => (
-                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-          </Grid>
-          <TextField
-            fullWidth
-            select
-            label="Responsável"
-            value={assignedTo}
-            onChange={(e) => {
-              setAssignedTo(e.target.value)
-              clearFieldError('assignedTo')
-            }}
-            margin="normal"
-            error={!!fieldErrors.assignedTo}
-            helperText={fieldErrors.assignedTo || 'Opcional'}
           >
-            <MenuItem value="">Sem responsável</MenuItem>
-            {collaborators.map((c) => (
-              <MenuItem key={c.id} value={collaboratorName(c)}>{collaboratorName(c)}</MenuItem>
+            {STEPS.map((step) => (
+              <Step key={step.label}>
+                <StepLabel>{step.label}</StepLabel>
+              </Step>
             ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          {isEdit && (
-            <Tooltip title="Excluir tarefa">
-              <IconButton color="error" onClick={handleDelete} disabled={loading || deleting} sx={{ mr: 'auto' }}>
-                <Delete />
-              </IconButton>
-            </Tooltip>
+          </Stepper>
+
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
+            Passo {activeStep + 1} de {STEPS.length} — {STEPS[activeStep].label}
+          </Typography>
+
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {stepError && <Alert severity="warning" sx={{ mb: 2 }}>{stepError}</Alert>}
+
+          {activeStep === 0 && (
+            <>
+              <TextField
+                label="Título"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  clearFieldError('title')
+                }}
+                margin="normal"
+                required
+                autoFocus
+                error={!!fieldErrors.title}
+                helperText={fieldErrors.title}
+              />
+              <MarkdownField
+                value={description}
+                onChange={(value) => {
+                  setDescription(value)
+                  clearFieldError('description')
+                }}
+                error={fieldErrors.description}
+              />
+            </>
           )}
-          <Button onClick={handleClose} disabled={loading || deleting}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={loading || deleting}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
-          </Button>
+
+          {activeStep === 1 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <SelectField
+                  label="Status"
+                  value={status}
+                  onChange={setStatus}
+                  margin="normal"
+                  options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <SelectField
+                  label="Prioridade"
+                  value={priority}
+                  onChange={setPriority}
+                  margin="normal"
+                  options={priorityOptions.map((option) => ({ value: option.value, label: option.label }))}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Data de Vencimento"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => {
+                    setDueDate(e.target.value)
+                    clearFieldError('dueAt')
+                  }}
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Hora de Vencimento"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => {
+                    setDueTime(e.target.value)
+                    clearFieldError('dueAt')
+                  }}
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+          )}
+
+          {activeStep === 2 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <SelectField
+                  label="Projeto"
+                  value={project}
+                  onChange={(value) => {
+                    setProject(value)
+                    if (!client) {
+                      const selected = projects.find((p) => p.nome === value)
+                      if (selected?.cliente) setClient(selected.cliente)
+                    }
+                    clearFieldError('project')
+                  }}
+                  margin="normal"
+                  error={!!fieldErrors.project}
+                  helperText={fieldErrors.project || 'Opcional'}
+                  options={[
+                    { value: '', label: 'Sem projeto' },
+                    ...projects.map((p) => ({ value: p.nome, label: p.nome })),
+                  ]}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <SelectField
+                  label="Cliente"
+                  value={client}
+                  onChange={(value) => {
+                    setClient(value)
+                    clearFieldError('client')
+                  }}
+                  margin="normal"
+                  error={!!fieldErrors.client}
+                  helperText={fieldErrors.client || 'Opcional'}
+                  options={[
+                    { value: '', label: 'Sem cliente' },
+                    ...clients.map((c) => ({ value: c, label: c })),
+                  ]}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <SelectField
+                  label="Responsável"
+                  value={assignedTo}
+                  onChange={(value) => {
+                    setAssignedTo(value)
+                    clearFieldError('assignedTo')
+                  }}
+                  margin="normal"
+                  error={!!fieldErrors.assignedTo}
+                  helperText={fieldErrors.assignedTo || 'Opcional'}
+                  options={[
+                    { value: '', label: 'Sem responsável' },
+                    ...collaborators.map((c) => ({ value: collaboratorName(c), label: collaboratorName(c) })),
+                  ]}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {isEdit && (
+              <Tooltip title="Excluir tarefa">
+                <IconButton color="error" onClick={() => setConfirmDelete(true)} disabled={loading || deleting}>
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Button onClick={handleClose} disabled={loading || deleting}>Cancelar</Button>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0 || loading || deleting}>
+              Voltar
+            </Button>
+            {isLastStep ? (
+              <Button type="submit" variant="contained" disabled={loading || deleting}>
+                {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
+              </Button>
+            ) : (
+              <Button type="submit" variant="contained" disabled={loading || deleting}>
+                Próximo
+              </Button>
+            )}
+          </Box>
         </DialogActions>
       </Box>
+
+      <DeleteModal
+        open={confirmDelete}
+        title="Excluir tarefa"
+        message="Tem certeza que deseja excluir esta tarefa? Esta ação não poderá ser desfeita."
+        deleting={deleting}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Dialog>
   )
 }

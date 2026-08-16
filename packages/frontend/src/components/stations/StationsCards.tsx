@@ -68,8 +68,8 @@ export default function StationsCards({ stations, onOpen, onEdit, onDelete }: St
                 cursor: 'pointer',
                 borderRadius: 2,
                 overflow: 'hidden',
-                transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                '&:hover': { boxShadow: '0 8px 24px rgba(0,0,0,0.1)', transform: 'translateY(-2px)' },
+              transition: 'border-color 0.15s ease',
+              '&:hover': { borderColor: 'rgba(0, 21, 68, 0.35)' },
               }}
               onClick={() => onOpen(station)}
             >

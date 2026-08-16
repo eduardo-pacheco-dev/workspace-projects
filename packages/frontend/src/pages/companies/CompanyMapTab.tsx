@@ -74,14 +74,14 @@ export default function CompanyMapTab({ company }: CompanyMapTabProps) {
   }, [coords, company.nome])
 
   const mapsUrl = coords
-    ? `https://maps.google.com/maps?q=${coords.lat},${coords.lng}`
-    : `https://maps.google.com/maps?q=${encodeURIComponent(address || company.nome)}`
+    ? `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`
+    : `https://www.openstreetmap.org/search?query=${encodeURIComponent(address || company.nome)}`
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Box>
-          <Typography variant="h6">Localização</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Localização</Typography>
           <Typography variant="body2" color="text.secondary">
             {address || company.nome}
           </Typography>
@@ -95,7 +95,7 @@ export default function CompanyMapTab({ company }: CompanyMapTabProps) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Abrir no Google Maps
+          Abrir no mapa
         </Button>
       </Box>
 

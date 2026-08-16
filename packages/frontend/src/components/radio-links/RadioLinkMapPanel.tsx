@@ -9,7 +9,7 @@ interface RadioLinkMapPanelProps {
 
 const shareEndpoint = async (radioLink: RadioLink, lat: number, lng: number, label: string) => {
   const text = `Estação ${label} do enlace ${radioLink.nome}`
-  const url = `https://maps.google.com/maps?q=${lat},${lng}`
+  const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`
   if (navigator.share) {
     try {
       await navigator.share({ title: text, text, url })
@@ -34,9 +34,12 @@ export default function RadioLinkMapPanel({ radioLink }: RadioLinkMapPanelProps)
     radioLink.longitudeB != null
 
   return (
-    <Paper sx={{ p: 3, mt: 3 }}>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}
+    >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Mapa do Enlace</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Mapa do Enlace</Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {radioLink.latitudeA != null && radioLink.longitudeA != null && (
             <Button

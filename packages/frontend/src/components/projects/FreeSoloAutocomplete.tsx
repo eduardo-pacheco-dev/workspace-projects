@@ -18,7 +18,7 @@ export default function FreeSoloAutocomplete({ label, options, value, onChange, 
       onChange={(_, v) => onChange(v ?? '')}
       onInputChange={(_, v) => onChange(v)}
       renderInput={(params) => (
-        <TextField {...params} label={label} margin="normal" placeholder={placeholder} />
+        <TextField {...params} label={label} margin="normal" placeholder={placeholder} size="small" />
       )}
     />
   )

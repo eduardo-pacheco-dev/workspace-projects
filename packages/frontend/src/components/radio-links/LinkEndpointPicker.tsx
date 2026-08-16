@@ -1,5 +1,6 @@
-import { Autocomplete, Box, Button, TextField, Typography } from '@mui/material'
+import { Autocomplete, Box, TextField, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import Button from '../ui/Button'
 import { LinkStationOption } from '../../pages/radio-links/radioLinksTypes'
 
 interface LinkEndpointPickerProps {
@@ -32,7 +33,7 @@ export default function LinkEndpointPicker({ label, stations, value, onChange, o
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={onNewStation}
-          sx={{ height: 56, whiteSpace: 'nowrap' }}
+          sx={{ height: 56, whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           Nova Estação
         </Button>

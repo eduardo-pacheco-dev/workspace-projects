@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import StationModal from './StationModal'
 import ImportStationsModal from './ImportStationsModal'
 import StationsMapTab from './StationsMapTab'
@@ -14,6 +14,13 @@ import StationsFilters, { StationViewMode } from '../../components/stations/Stat
 import StationsTable from '../../components/stations/StationsTable'
 import StationsCards from '../../components/stations/StationsCards'
 import { Station, StationSortBy, SortOrder } from './stationsTypes'
+
+const VIEW_MODE_KEY = 'stationsViewMode'
+
+const getStoredViewMode = (): StationViewMode => {
+  const stored = localStorage.getItem(VIEW_MODE_KEY)
+  return stored === 'cards' ? 'cards' : 'table'
+}
 
 export default function StationsPage() {
   const navigate = useNavigate()
@@ -32,7 +39,7 @@ export default function StationsPage() {
   const [stationToDelete, setStationToDelete] = useState<Station | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [tab, setTab] = useState(0)
-  const [viewMode, setViewMode] = useState<StationViewMode>('table')
+  const [viewMode, setViewMode] = useState<StationViewMode>(getStoredViewMode)
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,6 +101,11 @@ export default function StationsPage() {
   const openCreate = () => setModal({ open: true, editId: null })
   const openEdit = (station: Station) => setModal({ open: true, editId: station.id })
 
+  const handleViewModeChange = (mode: StationViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
       <StationsToolbar total={total} onImport={() => setImportOpen(true)} onNew={openCreate} />
@@ -106,7 +118,7 @@ export default function StationsPage() {
         onSearchChange={resetFilterAndPage(setSearch)}
         onStatusChange={resetFilterAndPage(setStatusFilter)}
         onMobileCarrierChange={resetFilterAndPage(setMobileCarrierFilter)}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
         showViewToggle={tab === 0}
       />
 
@@ -170,10 +182,10 @@ export default function StationsPage() {
             onSaved={() => fetchData()}
           />
 
-          <ConfirmDialog
+          <DeleteModal
             open={Boolean(stationToDelete)}
             title="Excluir estação"
-            message={`Tem certeza que deseja excluir a estação "${stationToDelete?.siteId}"?`}
+            message={`Tem certeza que deseja excluir a estação "${stationToDelete?.siteId}"? Esta ação não poderá ser desfeita.`}
             onClose={() => setStationToDelete(null)}
             onConfirm={() => stationToDelete && handleDelete(stationToDelete.id)}
           />

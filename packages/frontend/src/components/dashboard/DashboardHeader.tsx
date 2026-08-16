@@ -1,6 +1,7 @@
-import { Box, Button, Paper, Stack, Typography } from '@mui/material'
+import { Box, Paper, Stack, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { useNavigate } from 'react-router-dom'
+import Button from '../ui/Button'
 import { useProject } from '../../contexts/ProjectContext'
 
 interface DashboardHeaderProps {
@@ -24,10 +25,10 @@ export default function DashboardHeader({ userName, isMaster }: DashboardHeaderP
       sx={{
         p: 4,
         mb: 3,
-        borderRadius: 4,
+        borderRadius: 2,
         background: projectId
           ? 'linear-gradient(135deg, #065f46 0%, #047857 45%, #059669 100%)'
-          : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #6d28d9 100%)',
+          : 'linear-gradient(135deg, rgb(0, 21, 68) 0%, #1e3a8a 55%, #3b5bdb 100%)',
         color: 'white',
         position: 'relative',
         overflow: 'hidden',
@@ -92,7 +93,7 @@ export default function DashboardHeader({ userName, isMaster }: DashboardHeaderP
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                sx={{ bgcolor: 'white', color: '#312e81', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
+                sx={{ bgcolor: 'white', color: 'rgb(0, 21, 68)', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
                 onClick={() => navigate('/projects')}
               >
                 Novo Projeto

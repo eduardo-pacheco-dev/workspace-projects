@@ -1,5 +1,6 @@
-import { Box, Button, Divider, Paper, Stack, Typography } from '@mui/material'
+import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import Button from '../ui/Button'
 import { useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../../utils/format'
 
@@ -20,8 +21,8 @@ export default function FinancePanel({ income, expenses, balance }: FinancePanel
   const values = { income, expenses, balance }
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+    <Paper elevation={0} sx={{ p: 3, borderRadius: 2, height: '100%', border: '1px solid rgba(0,0,0,0.08)', bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>
         Finanças do Mês
       </Typography>
       <Divider sx={{ mb: 2 }} />

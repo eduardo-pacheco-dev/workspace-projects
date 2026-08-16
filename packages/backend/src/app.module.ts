@@ -26,6 +26,7 @@ import { CompaniesModule } from './companies/company.module';
 import { CollaboratorsModule } from './collaborators/collaborators.module';
 import { TeamsModule } from './teams/teams.module';
 import { PdcaModule } from './pdca/pdca.module';
+import { DashboardNotesModule } from './dashboard-notes/dashboard-notes.module';
 import { SeedModule } from './seed/seed.module';
 
 const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
@@ -78,6 +79,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
     CollaboratorsModule,
     TeamsModule,
     PdcaModule,
+    DashboardNotesModule,
     SeedModule,
   ],
   providers: [

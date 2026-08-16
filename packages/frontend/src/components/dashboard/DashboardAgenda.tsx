@@ -72,12 +72,13 @@ export default function DashboardAgenda() {
     <Paper
       elevation={0}
       sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         p: 2.5,
         borderRadius: 2,
         border: '1px solid rgba(0,0,0,0.08)',
         bgcolor: 'background.paper',
-        height: '100%',
-        overflowY: 'auto',
       }}
     >
       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>
@@ -108,28 +109,30 @@ export default function DashboardAgenda() {
         </IconButton>
       </Box>
 
-      {dayItems.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-          Nenhum agendamento para este dia.
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {dayItems.slice(0, 10).map((item) => (
-            <ListItem
-              key={item.id}
-              sx={{ px: 0, py: 0.25, cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04)' } }}
-              onClick={() => navigate(`/schedule?edit=${item.id}`)}
-            >
-              <ListItemText
-                primary={item.title}
-                secondary={timeLabel(item.startAt) || undefined}
-                primaryTypographyProps={{ sx: { fontSize: '0.875rem', fontWeight: 500 } }}
-                secondaryTypographyProps={{ sx: { fontSize: '0.75rem' } }}
-              />
-            </ListItem>
-          ))}
-        </List>
-      )}
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {dayItems.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+            Nenhum agendamento para este dia.
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {dayItems.slice(0, 10).map((item) => (
+              <ListItem
+                key={item.id}
+                sx={{ px: 0, py: 0.25, cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04)' } }}
+                onClick={() => navigate(`/schedule?edit=${item.id}`)}
+              >
+                <ListItemText
+                  primary={item.title}
+                  secondary={timeLabel(item.startAt) || undefined}
+                  primaryTypographyProps={{ sx: { fontSize: '0.875rem', fontWeight: 500 } }}
+                  secondaryTypographyProps={{ sx: { fontSize: '0.75rem' } }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Box>
     </Paper>
   )
 }

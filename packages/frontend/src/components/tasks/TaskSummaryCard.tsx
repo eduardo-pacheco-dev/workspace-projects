@@ -1,6 +1,8 @@
 import { Avatar, Box, Grid, Paper, Stack, Typography } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
 import { Task, statusLabels, priorityLabels, formatDateTime } from '../../pages/tasks/tasksTypes'
 import Markdown from '../Markdown'
+import Button from '../ui/Button'
 import TaskStatusChip from './TaskStatusChip'
 import TaskPriorityChip from './TaskPriorityChip'
 import InfoItem from '../ui/InfoItem'
@@ -8,15 +10,16 @@ import { getInitials } from '../../utils/format'
 
 interface TaskSummaryCardProps {
   task: Task
+  onEdit: () => void
 }
 
-export default function TaskSummaryCard({ task }: TaskSummaryCardProps) {
+export default function TaskSummaryCard({ task, onEdit }: TaskSummaryCardProps) {
   return (
     <Paper
       elevation={0}
       sx={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}
     >
-      <Box sx={{ bgcolor: 'rgb(0, 21, 68)', px: 3, py: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ bgcolor: 'rgb(0, 21, 68)', px: 3, py: 2.5, display: 'flex', alignItems: 'center', gap: 2, color: 'white' }}>
         <Avatar
           sx={{
             bgcolor: 'rgba(255,255,255,0.15)',
@@ -37,6 +40,19 @@ export default function TaskSummaryCard({ task }: TaskSummaryCardProps) {
             <TaskPriorityChip priority={task.priority} variant="outlined" />
           </Stack>
         </Box>
+        <Button
+          variant="outlined"
+          startIcon={<EditIcon />}
+          onClick={onEdit}
+          sx={{
+            flexShrink: 0,
+            color: 'white',
+            borderColor: 'rgba(255,255,255,0.5)',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.12)', borderColor: 'white', color: 'white' },
+          }}
+        >
+          Editar
+        </Button>
       </Box>
 
       <Box sx={{ p: 3 }}>

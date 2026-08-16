@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Box, Button, Container } from '@mui/material'
-import { ArrowBack, Edit } from '@mui/icons-material'
+import { ArrowBack } from '@mui/icons-material'
 import api from '../../services/api'
 import ErrorState from '../../components/ui/ErrorState'
 import PageLoader from '../../components/ui/PageLoader'
@@ -42,17 +42,13 @@ export default function TaskDetail() {
 
   return (
     <Container maxWidth="md" sx={{ mt: 3, mb: 6 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+      <Box sx={{ mb: 2 }}>
         <Button startIcon={<ArrowBack />} onClick={() => navigate('/tasks')}>
           Voltar
         </Button>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button variant="contained" startIcon={<Edit />} onClick={() => setModalOpen(true)}>
-          Editar
-        </Button>
       </Box>
 
-      <TaskSummaryCard task={task} />
+      <TaskSummaryCard task={task} onEdit={() => setModalOpen(true)} />
 
       <Box sx={{ mt: 3 }}>
         <SubtasksSection

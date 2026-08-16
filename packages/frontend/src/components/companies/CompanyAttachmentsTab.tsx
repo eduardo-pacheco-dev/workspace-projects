@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Box, Button, Divider, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Pagination, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Box, Divider, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Pagination, Paper, Stack, TextField, Typography } from '@mui/material'
 import { AttachFile, Delete, Download, PictureAsPdf, Visibility } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import Button from '../ui/Button'
+import DeleteModal from '../modals/DeleteModal'
 import FilePreviewDialog from '../ui/FilePreviewDialog'
 import { formatSize } from '../../utils/format'
 import { CompanyAttachment } from '../../pages/companies/companiesTypes'
@@ -75,10 +76,10 @@ export default function CompanyAttachmentsTab({ companyId }: CompanyAttachmentsT
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Box>
-          <Typography variant="h6">Anexos</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Anexos</Typography>
           <Typography variant="body2" color="text.secondary">
             {total} anexo(s)
           </Typography>
@@ -144,7 +145,7 @@ export default function CompanyAttachmentsTab({ companyId }: CompanyAttachmentsT
                   >
                     <Download fontSize="small" />
                   </IconButton>
-                  <IconButton size="small" onClick={() => setToDelete(attachment)}>
+                  <IconButton size="small" color="error" onClick={() => setToDelete(attachment)}>
                     <Delete fontSize="small" />
                   </IconButton>
                 </ListItemSecondaryAction>
@@ -161,10 +162,10 @@ export default function CompanyAttachmentsTab({ companyId }: CompanyAttachmentsT
 
       <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir anexo"
-        message={`Tem certeza que deseja excluir o anexo "${toDelete?.originalName}"?`}
+        message={`Tem certeza que deseja excluir o anexo "${toDelete?.originalName}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />

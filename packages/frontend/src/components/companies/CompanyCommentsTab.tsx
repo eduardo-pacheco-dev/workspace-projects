@@ -4,7 +4,7 @@ import { ArrowBack, Delete, Edit, Send } from '@mui/icons-material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import DeleteModal from '../modals/DeleteModal'
 import { CompanyComment } from '../../pages/companies/companiesTypes'
 
 const PAGE_SIZE = 5
@@ -94,8 +94,8 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Comentários</Typography>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>Comentários</Typography>
       <Divider sx={{ mb: 2 }} />
       {commentsError && <Alert severity="error" sx={{ mb: 2 }}>{commentsError}</Alert>}
       {!commentsError && comments.length === 0 ? (
@@ -168,10 +168,10 @@ export default function CompanyCommentsTab({ companyId }: CompanyCommentsTabProp
         </Stack>
       )}
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir comentário"
-        message={`Tem certeza que deseja excluir o comentário de ${toDelete?.author}?`}
+        message={`Tem certeza que deseja excluir o comentário de ${toDelete?.author}? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && deleteComment(toDelete.id)}
       />

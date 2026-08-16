@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Paper,
   Typography,
-  Button,
   Divider,
   Alert,
   Box,
@@ -24,7 +23,8 @@ import AddIcon from '@mui/icons-material/Add'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Button from '../../components/ui/Button'
+import DeleteModal from '../../components/modals/DeleteModal'
 import AddProjectDialog from './AddProjectDialog'
 import { ProjectSummary } from './companiesTypes'
 
@@ -140,10 +140,10 @@ export default function CompanyProjectsTab({ companyId }: CompanyProjectsTabProp
     <Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Paper sx={{ p: 3 }}>
+      <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
           <Box>
-            <Typography variant="h6">Projetos</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Projetos</Typography>
             <Typography variant="body2" color="text.secondary">
               {total} projeto(s) vinculado(s)
             </Typography>
@@ -188,42 +188,59 @@ export default function CompanyProjectsTab({ companyId }: CompanyProjectsTabProp
         {projects.length === 0 ? (
           <Typography variant="body2" color="text.secondary">Nenhum projeto encontrado.</Typography>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{sortableCell('nome', 'Nome')}</TableCell>
-                  <TableCell>{sortableCell('codigo', 'Código')}</TableCell>
-                  <TableCell>{sortableCell('cliente', 'Cliente')}</TableCell>
-                  <TableCell>{sortableCell('dataInicio', 'Início')}</TableCell>
-                  <TableCell>{sortableCell('status', 'Status')}</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {projects.map((p) => (
-                  <TableRow key={p.id} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{p.nome}</TableCell>
-                    <TableCell>{p.codigo || '-'}</TableCell>
-                    <TableCell>{p.cliente || '-'}</TableCell>
-                    <TableCell>{formatDate(p.dataInicio)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                        color={p.status === 'ativo' ? 'success' : 'default'}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" color="error" onClick={() => setProjectToRemove(p)}>
-                        <LinkOffIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      '& th': {
+                        bgcolor: 'rgba(0, 21, 68, 0.05)',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
+                      },
+                    }}
+                  >
+                    <TableCell>{sortableCell('nome', 'Nome')}</TableCell>
+                    <TableCell>{sortableCell('codigo', 'Código')}</TableCell>
+                    <TableCell>{sortableCell('cliente', 'Cliente')}</TableCell>
+                    <TableCell>{sortableCell('dataInicio', 'Início')}</TableCell>
+                    <TableCell>{sortableCell('status', 'Status')}</TableCell>
+                    <TableCell align="right">Ações</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {projects.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      hover
+                      sx={{
+                        '&:nth-of-type(even)': { bgcolor: 'rgba(0,0,0,0.015)' },
+                        '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04) !important' },
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 600 }}>{p.nome}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{p.codigo || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{p.cliente || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{formatDate(p.dataInicio)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                          color={p.status === 'ativo' ? 'success' : 'default'}
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" color="error" onClick={() => setProjectToRemove(p)}>
+                          <LinkOffIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
         )}
         {total > PAGE_SIZE && (
           <Stack alignItems="center" sx={{ mt: 2 }}>
@@ -244,7 +261,7 @@ export default function CompanyProjectsTab({ companyId }: CompanyProjectsTabProp
         onLink={handleLink}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={!!projectToRemove}
         title="Desvincular projeto"
         message={`Tem certeza que deseja desvincular o projeto "${projectToRemove?.nome}"?`}

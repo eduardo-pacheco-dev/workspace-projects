@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Paper,
   Typography,
-  Button,
   Divider,
   Alert,
   Box,
@@ -28,7 +27,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Button from '../../components/ui/Button'
+import DeleteModal from '../../components/modals/DeleteModal'
 import CollaboratorModal from './CollaboratorModal'
 import AddFreelancerDialog from './AddFreelancerDialog'
 import { formatDateTime } from '../../utils/format'
@@ -193,17 +193,21 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
       <Tabs
         value={subTab}
         onChange={(_, value) => setSubTab(value)}
-        sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+        sx={{
+          '& .MuiTabs-indicator': { bgcolor: 'rgb(0, 21, 68)' },
+          '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 },
+          '& .Mui-selected': { color: 'rgb(0, 21, 68)' },
+        }}
       >
         <Tab label={`Colaboradores (${collabTotal})`} />
         <Tab label={`Freelancers (${linkedTotal})`} />
       </Tabs>
 
       {subTab === 0 && (
-        <Paper sx={{ p: 3 }}>
+        <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Box>
-              <Typography variant="h6">Colaboradores</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Colaboradores</Typography>
               <Typography variant="body2" color="text.secondary">
                 {collabTotal} colaborador(es) · {countActive} ativo(s)
               </Typography>
@@ -236,7 +240,16 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
             <TableContainer>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
+                  <TableRow
+                    sx={{
+                      '& th': {
+                        bgcolor: 'rgba(0, 21, 68, 0.05)',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
+                      },
+                    }}
+                  >
                     <TableCell>{sortableCell(collabSort, handleCollabSort, 'nome', 'Nome')}</TableCell>
                     <TableCell>{sortableCell(collabSort, handleCollabSort, 'cargo', 'Cargo')}</TableCell>
                     <TableCell>{sortableCell(collabSort, handleCollabSort, 'email', 'E-mail')}</TableCell>
@@ -247,23 +260,31 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
                 </TableHead>
                 <TableBody>
                   {collaborators.map((c) => (
-                    <TableRow key={c.id} hover>
+                    <TableRow
+                      key={c.id}
+                      hover
+                      sx={{
+                        '&:nth-of-type(even)': { bgcolor: 'rgba(0,0,0,0.015)' },
+                        '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04) !important' },
+                      }}
+                    >
                       <TableCell sx={{ fontWeight: 600 }}>{c.nome}</TableCell>
-                      <TableCell>{c.cargo || '-'}</TableCell>
-                      <TableCell>{c.email || '-'}</TableCell>
-                      <TableCell>{c.telefone || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{c.cargo || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{c.email || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{c.telefone || '-'}</TableCell>
                       <TableCell>
                         <Chip
                           size="small"
                           label={c.ativo ? 'Ativo' : 'Inativo'}
                           color={c.ativo ? 'success' : 'default'}
+                          sx={{ fontWeight: 600 }}
                         />
                       </TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <IconButton size="small" onClick={() => setModal({ open: true, editId: c.id })}>
+                        <IconButton size="small" color="primary" onClick={() => setModal({ open: true, editId: c.id })}>
                           <EditIcon fontSize="small" />
                         </IconButton>
-                        <IconButton size="small" onClick={() => setCollaboratorToDelete(c)}>
+                        <IconButton size="small" color="error" onClick={() => setCollaboratorToDelete(c)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
@@ -287,10 +308,10 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
       )}
 
       {subTab === 1 && (
-        <Paper sx={{ p: 3 }}>
+        <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Box>
-              <Typography variant="h6">Freelancers</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>Freelancers</Typography>
               <Typography variant="body2" color="text.secondary">
                 {linkedTotal} freelancer(s) vinculado(s)
               </Typography>
@@ -323,7 +344,16 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
             <TableContainer>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
+                  <TableRow
+                    sx={{
+                      '& th': {
+                        bgcolor: 'rgba(0, 21, 68, 0.05)',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
+                      },
+                    }}
+                  >
                     <TableCell>{sortableCell(linkedSort, handleLinkedSort, 'firstName', 'Nome')}</TableCell>
                     <TableCell>{sortableCell(linkedSort, handleLinkedSort, 'email', 'E-mail')}</TableCell>
                     <TableCell>{sortableCell(linkedSort, handleLinkedSort, 'createdAt', 'Vinculado em')}</TableCell>
@@ -332,12 +362,19 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
                 </TableHead>
                 <TableBody>
                   {linked.map((l) => (
-                    <TableRow key={l.id} hover>
+                    <TableRow
+                      key={l.id}
+                      hover
+                      sx={{
+                        '&:nth-of-type(even)': { bgcolor: 'rgba(0,0,0,0.015)' },
+                        '&:hover': { bgcolor: 'rgba(0, 21, 68, 0.04) !important' },
+                      }}
+                    >
                       <TableCell sx={{ fontWeight: 600 }}>
                         {l.freelancer.firstName} {l.freelancer.lastName}
                       </TableCell>
-                      <TableCell>{l.freelancer.email || '-'}</TableCell>
-                      <TableCell>{formatDateTime(l.createdAt)}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{l.freelancer.email || '-'}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{formatDateTime(l.createdAt)}</TableCell>
                       <TableCell align="right">
                         <IconButton size="small" color="error" onClick={() => setLinkToRemove(l)}>
                           <LinkOffIcon fontSize="small" />
@@ -377,15 +414,15 @@ export default function CompanyMembersTab({ companyId }: CompanyMembersTabProps)
         onLink={handleLinkFreelancer}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={!!collaboratorToDelete}
         title="Excluir colaborador"
-        message={`Tem certeza que deseja excluir o colaborador "${collaboratorToDelete?.nome}"?`}
+        message={`Tem certeza que deseja excluir o colaborador "${collaboratorToDelete?.nome}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setCollaboratorToDelete(null)}
         onConfirm={handleDeleteCollaborator}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={!!linkToRemove}
         title="Desvincular freelancer"
         message={`Tem certeza que deseja desvincular o freelancer "${linkToRemove?.freelancer.firstName} ${linkToRemove?.freelancer.lastName}"?`}

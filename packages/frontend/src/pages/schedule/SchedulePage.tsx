@@ -4,7 +4,7 @@ import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import ScheduleModal from './ScheduleModal'
 import ScheduleCalendar from './ScheduleCalendar'
 import ScheduleToolbar, { ScheduleViewMode } from '../../components/schedule/ScheduleToolbar'
@@ -186,10 +186,10 @@ export default function SchedulePage() {
         onSaved={() => fetchEvents()}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir agendamento"
-        message={`Tem certeza que deseja excluir o agendamento "${toDelete?.title}"?`}
+        message={`Tem certeza que deseja excluir o agendamento "${toDelete?.title}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />

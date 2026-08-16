@@ -1,5 +1,6 @@
-import { Box, Button, IconButton, Paper, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, IconButton, Paper, Stack, Tooltip, Typography } from '@mui/material'
 import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material'
+import Button from '../../components/ui/Button'
 import { ScheduleEvent, statusCalendarColors, statusLabels, toDateString, capitalize } from './scheduleTypes'
 import CalendarDayCell from '../../components/schedule/CalendarDayCell'
 
@@ -53,13 +54,13 @@ export default function ScheduleCalendar({
   )
 
   return (
-    <Paper elevation={2} sx={{ p: 2 }}>
+    <Paper elevation={0} sx={{ p: 2, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton onClick={onPrevMonth} size="small">
             <ChevronLeft />
           </IconButton>
-          <Typography variant="h6" sx={{ minWidth: 200, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ minWidth: 200, textAlign: 'center', fontWeight: 700, color: 'rgb(0, 21, 68)' }}>
             {monthLabel}
           </Typography>
           <IconButton onClick={onNextMonth} size="small">

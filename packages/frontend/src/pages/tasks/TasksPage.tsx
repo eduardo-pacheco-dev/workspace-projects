@@ -4,7 +4,7 @@ import { Alert, Container, TablePagination } from '@mui/material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import TaskModal from './TaskModal'
 import TasksToolbar from '../../components/tasks/TasksToolbar'
 import TasksFilters from '../../components/tasks/TasksFilters'
@@ -144,10 +144,10 @@ export default function TasksPage() {
         onSaved={() => fetchTasks()}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(taskToDelete)}
         title="Excluir tarefa"
-        message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"?`}
+        message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setTaskToDelete(null)}
         onConfirm={() => taskToDelete && handleDelete(taskToDelete.id)}
       />

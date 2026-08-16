@@ -17,11 +17,11 @@ export default function StatCard({ label, value, icon, gradient, path }: StatCar
       onClick={() => navigate(path)}
       sx={{
         borderRadius: 3,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        border: '1px solid rgba(0,0,0,0.04)',
+        boxShadow: 'none',
+        border: '1px solid rgba(0,0,0,0.08)',
         cursor: 'pointer',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.12)' },
+        transition: 'border-color 0.15s ease',
+        '&:hover': { borderColor: 'rgba(0, 21, 68, 0.35)' },
       }}
     >
       <CardContent>

@@ -1,15 +1,13 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
 import { useNavigate } from 'react-router-dom'
 import Button from '../ui/Button'
 import { useProject } from '../../contexts/ProjectContext'
 
 interface DashboardHeaderProps {
   userName: string
-  isMaster: boolean
 }
 
-export default function DashboardHeader({ userName, isMaster }: DashboardHeaderProps) {
+export default function DashboardHeader({ userName }: DashboardHeaderProps) {
   const navigate = useNavigate()
   const { projectId, setProjectId } = useProject()
 
@@ -27,7 +25,7 @@ export default function DashboardHeader({ userName, isMaster }: DashboardHeaderP
         minHeight: 260,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         p: 4,
         borderRadius: 0,
         mx: -3,
@@ -76,44 +74,24 @@ export default function DashboardHeader({ userName, isMaster }: DashboardHeaderP
               : 'Visão geral dos seus projetos, estações e enlaces de telecomunicações.'}
           </Typography>
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          {projectId ? (
-            <>
-              <Button
-                variant="contained"
-                sx={{ bgcolor: 'white', color: '#047857', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
-                onClick={() => navigate(`/projects/${projectId}`)}
-              >
-                Abrir Projeto
-              </Button>
-              <Button
-                variant="outlined"
-                sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
-                onClick={() => setProjectId(null)}
-              >
-                Limpar Seleção
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                sx={{ bgcolor: 'white', color: 'rgb(0, 21, 68)', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
-                onClick={() => navigate('/projects')}
-              >
-                Novo Projeto
-              </Button>
-              <Button
-                variant="outlined"
-                sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
-                onClick={() => navigate(isMaster ? '/finance' : '/tasks')}
-              >
-                {isMaster ? 'Ver Finanças' : 'Ver Tarefas'}
-              </Button>
-            </>
-          )}
-        </Stack>
+        {projectId && (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button
+              variant="contained"
+              sx={{ bgcolor: 'white', color: '#047857', fontWeight: 600, '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
+              onClick={() => navigate(`/projects/${projectId}`)}
+            >
+              Abrir Projeto
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.08)' } }}
+              onClick={() => setProjectId(null)}
+            >
+              Limpar Seleção
+            </Button>
+          </Stack>
+        )}
       </Box>
     </Paper>
   )

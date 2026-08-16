@@ -24,7 +24,7 @@ export interface MenuItemConfig {
 }
 
 export const allItems: MenuItemConfig[] = [
-  { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+  { label: 'Início', path: '/', icon: <DashboardIcon /> },
   { label: 'Agenda', path: '/schedule', icon: <EventIcon />, module: '/schedule' },
   { label: 'Tarefas', path: '/tasks', icon: <CheckCircleIcon />, module: '/tasks' },
   { label: 'Cronograma', path: '/ms-project', icon: <TimelineIcon />, module: '/ms-project' },

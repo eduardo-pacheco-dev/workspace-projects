@@ -12,8 +12,10 @@ import { JOB_EXECUTORS, EchoJobExecutor, CleanupLogsJobExecutor } from './job-ex
   providers: [
     JobsService,
     JobSchedulerService,
-    { provide: JOB_EXECUTORS, useClass: EchoJobExecutor, multi: true } as any,
-    { provide: JOB_EXECUTORS, useClass: CleanupLogsJobExecutor, multi: true } as any,
+    {
+      provide: JOB_EXECUTORS,
+      useFactory: () => [new EchoJobExecutor(), new CleanupLogsJobExecutor()],
+    },
   ],
   exports: [JobsService],
 })

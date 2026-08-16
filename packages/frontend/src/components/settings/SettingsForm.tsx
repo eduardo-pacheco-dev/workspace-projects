@@ -1,5 +1,6 @@
-import { Alert, Box, Button, Divider, Grid, Paper, Typography } from '@mui/material'
+import { Alert, Box, Divider, Grid, Paper, Typography } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
+import Button from '../ui/Button'
 import { SettingsField } from '../../pages/settings/settingsTypes'
 import SettingsFormField from './SettingsFormField'
 
@@ -25,8 +26,11 @@ export default function SettingsForm<T>({
   disabledMessage,
 }: SettingsFormProps<T>) {
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>
+    <Paper
+      elevation={0}
+      sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>{title}</Typography>
       {disabledMessage && <Alert severity="info" sx={{ mb: 2 }}>{disabledMessage}</Alert>}
       <Divider sx={{ mb: 3 }} />
       <Box component="form" onSubmit={onSubmit}>

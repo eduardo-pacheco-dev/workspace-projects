@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Alert, Container, Paper, Tab, Tabs, CircularProgress, Typography } from '@mui/material'
+import { Alert, Container, Paper, Tab, Tabs, Typography } from '@mui/material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import PageLoader from '../../components/ui/PageLoader'
 import ProfileForm from '../users/ProfileForm'
 import { settingsFields, companyFields, emptySettings, emptyCompany, Settings, CompanyForm } from './settingsTypes'
 import { DEFAULT_ROLE_MODULES, parseRoleModules } from './roleModules'
@@ -140,14 +141,14 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+      <Container sx={{ mt: 4 }}>
+        <PageLoader py={8} />
       </Container>
     )
   }
 
   return (
-    <Container sx={{ mt: 4 }}>
+    <Container sx={{ mt: 3, mb: 6 }}>
       <SettingsHeader />
 
       {message && (
@@ -156,8 +157,24 @@ export default function SettingsPage() {
         </Alert>
       )}
 
-      <Paper sx={{ mb: 3 }}>
-        <Tabs value={isMaster ? tab : Math.min(tab, 2)} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          border: '1px solid rgba(0,0,0,0.08)',
+          borderRadius: 2,
+        }}
+      >
+        <Tabs
+          value={isMaster ? tab : Math.min(tab, 2)}
+          onChange={(_, v) => setTab(v)}
+          sx={{
+            px: 2,
+            '& .MuiTabs-indicator': { bgcolor: 'rgb(0, 21, 68)' },
+            '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 },
+            '& .Mui-selected': { color: 'rgb(0, 21, 68)' },
+          }}
+        >
           <Tab label="Sistema" />
           <Tab label="Empresa" />
           {isMaster && <Tab label="Perfis" />}
@@ -189,8 +206,11 @@ export default function SettingsPage() {
             disabledMessage={!canEditCompany ? 'Apenas administradores podem alterar os dados da empresa.' : undefined}
           />
         ) : (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
+          <Paper
+            elevation={0}
+            sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>
               Configuração da Empresa
             </Typography>
             <Alert severity="info">

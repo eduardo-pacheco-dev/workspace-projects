@@ -1,90 +1,156 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Box, Button, Chip, Container, CircularProgress, Grid, IconButton, Paper, Typography } from '@mui/material'
-import { ArrowBack, Edit } from '@mui/icons-material'
+import { Alert, Box, Button, CircularProgress, Container, Grid, Paper, Stack, Typography } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import InfoItem from '../../components/ui/InfoItem'
-import JobStatusChip from '../../components/jobs/JobStatusChip'
-import JobAttachmentsSection from '../../components/jobs/JobAttachmentsSection'
-import JobCommentsSection from '../../components/jobs/JobCommentsSection'
-import { Job, expLevelLabels, parseSkills, formatBudget } from './jobsTypes'
+import StatusChip from '../../components/ui/StatusChip'
+import JobModal from './JobModal'
+import { Job, jobStatusLabels, jobStatusColors, formatJobDate } from './jobsTypes'
 
 export default function JobDetail() {
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { showToast } = useToast()
+  const jobId = Number(id)
+
   const [job, setJob] = useState<Job | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [editOpen, setEditOpen] = useState(false)
+  const [toDelete, setToDelete] = useState(false)
+  const [toRun, setToRun] = useState(false)
 
   const load = useCallback(() => {
-    api.get(`/jobs/${id}`)
+    setLoading(true)
+    setError('')
+    api.get(`/jobs/${jobId}`)
       .then((res) => setJob(res.data))
-      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar os dados.'))
+      .catch((err) => setError(err.response?.data?.message || 'Não foi possível carregar o job.'))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [jobId])
 
   useEffect(() => {
     load()
   }, [load])
 
-  if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
-  if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
-  if (!job) return <Container sx={{ mt: 4 }}><Alert severity="warning">Job não encontrado.</Alert></Container>
+  const handleRun = async () => {
+    setToRun(false)
+    try {
+      const res = await api.post(`/jobs/${jobId}/run`)
+      showToast(`Job "${res.data.nome}" executado com sucesso.`)
+      load()
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível executar o job.', 'error')
+    }
+  }
 
-  const skills = parseSkills(job.skills)
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/jobs/${jobId}`)
+      showToast('Job excluído com sucesso.')
+      navigate('/jobs')
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Não foi possível excluir.', 'error')
+    }
+  }
+
+  if (loading) {
+    return (
+      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Container>
+    )
+  }
+
+  if (error && !job) {
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    )
+  }
+
+  if (!job) return null
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
-        <IconButton onClick={() => navigate('/collaborators?tab=3')}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes do Job</Typography>
-        <Button variant="contained" startIcon={<Edit />} onClick={() => navigate('/collaborators?tab=3')}>
-          Editar
-        </Button>
-      </Box>
+    <Container sx={{ mt: 4 }}>
+      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/jobs')} sx={{ mb: 2 }}>
+        Voltar
+      </Button>
 
-      <Paper sx={{ p: 4, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
           <Box>
-            <Typography variant="h4">{job.title}</Typography>
-            <JobStatusChip status={job.status} />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="h5">{job.nome}</Typography>
+              <StatusChip value={job.status} labels={jobStatusLabels} colors={jobStatusColors} />
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Tipo: {job.tipo}
+            </Typography>
           </Box>
-        </Box>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="contained"
+              startIcon={<PlayArrowIcon />}
+              onClick={() => setToRun(true)}
+              disabled={job.status === 'executando'}
+            >
+              Executar agora
+            </Button>
+            <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setEditOpen(true)}>
+              Editar
+            </Button>
+            <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setToDelete(true)}>
+              Excluir
+            </Button>
+          </Stack>
+        </Stack>
 
-        <Grid container spacing={3}>
-          <InfoItem label="Orçamento" value={formatBudget(job.budget, job.budgetType)} md={6} />
-          <InfoItem label="Nível de Experiência" value={expLevelLabels[job.experienceLevel] || job.experienceLevel} md={6} />
-          <InfoItem label="Cliente" value={job.clientId || '-'} md={6} />
-          <Grid item xs={12} sm={6} md={6}>
-            <Typography variant="subtitle2" color="text.secondary">Status</Typography>
-            <Box sx={{ mt: 0.5 }}>
-              <JobStatusChip status={job.status} />
-            </Box>
-          </Grid>
-          <InfoItem label="Descrição" value={job.description || '-'} md={12} />
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Habilidades</Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              {skills.length > 0
-                ? skills.map((skill) => <Chip key={skill} label={skill} size="small" variant="outlined" color="primary" />)
-                : <Typography variant="body2" color="text.secondary">Nenhuma habilidade cadastrada</Typography>
-              }
-            </Box>
-          </Grid>
+        <Grid container spacing={2}>
+          <InfoItem label="Expressão Cron" value={job.cronExpression} md={6} />
+          <InfoItem label="Descrição" value={job.descricao} md={6} />
+          <InfoItem label="Última execução" value={formatJobDate(job.ultimoExecutadoEm)} md={6} />
+          <InfoItem label="Próxima execução" value={formatJobDate(job.proximaExecucaoEm)} md={6} />
+          <InfoItem label="Criado em" value={formatJobDate(job.createdAt)} md={6} />
+          <InfoItem label="Atualizado em" value={formatJobDate(job.updatedAt)} md={6} />
         </Grid>
       </Paper>
 
-      <JobAttachmentsSection jobId={job.id} onError={setError} />
+      <JobModal
+        open={editOpen}
+        editId={jobId}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => {
+          setEditOpen(false)
+          load()
+        }}
+      />
 
-      <JobCommentsSection jobId={job.id} />
+      <ConfirmDialog
+        open={toRun}
+        title="Executar job"
+        message={`Deseja executar agora o job "${job.nome}"?`}
+        confirmLabel="Executar"
+        onClose={() => setToRun(false)}
+        onConfirm={handleRun}
+      />
 
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="outlined" onClick={() => navigate('/collaborators?tab=3')}>
-          Voltar para a Lista
-        </Button>
-      </Box>
+      <ConfirmDialog
+        open={toDelete}
+        title="Excluir job"
+        message={`Tem certeza que deseja excluir o job "${job.nome}"?`}
+        onClose={() => setToDelete(false)}
+        onConfirm={handleDelete}
+      />
     </Container>
   )
 }

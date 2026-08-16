@@ -2,47 +2,45 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Attachment } from '../attachments/attachment.entity';
-import { Comment } from '../comments/comment.entity';
+import { Company } from '../companies/company.entity';
 
-@Entity()
+@Entity('pdca_job')
 export class Job {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'text' })
-  title: string;
+  nome: string;
 
   @Column({ type: 'text' })
-  description: string;
-
-  @Column({ type: 'real' })
-  budget: number;
-
-  @Column({ type: 'text' })
-  budgetType: string;
-
-  @Column({ type: 'text' })
-  skills: string;
-
-  @Column({ type: 'text' })
-  experienceLevel: string;
-
-  @Column({ type: 'text' })
-  status: string;
+  tipo: string;
 
   @Column({ type: 'text', nullable: true })
-  clientId?: string;
+  descricao: string | null;
 
-  @OneToMany(() => Attachment, (att) => att.job)
-  attachments: Attachment[];
+  @Column({ type: 'text' })
+  cronExpression: string;
 
-  @OneToMany(() => Comment, (c) => c.job)
-  comments: Comment[];
+  @Column({ type: 'text', default: 'ativo' })
+  status: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  ultimoExecutadoEm: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  proximaExecucaoEm: Date | null;
+
+  @Column({ type: 'integer', nullable: true })
+  empresaId: number | null;
+
+  @ManyToOne(() => Company, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'empresaId' })
+  empresa: Company | null;
 
   @CreateDateColumn()
   createdAt: Date;

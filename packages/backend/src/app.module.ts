@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtRoleGuard } from './common/guards/jwt-role.guard';
 import { AuthModule } from './auth/auth.module';
@@ -34,6 +35,7 @@ const dbType = process.env.DB_TYPE === 'sqljs' ? 'sqljs' : 'mysql';
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 100 }]),
+    NestScheduleModule.forRoot(),
     TypeOrmModule.forRoot(
       dbType === 'sqljs'
         ? {

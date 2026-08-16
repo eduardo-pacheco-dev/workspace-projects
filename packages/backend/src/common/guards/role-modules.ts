@@ -27,6 +27,7 @@ export const ALL_ROLE_MODULES = [
   { value: '/ms-project', label: 'Cronograma' },
   { value: '/finance', label: 'Finanças' },
   { value: '/companies', label: 'Empresas' },
+  { value: '/jobs', label: 'Jobs' },
 ];
 
 export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
@@ -45,6 +46,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/lpus',
     '/teams',
     '/settings',
+    '/jobs',
   ],
   supervisor: [
     '/tasks',
@@ -60,6 +62,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/lpus',
     '/teams',
     '/settings',
+    '/jobs',
   ],
   coordenador: [
     '/tasks',
@@ -75,6 +78,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/lpus',
     '/teams',
     '/settings',
+    '/jobs',
   ],
   analista: [
     '/tasks',
@@ -89,6 +93,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/attachments',
     '/comments',
     '/settings',
+    '/jobs',
   ],
   technician: [
     '/tasks',
@@ -100,6 +105,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/attachments',
     '/comments',
     '/settings',
+    '/jobs',
   ],
   user: [
     '/tasks',
@@ -111,6 +117,7 @@ export const DEFAULT_ROLE_MODULES: Record<string, string[]> = {
     '/attachments',
     '/comments',
     '/settings',
+    '/jobs',
   ],
   master: [],
 };

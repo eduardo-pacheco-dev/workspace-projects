@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Paper, TextareaAutosize } from '@mui/material'
+import { Box, Paper } from '@mui/material'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -44,6 +44,8 @@ export default function DashboardNote() {
       elevation={0}
       sx={{
         height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         p: 2,
         pt: 2.5,
         borderRadius: 1,
@@ -66,18 +68,18 @@ export default function DashboardNote() {
           boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
         }}
       />
-      <TextareaAutosize
-        minRows={4}
-        maxRows={14}
+      <textarea
         value={text}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Escreva seu rascunho..."
         style={{
+          flex: 1,
           width: '100%',
+          minHeight: 0,
           border: 'none',
           outline: 'none',
           background: 'transparent',
-          resize: 'vertical',
+          resize: 'none',
           fontFamily: 'inherit',
           fontSize: '0.95rem',
           lineHeight: 1.5,

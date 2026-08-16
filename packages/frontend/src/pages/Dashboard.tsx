@@ -345,8 +345,8 @@ export default function Dashboard() {
   return (
     <>
       <DashboardHeader userName={user?.name ?? ''} isMaster={isMaster} />
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Grid container spacing={3}>
+      <Container maxWidth="lg" sx={{ mt: 3, mb: 6 }}>
+        <Grid container spacing={3} sx={{ mb: 3, minHeight: '33.33vh' }}>
           <Grid item xs={12} md={6}>
             <DashboardNote />
           </Grid>

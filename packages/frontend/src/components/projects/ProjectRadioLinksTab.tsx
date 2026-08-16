@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Autocomplete, Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, TextField, Typography } from '@mui/material'
+import { Autocomplete, Box, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, TextField, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import Button from '../ui/Button'
+import DeleteModal from '../modals/DeleteModal'
 import { ProjectRadioLink } from '../../pages/projects/projectsTypes'
 
 interface ProjectRadioLinksTabProps {
@@ -60,8 +61,8 @@ export default function ProjectRadioLinksTab({ projectId, onError }: ProjectRadi
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Enlaces de Rádio do Projeto</Typography>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>Enlaces de Rádio do Projeto</Typography>
       <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'flex-start' }}>
         <Autocomplete
           fullWidth
@@ -70,7 +71,7 @@ export default function ProjectRadioLinksTab({ projectId, onError }: ProjectRadi
           value={selectedRadioLink}
           onChange={(_, v) => setSelectedRadioLink(v)}
           renderInput={(params) => (
-            <TextField {...params} label="Adicionar enlace" placeholder="Busque pelo nome" />
+            <TextField {...params} label="Adicionar enlace" placeholder="Busque pelo nome" size="small" />
           )}
         />
         <Button
@@ -78,7 +79,7 @@ export default function ProjectRadioLinksTab({ projectId, onError }: ProjectRadi
           startIcon={<AddIcon />}
           onClick={handleAdd}
           disabled={!selectedRadioLink}
-          sx={{ height: 56, whiteSpace: 'nowrap' }}
+          sx={{ height: 40, whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           Adicionar
         </Button>
@@ -103,6 +104,7 @@ export default function ProjectRadioLinksTab({ projectId, onError }: ProjectRadi
               <ListItemSecondaryAction>
                 <IconButton
                   size="small"
+                  color="error"
                   onClick={(e) => {
                     e.stopPropagation()
                     setToRemove(link)
@@ -116,10 +118,11 @@ export default function ProjectRadioLinksTab({ projectId, onError }: ProjectRadi
         </List>
       )}
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toRemove)}
         title="Remover enlace"
-        message={`Remover o enlace "${toRemove?.nome}" do projeto?`}
+        message={`Tem certeza que deseja remover o enlace "${toRemove?.nome}" do projeto? Esta ação não poderá ser desfeita.`}
+        confirmLabel="Remover"
         onClose={() => setToRemove(null)}
         onConfirm={() => toRemove && handleRemove(toRemove.id)}
       />

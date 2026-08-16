@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Alert, Box, Button, Container, CircularProgress, IconButton, Typography } from '@mui/material'
+import { Box, Button, Container } from '@mui/material'
 import { ArrowBack, Edit } from '@mui/icons-material'
 import api from '../../services/api'
+import ErrorState from '../../components/ui/ErrorState'
+import PageLoader from '../../components/ui/PageLoader'
 import TaskModal from './TaskModal'
 import TaskSummaryCard from '../../components/tasks/TaskSummaryCard'
 import SubtasksSection from '../../components/tasks/SubtasksSection'
@@ -34,17 +36,17 @@ export default function TaskDetail() {
     setTask((prev) => (prev ? { ...prev, subtasks } : prev))
   }
 
-  if (loading) return <Container sx={{ mt: 4, textAlign: 'center' }}><CircularProgress /></Container>
-  if (error) return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>
-  if (!task) return <Container sx={{ mt: 4 }}><Alert severity="warning">Tarefa não encontrada.</Alert></Container>
+  if (loading) return <Container sx={{ mt: 4 }}><PageLoader py={10} /></Container>
+  if (error) return <Container sx={{ mt: 4 }}><ErrorState message={error} /></Container>
+  if (!task) return <Container sx={{ mt: 4 }}><ErrorState message="Tarefa não encontrada." severity="warning" /></Container>
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
-        <IconButton onClick={() => navigate('/tasks')}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h5" sx={{ flexGrow: 1 }}>Detalhes da Tarefa</Typography>
+    <Container maxWidth="md" sx={{ mt: 3, mb: 6 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+        <Button startIcon={<ArrowBack />} onClick={() => navigate('/tasks')}>
+          Voltar
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
         <Button variant="contained" startIcon={<Edit />} onClick={() => setModalOpen(true)}>
           Editar
         </Button>
@@ -52,19 +54,17 @@ export default function TaskDetail() {
 
       <TaskSummaryCard task={task} />
 
-      <SubtasksSection
-        taskId={task.id}
-        subtasks={task.subtasks ?? []}
-        onSubtasksChange={handleSubtasksChange}
-        onError={setError}
-      />
+      <Box sx={{ mt: 3 }}>
+        <SubtasksSection
+          taskId={task.id}
+          subtasks={task.subtasks ?? []}
+          onSubtasksChange={handleSubtasksChange}
+          onError={setError}
+        />
+      </Box>
 
-      <AttachmentsSection taskId={task.id} onError={setError} />
-
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-        <Button variant="outlined" onClick={() => navigate('/tasks')}>
-          Voltar para a Lista
-        </Button>
+      <Box sx={{ mt: 3 }}>
+        <AttachmentsSection taskId={task.id} onError={setError} />
       </Box>
 
       <TaskModal

@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import { Box, Button, Checkbox, Divider, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Box, Checkbox, Divider, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
 import { Add, Delete } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import Button from '../ui/Button'
+import DeleteModal from '../modals/DeleteModal'
 import { Task } from '../../pages/tasks/tasksTypes'
 import TaskStatusChip from './TaskStatusChip'
 
@@ -73,8 +74,8 @@ export default function SubtasksSection({ taskId, subtasks, onSubtasksChange, on
   }
 
   return (
-    <Paper sx={{ p: 4, mb: 3 }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>
         Subtarefas ({subtasks?.length ?? 0})
       </Typography>
       <Divider sx={{ mb: 2 }} />
@@ -94,7 +95,7 @@ export default function SubtasksSection({ taskId, subtasks, onSubtasksChange, on
           startIcon={<Add />}
           onClick={addSubtask}
           disabled={submitting || !title.trim()}
-          sx={{ whiteSpace: 'nowrap' }}
+          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           Adicionar
         </Button>
@@ -134,7 +135,7 @@ export default function SubtasksSection({ taskId, subtasks, onSubtasksChange, on
                 {subtask.title}
               </Typography>
               <TaskStatusChip status={subtask.status} />
-              <IconButton size="small" onClick={() => setToDelete(subtask)}>
+              <IconButton size="small" color="error" onClick={() => setToDelete(subtask)}>
                 <Delete fontSize="small" />
               </IconButton>
             </Box>
@@ -142,10 +143,10 @@ export default function SubtasksSection({ taskId, subtasks, onSubtasksChange, on
         </Stack>
       )}
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir subtarefa"
-        message={`Tem certeza que deseja excluir a subtarefa "${toDelete?.title}"?`}
+        message={`Tem certeza que deseja excluir a subtarefa "${toDelete?.title}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && deleteSubtask(toDelete.id)}
       />

@@ -23,12 +23,18 @@ export default function DashboardHeader({ userName, isMaster }: DashboardHeaderP
   return (
     <Paper
       sx={{
+        height: '33.33vh',
+        minHeight: 260,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
         p: 4,
-        mb: 3,
-        borderRadius: 2,
+        borderRadius: 0,
+        mx: -3,
+        mt: -3,
         background: projectId
-          ? 'linear-gradient(135deg, #065f46 0%, #047857 45%, #059669 100%)'
-          : 'linear-gradient(135deg, rgb(0, 21, 68) 0%, #1e3a8a 55%, #3b5bdb 100%)',
+          ? 'linear-gradient(135deg, rgba(6, 95, 70, 0.78) 0%, rgba(4, 120, 87, 0.7) 45%, rgba(5, 150, 105, 0.5) 100%), url("https://images.pexels.com/photos/17869674/pexels-photo-17869674/free-photo-of-cidade-meio-urbano-conexao-ligacao.jpeg") center/cover no-repeat'
+          : 'linear-gradient(135deg, rgba(0, 21, 68, 0.78) 0%, rgba(30, 58, 138, 0.68) 55%, rgba(59, 91, 219, 0.5) 100%), url("https://images.pexels.com/photos/17869674/pexels-photo-17869674/free-photo-of-cidade-meio-urbano-conexao-ligacao.jpeg") center/cover no-repeat',
         color: 'white',
         position: 'relative',
         overflow: 'hidden',

@@ -341,15 +341,17 @@ export default function Dashboard() {
   const isMaster = user?.role === 'master'
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
+    <>
       <DashboardHeader userName={user?.name ?? ''} isMaster={isMaster} />
-      {projectId ? (
-        <ProjectDashboard projectId={projectId} />
-      ) : isMaster ? (
-        <GlobalDashboard />
-      ) : (
-        <UserDashboard />
-      )}
-    </Container>
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        {projectId ? (
+          <ProjectDashboard projectId={projectId} />
+        ) : isMaster ? (
+          <GlobalDashboard />
+        ) : (
+          <UserDashboard />
+        )}
+      </Container>
+    </>
   )
 }

@@ -4,14 +4,15 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Button,
   Alert,
   Box,
   CircularProgress,
   Grid,
+  Stepper,
+  Step,
+  StepLabel,
+  Typography,
   InputAdornment,
-  MenuItem,
 } from '@mui/material'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
@@ -19,6 +20,9 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import TextField from '../../components/ui/TextField'
+import SelectField from '../../components/ui/SelectField'
+import Button from '../../components/ui/Button'
 import { formatPhone } from '../../utils/phone'
 import { roleOptions, RoleType } from '../settings/roleModules'
 import { createUserSchema, updateUserSchema } from './userSchemas'
@@ -30,6 +34,8 @@ interface UserModalProps {
   onClose: () => void
   onSaved: () => void
 }
+
+const STEPS = [{ label: 'Identificação' }, { label: 'Acesso e Perfil' }, { label: 'Finalização' }]
 
 export default function UserModal({ open, editId, onClose, onSaved }: UserModalProps) {
   const isEdit = Boolean(editId)
@@ -48,12 +54,15 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const [companies, setCompanies] = useState<{ id: number; nome: string }[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [stepError, setStepError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
 
   const isMasterUser = currentUser?.role === 'master'
   const showMasterOption = isMasterUser || role === 'master'
   const isSelf = isEdit && currentUser != null && String(editId) === String(currentUser.id)
+  const isLastStep = activeStep === STEPS.length - 1
   const availableCompanies = isMasterUser
     ? companies
     : currentUser?.companyId != null
@@ -62,6 +71,8 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
 
   useEffect(() => {
     if (!open) return
+    setActiveStep(0)
+    setStepError('')
     if (isMasterUser) {
       api
         .get('/companies', { params: { limit: 100, sortBy: 'nome', sortOrder: 'ASC' } })
@@ -106,8 +117,48 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     return payload
   }
 
+  const validateStep = () => {
+    const missing: string[] = []
+    if (activeStep === 0) {
+      if (!name.trim()) missing.push('Nome')
+      if (!lastName.trim()) missing.push('Sobrenome')
+      if (!email.trim()) missing.push('Email')
+      if (!phone.trim()) missing.push('Telefone')
+    } else if (activeStep === 1) {
+      if (!isEdit) {
+        if (!password) missing.push('Senha')
+        if (!confirmPassword) missing.push('Confirmação de senha')
+      }
+      if (!role) missing.push('Perfil')
+      if (role !== 'master' && !companyId) missing.push('Empresa')
+    }
+
+    if (missing.length) {
+      setStepError(`Preencha os campos obrigatórios: ${missing.join(', ')}.`)
+      return false
+    }
+    setStepError('')
+    return true
+  }
+
+  const handleNext = () => {
+    if (validateStep()) setActiveStep((prev) => prev + 1)
+  }
+
+  const handleBack = () => {
+    setStepError('')
+    setActiveStep((prev) => Math.max(0, prev - 1))
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!isLastStep) {
+      handleNext()
+      return
+    }
+    if (!validateStep()) return
+
     setError('')
     setFieldErrors({})
 
@@ -151,6 +202,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   const handleClose = () => {
     if (loading) return
     setError('')
+    setStepError('')
     setFieldErrors({})
     setName('')
     setLastName('')
@@ -162,6 +214,7 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
     setRole('user')
     setCompanyId(null)
     setShowPassword(false)
+    setActiveStep(0)
     onClose()
   }
 
@@ -170,209 +223,255 @@ export default function UserModal({ open, editId, onClose, onSaved }: UserModalP
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogTitle>{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Nome"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value)
-                  clearFieldError('name')
-                }}
-                margin="normal"
-                required
-                error={!!fieldErrors.name}
-                helperText={fieldErrors.name}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonOutlinedIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Sobrenome"
-                value={lastName}
-                onChange={(e) => {
-                  setLastName(e.target.value)
-                  clearFieldError('lastName')
-                }}
-                margin="normal"
-                required
-                error={!!fieldErrors.lastName}
-                helperText={fieldErrors.lastName}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonOutlinedIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              clearFieldError('email')
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel
+            sx={{
+              my: 2,
+              '& .MuiStepConnector-line': { borderColor: 'divider' },
+              '& .MuiStepLabel-label': { fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 },
+              '& .MuiStepLabel-label.Mui-active': { fontWeight: 700, color: 'rgb(0, 21, 68)' },
+              '& .MuiStepLabel-label.Mui-completed': { fontWeight: 600, color: 'text.primary' },
+              '& .MuiStepIcon-root.Mui-active': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-root.Mui-completed': { color: 'rgb(0, 21, 68)' },
+              '& .MuiStepIcon-text': { fontWeight: 600 },
             }}
-            margin="normal"
-            required
-            error={!!fieldErrors.email}
-            helperText={fieldErrors.email}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Telefone"
-            value={phone}
-            onChange={(e) => {
-              setPhone(formatPhone(e.target.value))
-              clearFieldError('phone')
-            }}
-            margin="normal"
-            required
-            error={!!fieldErrors.phone}
-            helperText={fieldErrors.phone}
-            placeholder="(11) 99999-9999"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <PhoneOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          {!isEdit && (
-            <>
-              <PasswordField
-                label="Senha"
-                value={password}
-                onChange={(value) => {
-                  setPassword(value)
-                  clearFieldError('password')
-                }}
-                showPassword={showPassword}
-                onToggleShow={toggleShowPassword}
-                required
-                error={fieldErrors.password}
-              />
-              <PasswordField
-                label="Confirmar Senha"
-                value={confirmPassword}
-                onChange={(value) => {
-                  setConfirmPassword(value)
-                  clearFieldError('confirmPassword')
-                }}
-                showPassword={showPassword}
-                onToggleShow={toggleShowPassword}
-                required
-                error={fieldErrors.confirmPassword}
-              />
-            </>
-          )}
-          <TextField
-            fullWidth
-            select
-            label="Perfil"
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value as RoleType)
-              clearFieldError('role')
-            }}
-            margin="normal"
-            disabled={isEdit && role === 'master'}
-            helperText={
-              fieldErrors.role ||
-              (isEdit && role === 'master'
-                ? 'O perfil master não pode ser alterado para usuário.'
-                : isEdit && !showMasterOption
-                  ? 'Perfil master é exclusivo do administrador geral.'
-                  : undefined)
-            }
-            error={!!fieldErrors.role}
           >
-            {roleOptions
-              .filter((o) => o.value !== 'master' || showMasterOption)
-              .map((o) => (
-                <MenuItem key={o.value} value={o.value}>
-                  {o.label}
-                </MenuItem>
-              ))}
-          </TextField>
-          {role !== 'master' && (
-            <TextField
-              fullWidth
-              select
-              label="Empresa"
-              value={companyId ?? ''}
-              onChange={(e) => {
-                setCompanyId(e.target.value ? Number(e.target.value) : null)
-                clearFieldError('companyId')
-              }}
-              margin="normal"
-              required
-              disabled={!isMasterUser}
-              error={!!fieldErrors.companyId}
-              helperText={
-                fieldErrors.companyId ||
-                (!isMasterUser ? 'Usuário não-master só pode criar usuários para a própria empresa.' : 'Usuário não-master deve estar vinculado a uma empresa.')
-              }
-            >
-              {availableCompanies.map((c) => (
-                <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
-              ))}
-            </TextField>
+            {STEPS.map((step) => (
+              <Step key={step.label}>
+                <StepLabel>{step.label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
+            Passo {activeStep + 1} de {STEPS.length} — {STEPS[activeStep].label}
+          </Typography>
+
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {stepError && <Alert severity="warning" sx={{ mb: 2 }}>{stepError}</Alert>}
+
+          {activeStep === 0 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Nome"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    clearFieldError('name')
+                  }}
+                  margin="normal"
+                  required
+                  error={!!fieldErrors.name}
+                  helperText={fieldErrors.name}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlinedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Sobrenome"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value)
+                    clearFieldError('lastName')
+                  }}
+                  margin="normal"
+                  required
+                  error={!!fieldErrors.lastName}
+                  helperText={fieldErrors.lastName}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlinedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    clearFieldError('email')
+                  }}
+                  margin="normal"
+                  required
+                  error={!!fieldErrors.email}
+                  helperText={fieldErrors.email}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailOutlinedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Telefone"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(formatPhone(e.target.value))
+                    clearFieldError('phone')
+                  }}
+                  margin="normal"
+                  required
+                  error={!!fieldErrors.phone}
+                  helperText={fieldErrors.phone}
+                  placeholder="(11) 99999-9999"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneOutlinedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
           )}
-          {isEdit ? (
-            <TextField
-              fullWidth
-              select
-              label="Status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              margin="normal"
-              disabled={isEdit && (role === 'master' || isSelf)}
-              helperText={
-                isEdit && role === 'master'
-                  ? 'O administrador master não pode ser desativado.'
-                  : isEdit && isSelf
-                    ? 'Não é possível desativar o próprio usuário.'
-                    : undefined
-              }
-            >
-              <MenuItem value="active">Ativo</MenuItem>
-              <MenuItem value="inactive">Inativo</MenuItem>
-            </TextField>
-          ) : (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Novo usuário entra como <strong>inativo</strong> até ser ativado.
-            </Alert>
+
+          {activeStep === 1 && (
+            <Grid container spacing={2}>
+              {!isEdit && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <PasswordField
+                      label="Senha"
+                      value={password}
+                      onChange={(value) => {
+                        setPassword(value)
+                        clearFieldError('password')
+                      }}
+                      showPassword={showPassword}
+                      onToggleShow={toggleShowPassword}
+                      required
+                      error={fieldErrors.password}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <PasswordField
+                      label="Confirmar Senha"
+                      value={confirmPassword}
+                      onChange={(value) => {
+                        setConfirmPassword(value)
+                        clearFieldError('confirmPassword')
+                      }}
+                      showPassword={showPassword}
+                      onToggleShow={toggleShowPassword}
+                      required
+                      error={fieldErrors.confirmPassword}
+                    />
+                  </Grid>
+                </>
+              )}
+              <Grid item xs={12}>
+                <SelectField
+                  label="Perfil"
+                  value={role}
+                  onChange={(value) => {
+                    setRole(value as RoleType)
+                    clearFieldError('role')
+                  }}
+                  margin="normal"
+                  disabled={isEdit && role === 'master'}
+                  error={!!fieldErrors.role}
+                  helperText={
+                    fieldErrors.role ||
+                    (isEdit && role === 'master'
+                      ? 'O perfil master não pode ser alterado para usuário.'
+                      : isEdit && !showMasterOption
+                        ? 'Perfil master é exclusivo do administrador geral.'
+                        : undefined)
+                  }
+                  options={roleOptions
+                    .filter((o) => o.value !== 'master' || showMasterOption)
+                    .map((o) => ({ value: o.value, label: o.label }))}
+                />
+              </Grid>
+              {role !== 'master' && (
+                <Grid item xs={12}>
+                  <SelectField
+                    label="Empresa"
+                    value={companyId != null ? String(companyId) : ''}
+                    onChange={(value) => {
+                      setCompanyId(value ? Number(value) : null)
+                      clearFieldError('companyId')
+                    }}
+                    margin="normal"
+                    required
+                    disabled={!isMasterUser}
+                    error={!!fieldErrors.companyId}
+                    helperText={
+                      fieldErrors.companyId ||
+                      (!isMasterUser
+                        ? 'Usuário não-master só pode criar usuários para a própria empresa.'
+                        : 'Usuário não-master deve estar vinculado a uma empresa.')
+                    }
+                    options={availableCompanies.map((c) => ({ value: String(c.id), label: c.nome }))}
+                  />
+                </Grid>
+              )}
+            </Grid>
+          )}
+
+          {activeStep === 2 && (
+            isEdit ? (
+              <SelectField
+                label="Status"
+                value={status}
+                onChange={setStatus}
+                margin="normal"
+                required
+                disabled={isEdit && (role === 'master' || isSelf)}
+                helperText={
+                  isEdit && role === 'master'
+                    ? 'O administrador master não pode ser desativado.'
+                    : isEdit && isSelf
+                      ? 'Não é possível desativar o próprio usuário.'
+                      : undefined
+                }
+                options={[
+                  { value: 'active', label: 'Ativo' },
+                  { value: 'inactive', label: 'Inativo' },
+                ]}
+              />
+            ) : (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Novo usuário entra como <strong>inativo</strong> até ser ativado.
+              </Alert>
+            )
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
           <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0 || loading}>
+              Voltar
+            </Button>
+            {isLastStep ? (
+              <Button type="submit" variant="contained" disabled={loading}>
+                {loading ? <CircularProgress size={24} color="inherit" /> : (isEdit ? 'Salvar' : 'Criar')}
+              </Button>
+            ) : (
+              <Button type="submit" variant="contained" disabled={loading}>
+                Próximo
+              </Button>
+            )}
+          </Box>
         </DialogActions>
       </Box>
     </Dialog>

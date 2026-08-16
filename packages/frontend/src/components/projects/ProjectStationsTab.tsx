@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Autocomplete, Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, TextField, Typography } from '@mui/material'
+import { Autocomplete, Box, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, TextField, Typography } from '@mui/material'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import CellTowerIcon from '@mui/icons-material/CellTower'
 import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../../services/api'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../ui/ConfirmDialog'
+import Button from '../ui/Button'
+import DeleteModal from '../modals/DeleteModal'
 import { ProjectStation } from '../../pages/projects/projectsTypes'
 
 interface ProjectStationsTabProps {
@@ -60,8 +61,8 @@ export default function ProjectStationsTab({ projectId, onError }: ProjectStatio
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Estações do Projeto</Typography>
+    <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)', mb: 2 }}>Estações do Projeto</Typography>
       <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'flex-start' }}>
         <Autocomplete
           fullWidth
@@ -70,7 +71,7 @@ export default function ProjectStationsTab({ projectId, onError }: ProjectStatio
           value={selectedStation}
           onChange={(_, v) => setSelectedStation(v)}
           renderInput={(params) => (
-            <TextField {...params} label="Adicionar estação" placeholder="Busque pelo site id ou end id" />
+            <TextField {...params} label="Adicionar estação" placeholder="Busque pelo site id ou end id" size="small" />
           )}
         />
         <Button
@@ -78,7 +79,7 @@ export default function ProjectStationsTab({ projectId, onError }: ProjectStatio
           startIcon={<AttachFileIcon />}
           onClick={handleAdd}
           disabled={!selectedStation}
-          sx={{ height: 56, whiteSpace: 'nowrap' }}
+          sx={{ height: 40, whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           Adicionar
         </Button>
@@ -103,6 +104,7 @@ export default function ProjectStationsTab({ projectId, onError }: ProjectStatio
               <ListItemSecondaryAction>
                 <IconButton
                   size="small"
+                  color="error"
                   onClick={(e) => {
                     e.stopPropagation()
                     setToRemove(station)
@@ -116,10 +118,11 @@ export default function ProjectStationsTab({ projectId, onError }: ProjectStatio
         </List>
       )}
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toRemove)}
         title="Remover estação"
-        message={`Remover a estação "${toRemove?.siteId}" do projeto?`}
+        message={`Tem certeza que deseja remover a estação "${toRemove?.siteId}" do projeto? Esta ação não poderá ser desfeita.`}
+        confirmLabel="Remover"
         onClose={() => setToRemove(null)}
         onConfirm={() => toRemove && handleRemove(toRemove.id)}
       />

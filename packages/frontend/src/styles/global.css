@@ -1,0 +1,27 @@
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 21, 68, 0.5) rgba(0, 0, 0, 0.05);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 21, 68, 0.45);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(0, 21, 68);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

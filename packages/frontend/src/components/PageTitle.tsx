@@ -11,7 +11,7 @@ const ROUTE_TITLES: { pattern: string[]; title: string }[] = [
   { pattern: ['activation-pending'], title: 'Aguardando Ativação' },
   { pattern: ['500'], title: 'Erro Interno' },
   { pattern: ['401'], title: 'Não Autorizado' },
-  { pattern: [], title: 'Dashboard' },
+  { pattern: [], title: 'Início' },
   { pattern: ['users'], title: 'Usuários' },
   { pattern: ['service-orders'], title: 'Ordens de Serviço' },
   { pattern: ['service-orders', ':id'], title: 'Ordem de Serviço' },

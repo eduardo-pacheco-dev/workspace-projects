@@ -4,13 +4,20 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import ProjectModal from './ProjectModal'
 import ProjectsToolbar from '../../components/projects/ProjectsToolbar'
 import ProjectsFilters, { ProjectViewMode } from '../../components/projects/ProjectsFilters'
 import ProjectsTable from '../../components/projects/ProjectsTable'
 import ProjectsCards from '../../components/projects/ProjectsCards'
 import { Project, ProjectSortBy, SortOrder } from './projectsTypes'
+
+const VIEW_MODE_KEY = 'projectsViewMode'
+
+const getStoredViewMode = (): ProjectViewMode => {
+  const stored = localStorage.getItem(VIEW_MODE_KEY)
+  return stored === 'cards' ? 'cards' : 'table'
+}
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
@@ -23,7 +30,7 @@ export default function ProjectsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [viewMode, setViewMode] = useState<ProjectViewMode>('table')
+  const [viewMode, setViewMode] = useState<ProjectViewMode>(getStoredViewMode)
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [toDelete, setToDelete] = useState<Project | null>(null)
@@ -87,9 +94,14 @@ export default function ProjectsPage() {
   const openCreate = () => setModal({ open: true, editId: null })
   const openEdit = (project: Project) => setModal({ open: true, editId: project.id })
 
+  const handleViewModeChange = (mode: ProjectViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
-      <ProjectsToolbar onNew={openCreate} />
+      <ProjectsToolbar total={total} onNew={openCreate} />
 
       <ProjectsFilters
         search={search}
@@ -97,7 +109,7 @@ export default function ProjectsPage() {
         viewMode={viewMode}
         onSearchChange={resetFilterAndPage(setSearch)}
         onStatusChange={resetFilterAndPage(setStatusFilter)}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
       />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -139,10 +151,10 @@ export default function ProjectsPage() {
         onSaved={() => fetchData()}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir projeto"
-        message={`Tem certeza que deseja excluir o projeto "${toDelete?.nome}"?`}
+        message={`Tem certeza que deseja excluir o projeto "${toDelete?.nome}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />

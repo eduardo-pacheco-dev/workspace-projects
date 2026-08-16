@@ -1,5 +1,6 @@
-import { Avatar, Box, Button, Divider, Paper, Typography } from '@mui/material'
+import { Avatar, Box, Divider, Paper, Typography } from '@mui/material'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import Button from '../ui/Button'
 import { useNavigate } from 'react-router-dom'
 
 export interface ListRow {
@@ -23,9 +24,9 @@ export default function ListPanel({ title, rows, emptyMessage, action }: ListPan
   const navigate = useNavigate()
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+    <Paper elevation={0} sx={{ p: 3, borderRadius: 2, height: '100%', border: '1px solid rgba(0,0,0,0.08)', bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgb(0, 21, 68)' }}>
           {title}
         </Typography>
         {action && (

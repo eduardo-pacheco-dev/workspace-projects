@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
 import { normalizeList } from '../../utils/list'
-import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import DeleteModal from '../../components/modals/DeleteModal'
 import CompanyModal from './CompanyModal'
 import CompaniesToolbar from '../../components/companies/CompaniesToolbar'
 import CompaniesFilters from '../../components/companies/CompaniesFilters'
@@ -112,10 +112,10 @@ export default function CompaniesPage() {
         onSaved={() => fetchCompanies()}
       />
 
-      <ConfirmDialog
+      <DeleteModal
         open={Boolean(toDelete)}
         title="Excluir empresa"
-        message={`Tem certeza que deseja excluir a empresa "${toDelete?.nome}"?`}
+        message={`Tem certeza que deseja excluir a empresa "${toDelete?.nome}"? Esta ação não poderá ser desfeita.`}
         onClose={() => setToDelete(null)}
         onConfirm={() => toDelete && handleDelete(toDelete.id)}
       />

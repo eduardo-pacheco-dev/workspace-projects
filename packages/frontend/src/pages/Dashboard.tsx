@@ -16,6 +16,9 @@ import { useProject } from '../contexts/ProjectContext'
 import api from '../services/api'
 import { formatCurrency } from '../utils/format'
 import DashboardHeader from '../components/dashboard/DashboardHeader'
+import DashboardNote from '../components/dashboard/DashboardNote'
+import DashboardTasks from '../components/dashboard/DashboardTasks'
+import DashboardAgenda from '../components/dashboard/DashboardAgenda'
 import StatsGrid, { StatCardConfig } from '../components/dashboard/StatsGrid'
 import ListPanel, { ListRow } from '../components/dashboard/ListPanel'
 import FinancePanel from '../components/dashboard/FinancePanel'
@@ -341,15 +344,28 @@ export default function Dashboard() {
   const isMaster = user?.role === 'master'
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <DashboardHeader userName={user?.name ?? ''} isMaster={isMaster} />
-      {projectId ? (
-        <ProjectDashboard projectId={projectId} />
-      ) : isMaster ? (
-        <GlobalDashboard />
-      ) : (
-        <UserDashboard />
-      )}
-    </Container>
+    <>
+      <DashboardHeader userName={user?.name ?? ''} />
+      <Container maxWidth="lg" sx={{ mt: 3, mb: 6 }}>
+        <Grid container spacing={3} sx={{ mb: 3, minHeight: '33.33vh' }}>
+          <Grid item xs={12} md={6} lg={4}>
+            <DashboardNote />
+          </Grid>
+          <Grid item xs={12} md={6} lg={4}>
+            <DashboardTasks />
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <DashboardAgenda />
+          </Grid>
+        </Grid>
+        {projectId ? (
+          <ProjectDashboard projectId={projectId} />
+        ) : isMaster ? (
+          <GlobalDashboard />
+        ) : (
+          <UserDashboard />
+        )}
+      </Container>
+    </>
   )
 }

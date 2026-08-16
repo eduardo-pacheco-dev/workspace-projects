@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Alert,
   Box,
   Typography,
@@ -17,6 +16,7 @@ import {
 import { Download, UploadFile, FileUpload } from '@mui/icons-material'
 import api from '../../services/api'
 import { useToast } from '../../contexts/ToastContext'
+import Button from '../../components/ui/Button'
 import { downloadStationTemplate, parseStationFile } from './stationImport'
 
 interface ImportResult {
@@ -100,17 +100,40 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Importar Estações</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700 }}>Importar Estações</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Baixe o template, preencha as colunas e envie o arquivo (.xlsx, .xls ou .csv). O End ID só é aplicado para a mobileCarrier TIM. Estações que já existem (mesmo Site ID e End ID) serão atualizadas.
         </Typography>
 
-        <Button variant="outlined" startIcon={<Download />} onClick={downloadStationTemplate} sx={{ mb: 2 }}>
-          Baixar Template
-        </Button>
-
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+        <Box
+          sx={{
+            mb: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1,
+            p: 2,
+            borderRadius: 2,
+            border: '1px solid rgba(0,0,0,0.08)',
+            bgcolor: 'rgba(0, 21, 68, 0.03)',
+          }}
+        >
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Passo 1 — Baixe o template
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Use as colunas do arquivo para preencher os dados.
+            </Typography>
+          </Box>
+          <Button variant="outlined" startIcon={<Download />} onClick={downloadStationTemplate}>
+            Baixar Template
+          </Button>
+        </Box>
 
         <Box
           onClick={() => fileInputRef.current?.click()}
@@ -122,12 +145,12 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
           onDrop={handleDrop}
           sx={{
             border: '2px dashed',
-            borderColor: dragging ? 'primary.main' : 'divider',
+            borderColor: dragging ? 'rgb(0, 21, 68)' : 'rgba(0, 21, 68, 0.3)',
             borderRadius: 2,
             p: 4,
             textAlign: 'center',
             cursor: 'pointer',
-            bgcolor: dragging ? 'action.hover' : 'transparent',
+            bgcolor: dragging ? 'rgba(0, 21, 68, 0.06)' : 'transparent',
             transition: 'background-color 0.2s, border-color 0.2s',
           }}
         >
@@ -139,22 +162,55 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
             onChange={handleInputChange}
           />
           {fileName ? (
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-              <UploadFile />
-              <Typography variant="body2">{fileName}</Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1.5,
+                  bgcolor: 'rgba(0, 21, 68, 0.08)',
+                  color: 'rgb(0, 21, 68)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <UploadFile fontSize="small" />
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>{fileName}</Typography>
             </Stack>
           ) : (
             <>
-              <FileUpload sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-              <Typography>Arraste o arquivo aqui ou clique para selecionar</Typography>
+              <Box
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  bgcolor: 'rgba(0, 21, 68, 0.08)',
+                  color: 'rgb(0, 21, 68)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 2,
+                }}
+              >
+                <FileUpload sx={{ fontSize: 30 }} />
+              </Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Arraste o arquivo aqui ou clique para selecionar
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Formatos aceitos: .xlsx, .xls, .csv
+              </Typography>
             </>
           )}
         </Box>
 
         {loading && (
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
-            <CircularProgress size={20} />
-            <Typography variant="body2">Importando...</Typography>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2, py: 1 }}>
+            <CircularProgress size={20} color="inherit" sx={{ color: 'rgb(0, 21, 68)' }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>Importando...</Typography>
           </Stack>
         )}
 
@@ -178,7 +234,7 @@ export default function ImportStationsModal({ open, onClose, onImported }: Impor
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>Fechar</Button>
+        <Button variant="outlined" onClick={handleClose} disabled={loading}>Fechar</Button>
       </DialogActions>
     </Dialog>
   )

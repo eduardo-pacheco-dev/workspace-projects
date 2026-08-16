@@ -1,4 +1,4 @@
-import DeleteConfirmDialog from '../ui/DeleteConfirmDialog'
+import DeleteModal from '../modals/DeleteModal'
 
 interface DeleteUserDialogProps {
   user: { id: number; name: string } | null
@@ -9,7 +9,7 @@ interface DeleteUserDialogProps {
 
 export default function DeleteUserDialog({ user, deleting, onClose, onConfirm }: DeleteUserDialogProps) {
   return (
-    <DeleteConfirmDialog
+    <DeleteModal
       open={Boolean(user)}
       title="Excluir Usuário"
       message={

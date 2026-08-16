@@ -18,6 +18,13 @@ interface DeleteTarget {
   name: string
 }
 
+const VIEW_MODE_KEY = 'usersViewMode'
+
+const getStoredViewMode = (): ViewMode => {
+  const stored = localStorage.getItem(VIEW_MODE_KEY)
+  return stored === 'cards' ? 'cards' : 'table'
+}
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth()
   const { showToast } = useToast()
@@ -28,7 +35,7 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState<SortBy>('id')
   const [sortOrder, setSortOrder] = useState<SortOrder>('ASC')
   const [search, setSearch] = useState('')
-  const [viewMode, setViewMode] = useState<ViewMode>('table')
+  const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode)
   const [error, setError] = useState('')
   const [modal, setModal] = useState({ open: false, editId: null as number | null })
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
@@ -106,15 +113,20 @@ export default function UsersPage() {
   const requestDelete = (u: User) => setDeleteTarget({ id: u.id, name: u.name })
   const isSelf = (u: User) => currentUser != null && String(currentUser.id) === String(u.id)
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  }
+
   return (
     <Container sx={{ mt: 4 }}>
-      <UsersToolbar onExport={handleExport} onNew={openCreate} />
+      <UsersToolbar total={total} onExport={handleExport} onNew={openCreate} />
 
       <UsersFilters
         search={search}
         viewMode={viewMode}
         onSearchChange={handleSearchChange}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
       />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

@@ -14,6 +14,7 @@ import BusinessIcon from '@mui/icons-material/Business'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import CorporateFareIcon from '@mui/icons-material/CorporateFare'
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications'
+import UpdateIcon from '@mui/icons-material/Update'
 
 export interface MenuItemConfig {
   label: string
@@ -38,6 +39,7 @@ export const allItems: MenuItemConfig[] = [
   { label: 'PDCA', path: '/pdca', icon: <LoopIcon />, module: '/pdca' },
   { label: 'Clientes', path: '/clients', icon: <BusinessIcon />, module: '/clients' },
   { label: 'LPUs', path: '/lpus', icon: <ReceiptLongIcon />, module: '/lpus' },
+  { label: 'Jobs', path: '/jobs', icon: <UpdateIcon />, module: '/jobs' },
   { label: 'Empresas', path: '/companies', icon: <CorporateFareIcon />, masterOnly: true },
   { label: 'Configurações', path: '/settings', icon: <SettingsApplicationsIcon />, module: '/settings' },
 ]

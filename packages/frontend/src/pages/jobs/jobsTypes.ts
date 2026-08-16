@@ -1,48 +1,63 @@
 export interface Job {
   id: number
-  title: string
-  description: string
-  budget: number
-  budgetType: string
+  nome: string
+  tipo: string
+  descricao: string | null
+  cronExpression: string
   status: string
-  skills: string | string[]
-  experienceLevel: string
-  clientId: string
+  ultimoExecutadoEm: string | null
+  proximaExecucaoEm: string | null
+  empresaId: number | null
+  createdAt: string
+  updatedAt: string
 }
+
+export type ChipColor = 'default' | 'info' | 'primary' | 'secondary' | 'success' | 'warning' | 'error'
+
+export const jobStatusOptions: { value: string; label: string }[] = [
+  { value: 'ativo', label: 'Ativo' },
+  { value: 'inativo', label: 'Inativo' },
+  { value: 'executando', label: 'Executando' },
+]
 
 export const jobStatusLabels: Record<string, string> = {
-  open: 'Aberto',
-  in_progress: 'Em andamento',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
+  ativo: 'Ativo',
+  inativo: 'Inativo',
+  executando: 'Executando',
 }
 
-export const jobStatusColors: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
-  open: 'info',
-  in_progress: 'warning',
-  completed: 'success',
-  cancelled: 'error',
+export const jobStatusColors: Record<string, ChipColor> = {
+  ativo: 'success',
+  inativo: 'default',
+  executando: 'info',
 }
 
-export const expLevelLabels: Record<string, string> = {
-  junior: 'Junior',
-  mid: 'Pleno',
-  senior: 'Sênior',
-  lead: 'Líder',
-}
+export const jobTipoOptions: { value: string; label: string }[] = [
+  { value: 'ECHO', label: 'Echo (teste)' },
+  { value: 'CLEANUP_LOGS', label: 'Limpeza de Logs' },
+]
 
-export const budgetTypeLabels: Record<string, string> = {
-  hourly: 'Por Hora',
-  fixed: 'Fixo',
-}
+export type JobSortBy =
+  | 'id'
+  | 'nome'
+  | 'tipo'
+  | 'status'
+  | 'ultimoExecutadoEm'
+  | 'proximaExecucaoEm'
+  | 'createdAt'
 
-export function parseSkills(skills: string | string[]): string[] {
-  if (Array.isArray(skills)) return skills
-  if (!skills) return []
-  return skills.split(',').map((s) => s.trim()).filter(Boolean)
-}
+export type SortOrder = 'ASC' | 'DESC'
 
-export function formatBudget(budget: number, budgetType: string): string {
-  const value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(budget)
-  return `${value} (${budgetTypeLabels[budgetType] || budgetType})`
+export const JOB_COLUMNS: { id: JobSortBy; label: string }[] = [
+  { id: 'nome', label: 'Nome' },
+  { id: 'tipo', label: 'Tipo' },
+  { id: 'status', label: 'Status' },
+  { id: 'ultimoExecutadoEm', label: 'Última Execução' },
+  { id: 'proximaExecucaoEm', label: 'Próxima Execução' },
+]
+
+export function formatJobDate(value: string | null): string {
+  if (!value) return '-'
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? value : date.toLocaleString('pt-BR')
 }

@@ -19,6 +19,7 @@ import ServiceOrderDetail from './pages/service-orders/ServiceOrderDetail'
 import FreelancersPage from './pages/freelancers/FreelancersPage'
 import CollaboratorDetail from './pages/collaborators/CollaboratorDetail'
 import JobDetail from './pages/jobs/JobDetail'
+import JobsPage from './pages/jobs/JobsPage'
 import ProposalForm from './pages/proposals/ProposalForm'
 import ProposalDetail from './pages/proposals/ProposalDetail'
 import ContractForm from './pages/contracts/ContractForm'
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="/service-orders/:id" element={<ServiceOrderDetail />} />
           <Route path="/collaborators" element={<FreelancersPage />} />
           <Route path="/collaborators/:id" element={<CollaboratorDetail />} />
+          <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/proposals/new" element={<ProposalForm />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />

@@ -6,7 +6,6 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { Job } from '../jobs/job.entity';
 import { ServiceOrderEntity } from '../service-orders/infrastructure/service-order.entity';
 import { StationEntity } from '../stations/infrastructure/station.entity';
 import { RadioLinkEntity } from '../radio-links/infrastructure/radio-link.entity';
@@ -22,10 +21,6 @@ export class Attachment {
 
   @Column({ type: 'integer', nullable: true })
   jobId: number | null;
-
-  @ManyToOne(() => Job, (job) => job.attachments, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'jobId' })
-  job: Job | null;
 
   @Column({ type: 'integer', nullable: true })
   serviceOrderId: number | null;

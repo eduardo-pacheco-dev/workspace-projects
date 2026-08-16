@@ -43,7 +43,7 @@ export default function DashboardNote() {
     <Paper
       elevation={0}
       sx={{
-        mb: 3,
+        height: '100%',
         p: 2,
         pt: 2.5,
         borderRadius: 1,

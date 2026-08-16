@@ -17,6 +17,7 @@ import api from '../services/api'
 import { formatCurrency } from '../utils/format'
 import DashboardHeader from '../components/dashboard/DashboardHeader'
 import DashboardNote from '../components/dashboard/DashboardNote'
+import DashboardTasks from '../components/dashboard/DashboardTasks'
 import StatsGrid, { StatCardConfig } from '../components/dashboard/StatsGrid'
 import ListPanel, { ListRow } from '../components/dashboard/ListPanel'
 import FinancePanel from '../components/dashboard/FinancePanel'
@@ -345,7 +346,14 @@ export default function Dashboard() {
     <>
       <DashboardHeader userName={user?.name ?? ''} isMaster={isMaster} />
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <DashboardNote />
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <DashboardNote />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <DashboardTasks />
+          </Grid>
+        </Grid>
         {projectId ? (
           <ProjectDashboard projectId={projectId} />
         ) : isMaster ? (
